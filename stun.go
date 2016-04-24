@@ -23,7 +23,9 @@
 package stun
 
 import (
+	"crypto/rand"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -48,6 +50,27 @@ type message struct {
 	Length        uint16                  // size, in bytes, not including the 20-byte STUN header
 	TransactionID [transactionIDSize]byte // used to uniquely identify STUN transactions.
 	Attributes    []attribute
+}
+
+func (m message) String() string {
+	return fmt.Sprintf("%s (len=%d) (attr=%d) [%s]",
+		m.Type,
+		m.Length,
+		len(m.Attributes),
+		hex.EncodeToString(m.TransactionID[:]),
+	)
+}
+
+func unexpected(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func newTransactionID() (b [transactionIDSize]byte) {
+	_, err := rand.Read(b[:])
+	unexpected(err)
+	return b
 }
 
 func (m message) Put(buf []byte) {
@@ -119,7 +142,7 @@ type method uint16
 
 // possible methods for STUN Message.
 const (
-	methodBinding = 0x01 // 0b000000000001
+	methodBinding method = 0x01 // 0b000000000001
 )
 
 func (m method) String() string {
@@ -145,8 +168,11 @@ const (
 	methodBShift = 1
 	methodDShift = 2
 
-	firstBit  = 0x01
-	secondBit = 0x02
+	firstBit  = 0x1
+	secondBit = 0x2
+
+	c0Bit = firstBit
+	c1Bit = secondBit
 
 	classC0Shift = 4
 	classC1Shift = 7
@@ -162,11 +188,12 @@ func (t messageType) Value() uint16 {
 	//	+--+--+-+-+-+-+-+-+-+-+-+-+-+-+
 	// Figure 3: Format of STUN Message Type Field
 
+	// warning: Abandon all hope ye who enter here.
 	// splitting M into A(M0-M3), B(M4-M6), D(M7-M11)
 	m := uint16(t.Method)
-	a := m & methodABits                              // A = M * 0b0000000000001111
-	b := m & methodBBits                              // B = M * 0b0000000001110000
-	d := m & methodDBits                              // D = M * 0b0000111110000000
+	a := m & methodABits                              // A = M * 0b0000000000001111 (right 4 bits)
+	b := m & methodBBits                              // B = M * 0b0000000001110000 (3 bits after A)
+	d := m & methodDBits                              // D = M * 0b0000111110000000 (5 bits after B)
 	m = a + (b << methodBShift) + (d << methodDShift) // shifting to add "holes" for C0 (at 4 bit) and C1 (8 bit)
 
 	// C0 is zero bit of C, C1 is fist bit.
@@ -174,7 +201,10 @@ func (t messageType) Value() uint16 {
 	// Ct = C0 << 4 + C1 << 8.
 	// Optimizations: "((C * 0b10) >> 1) << 8" as "(C * 0b10) << 7"
 	// We need C0 shifted by 4, and C1 by 8 to fit "11" and "7" positions (see figure 3).
-	class := (uint16(t.Class&firstBit) << classC0Shift) + (uint16(t.Class&secondBit) << classC1Shift)
+	c := uint16(t.Class)
+	c0 := (c & c0Bit) << classC0Shift
+	c1 := (c & c1Bit) << classC1Shift
+	class := c0 + c1
 
 	return m + class
 }
@@ -182,7 +212,9 @@ func (t messageType) Value() uint16 {
 func (t *messageType) ReadValue(v uint16) {
 	// decoding class
 	// we are taking first bit from v >> 4 and second from v >> 7.
-	class := (v>>classC0Shift)&firstBit + (v>>classC1Shift)&secondBit
+	c0 := (v >> classC0Shift) & c0Bit
+	c1 := (v >> classC1Shift) & c1Bit
+	class := c0 + c1
 	t.Class = messageClass(class)
 
 	// decoding method

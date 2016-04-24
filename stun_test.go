@@ -105,3 +105,17 @@ func BenchmarkMessageType_Value(b *testing.B) {
 		m.Value()
 	}
 }
+
+func BenchmarkMessage_Put(b *testing.B) {
+	mType := messageType{Method: methodBinding, Class: classRequest}
+	m := message{
+		Type:          mType,
+		Length:        0,
+		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+	}
+	buf := make([]byte, 20)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		m.Put(buf)
+	}
+}
