@@ -23,8 +23,11 @@
 package stun
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strconv"
+
+	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 const (
@@ -39,7 +42,51 @@ const (
 	magicCookie = 0x2112A442
 )
 
+const transactionIDSize = 12 // 96 bit
+
 type message struct {
+	Type          messageType
+	Length        uint16                  // size, in bytes, not including the 20-byte STUN header
+	TransactionID [transactionIDSize]byte // used to uniquely identify STUN transactions.
+	Attributes    []attribute
+}
+
+func (m message) Put(buf []byte) {
+	binary.BigEndian.PutUint16(buf[0:2], m.Type.Value())
+	binary.BigEndian.PutUint16(buf[2:4], m.Length)
+	binary.BigEndian.PutUint32(buf[4:8], magicCookie)
+	copy(buf[8:20], m.TransactionID[:])
+	offset := 20
+	for _, a := range m.Attributes {
+		binary.BigEndian.PutUint16(buf[offset:offset+2], a.Type.Value())
+		offset += 2
+		binary.BigEndian.PutUint16(buf[offset:offset+2], a.Length)
+		offset += 2
+		copy(buf[offset:offset+len(a.Value)], a.Value[:])
+	}
+}
+
+func (m *message) Get(buf []byte) error {
+	m.Type.ReadValue(binary.BigEndian.Uint16(buf[0:2]))
+	m.Length = binary.BigEndian.Uint16(buf[2:4])
+	cookie := binary.BigEndian.Uint32(buf[4:8])
+	copy(m.TransactionID[:], buf[8:20])
+	if cookie != magicCookie {
+		return ErrInvalidMagicCookie
+	}
+	return nil
+}
+
+type attributeType uint16
+
+func (t attributeType) Value() uint16 {
+	return uint16(t)
+}
+
+type attribute struct {
+	Type   attributeType
+	Length uint16
+	Value  []byte
 }
 
 // messageClass is 8-bit representation of 2-bit class of STUN Message Type.
@@ -134,15 +181,15 @@ func (t messageType) Value() uint16 {
 }
 
 func (t *messageType) ReadValue(v uint16) {
-	// first we decoding class.
+	// decoding class
 	// we are taking first bit from v >> 4 and second from v >> 7.
 	class := (v>>classC0Shift)&firstBit + (v>>classC1Shift)&secondBit
 	t.Class = messageClass(class)
 
 	// decoding method
-	a := v & methodABits
-	b := (v >> methodBShift) & methodBBits
-	d := (v >> methodDShift) & methodDBits
+	a := v & methodABits                   // A(M0-M3)
+	b := (v >> methodBShift) & methodBBits // B(M4-M6)
+	d := (v >> methodDShift) & methodDBits // D(M7-M11)
 	m := a + b + d
 	t.Method = method(m)
 }
@@ -150,3 +197,7 @@ func (t *messageType) ReadValue(v uint16) {
 func (t messageType) String() string {
 	return fmt.Sprintf("%s %s", t.Method, t.Class)
 }
+
+var (
+	ErrInvalidMagicCookie = errors.New("Magic cookie value is invalid")
+)

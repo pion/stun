@@ -66,6 +66,38 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 	}
 }
 
+func TestMessage_PutGet(t *testing.T) {
+	mType := messageType{Method: methodBinding, Class: classRequest}
+	m := message{
+		Type:          mType,
+		Length:        0,
+		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+	}
+	buf := make([]byte, 20)
+	m.Put(buf)
+	mDecoded := message{}
+	if err := mDecoded.Get(buf); err != nil {
+		t.Error(err)
+	}
+	if mDecoded.Type != m.Type {
+		t.Error("incorrect type")
+	}
+	if mDecoded.Length != m.Length {
+		t.Error("incorrect length")
+	}
+	if mDecoded.TransactionID != m.TransactionID {
+		t.Error("incorrect transaction ID")
+	}
+}
+
+func TestMessage_Cookie(t *testing.T) {
+	buf := make([]byte, 20)
+	mDecoded := message{}
+	if err := mDecoded.Get(buf); err != ErrInvalidMagicCookie {
+		t.Error("should error")
+	}
+}
+
 func BenchmarkMessageType_Value(b *testing.B) {
 	m := messageType{Method: methodBinding, Class: classRequest}
 	b.ReportAllocs()
