@@ -24,10 +24,9 @@ package stun
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"strconv"
-
-	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 const (
