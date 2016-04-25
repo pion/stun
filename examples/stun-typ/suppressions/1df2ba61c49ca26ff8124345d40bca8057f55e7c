@@ -1,0 +1,5 @@
+panic: v != v2
+panic
+github.com/cydev/stun.FuzzType
+go-fuzz-dep.Main
+main.main

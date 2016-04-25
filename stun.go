@@ -28,7 +28,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 const (
@@ -45,11 +48,22 @@ const (
 
 const transactionIDSize = 12 // 96 bit
 
+type attributes []attribute
+
+func (a attributes) Get(t attrType) attribute {
+	for _, candidate := range a {
+		if candidate.Type == t {
+			return candidate
+		}
+	}
+	return attribute{}
+}
+
 type message struct {
 	Type          messageType
-	Length        uint16                  // size, in bytes, not including the 20-byte STUN header
+	Length        uint16                  // TODO: is it needed?
 	TransactionID [transactionIDSize]byte // used to uniquely identify STUN transactions.
-	Attributes    []attribute
+	Attributes    attributes
 }
 
 func (m message) String() string {
@@ -73,42 +87,172 @@ func newTransactionID() (b [transactionIDSize]byte) {
 	return b
 }
 
+// Put encodes message into buf. If len(buf) is not enough, it panics.
 func (m message) Put(buf []byte) {
+	// encoding header
 	binary.BigEndian.PutUint16(buf[0:2], m.Type.Value())
-	binary.BigEndian.PutUint16(buf[2:4], m.Length)
 	binary.BigEndian.PutUint32(buf[4:8], magicCookie)
-	copy(buf[8:20], m.TransactionID[:])
-	offset := 20
+	copy(buf[8:messageHeaderSize], m.TransactionID[:])
+	offset := messageHeaderSize
+	// encoding attributes
 	for _, a := range m.Attributes {
 		binary.BigEndian.PutUint16(buf[offset:offset+2], a.Type.Value())
 		offset += 2
 		binary.BigEndian.PutUint16(buf[offset:offset+2], a.Length)
 		offset += 2
 		copy(buf[offset:offset+len(a.Value)], a.Value[:])
+		offset += len(a.Value)
 	}
+	// writing length as size, in bytes, not including the 20-byte STUN header.
+	binary.BigEndian.PutUint16(buf[2:4], uint16(offset-20))
 }
 
+// Get decodes message from byte slice and return error if any.
+//
+// Can return ErrUnexpectedEOF, ErrInvalidMagicCookie, ErrInvalidMessageLength.
+// Any error is unrecoverable, but message could be partially decoded.
+//
+// ErrUnexpectedEOF means that there were not enough bytes to read header or
+// value and indicates possible data loss.
 func (m *message) Get(buf []byte) error {
-	m.Type.ReadValue(binary.BigEndian.Uint16(buf[0:2]))
-	m.Length = binary.BigEndian.Uint16(buf[2:4])
+	if len(buf) < messageHeaderSize {
+		return io.ErrUnexpectedEOF
+	}
+
+	// decoding message header
+	m.Type.ReadValue(binary.BigEndian.Uint16(buf[0:2])) // first 2 bytes
+	m.Length = binary.BigEndian.Uint16(buf[2:4])        // second 2 bytes
 	cookie := binary.BigEndian.Uint32(buf[4:8])
-	copy(m.TransactionID[:], buf[8:20])
+	copy(m.TransactionID[:], buf[8:messageHeaderSize])
+
 	if cookie != magicCookie {
 		return ErrInvalidMagicCookie
+	}
+
+	offset := messageHeaderSize
+	mLength := int(m.Length)
+	if (mLength + offset) > len(buf) {
+		log.WithFields(log.Fields{
+			"len(b)": len(buf),
+			"offset": offset,
+		}).Debugln("message length", mLength, "is invalid?")
+		return ErrInvalidMessageLength
+	}
+
+	for (mLength + messageHeaderSize - offset) > 0 {
+		b := buf[offset:]
+		// checking that we have enough bytes to read header
+		if len(b) < attributeHeaderSize {
+			return io.ErrUnexpectedEOF
+		}
+		a := attribute{}
+
+		// decoding header
+		t := binary.BigEndian.Uint16(b[0:2])       // first 2 bytes
+		a.Length = binary.BigEndian.Uint16(b[2:4]) // second 2 bytes
+		a.Type = attrType(t)
+		l := int(a.Length)
+
+		// reading value
+		a.Value = make([]byte, l)   // we could possibly use pool here
+		b = b[attributeHeaderSize:] // slicing again to simplify value read
+		if len(b) < l {             // checking size
+			return io.ErrUnexpectedEOF
+		}
+		copy(a.Value, b[:l])
+
+		m.Attributes = append(m.Attributes, a)
+		offset += l + attributeHeaderSize
 	}
 	return nil
 }
 
-type attributeType uint16
+const (
+	attributeHeaderSize = 4
+	messageHeaderSize   = 20
+)
 
-func (t attributeType) Value() uint16 {
+type attrType uint16
+
+// attributes from comprehension-required range (0x0000-0x7FFF).
+const (
+	attrMappedAddress     attrType = 0x0001 // MAPPED-ADDRESS
+	attrUsername          attrType = 0x0006 // USERNAME
+	attrErrorCode         attrType = 0x0009 // ERROR-CODE
+	attrMessageIntegrity  attrType = 0x0008 // MESSAGE-INTEGRITY
+	attrUnknownAttributes attrType = 0x000A // UNKNOWN-ATTRIBUTES
+	attrRealm             attrType = 0x0014 // REALM
+	attrNonce             attrType = 0x0015 // NONCE
+	attrXORMappedAddress  attrType = 0x0020 // XOR-MAPPED-ADDRESS
+)
+
+// attributes from comprehension-optional range (0x8000-0xFFFF).
+const (
+	attrSoftware        attrType = 0x8022 // SOFTWARE
+	attrAlternateServer attrType = 0x8023 // ALTERNATE-SERVER
+	attrFingerprint     attrType = 0x8028 // FINGERPRINT
+
+)
+
+// Value returns uint16 representation of attribute type.
+func (t attrType) Value() uint16 {
 	return uint16(t)
 }
 
+func (t attrType) String() string {
+	switch t {
+	case attrMappedAddress:
+		return "MAPPED-ADDRESS"
+	case attrUsername:
+		return "USERNAME"
+	case attrErrorCode:
+		return "ERROR-CODE"
+	case attrMessageIntegrity:
+		return "MESSAGE-INTEGRITY"
+	case attrUnknownAttributes:
+		return "UNKNOWN-ATTRIBUTES"
+	case attrRealm:
+		return "REALM"
+	case attrNonce:
+		return "NONCE"
+	case attrXORMappedAddress:
+		return "XOR-MAPPED-ADDRESS"
+	case attrSoftware:
+		return "SOFTWARE"
+	case attrAlternateServer:
+		return "ALTERNATE-SERVER"
+	case attrFingerprint:
+		return "FINGERPRINT"
+	default:
+		// just return hex representation of unknown attribute type
+		return "0x" + strconv.FormatUint(uint64(t), 16)
+	}
+}
+
 type attribute struct {
-	Type   attributeType
+	Type   attrType
 	Length uint16
 	Value  []byte
+}
+
+// Equal returns true if a == b.
+func (a attribute) Equal(b attribute) bool {
+	if a.Type != b.Type {
+		return false
+	}
+	if a.Length != b.Length {
+		return false
+	}
+	for i, v := range a.Value {
+		if b.Value[i] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func (a attribute) String() string {
+	return fmt.Sprintf("%s: %x", a.Type, a.Value)
 }
 
 // messageClass is 8-bit representation of 2-bit class of STUN Message Type.
@@ -230,5 +374,9 @@ func (t messageType) String() string {
 }
 
 var (
+	// ErrInvalidMagicCookie means that magic cookie field has invalid value.
 	ErrInvalidMagicCookie = errors.New("Magic cookie value is invalid")
+	// ErrInvalidMessageLength means that actual message size is smaller that length
+	// from header field.
+	ErrInvalidMessageLength = errors.New("Message size is smaller than specified length")
 )

@@ -50,7 +50,7 @@ func TestClientSend(t *testing.T) {
 		Length:        0,
 		TransactionID: newTransactionID(),
 	}
-	buf := make([]byte, 20)
+	buf := make([]byte, 256)
 	m.Put(buf)
 	if _, err := conn.Write(buf); err != nil {
 		t.Fatal(err)
@@ -72,6 +72,7 @@ func TestClientSend(t *testing.T) {
 				t.Error(err)
 			}
 			log.Println(kek)
+			log.Println(kek.Attributes)
 			if kek.TransactionID != m.TransactionID {
 				t.Error("TransactionID missmatch")
 			}

@@ -68,12 +68,17 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 
 func TestMessage_PutGet(t *testing.T) {
 	mType := messageType{Method: methodBinding, Class: classRequest}
+	messageAttribute := attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
+	messageAttributes := attributes{
+		messageAttribute,
+	}
 	m := message{
 		Type:          mType,
-		Length:        0,
+		Length:        6,
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+		Attributes:    messageAttributes,
 	}
-	buf := make([]byte, 20)
+	buf := make([]byte, 128)
 	m.Put(buf)
 	mDecoded := message{}
 	if err := mDecoded.Get(buf); err != nil {
@@ -87,6 +92,10 @@ func TestMessage_PutGet(t *testing.T) {
 	}
 	if mDecoded.TransactionID != m.TransactionID {
 		t.Error("incorrect transaction ID")
+	}
+	aDecoded := mDecoded.Attributes.Get(messageAttribute.Type)
+	if !aDecoded.Equal(messageAttribute) {
+		t.Error(aDecoded, "!=", messageAttribute)
 	}
 }
 
@@ -119,3 +128,4 @@ func BenchmarkMessage_Put(b *testing.B) {
 		m.Put(buf)
 	}
 }
+
