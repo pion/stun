@@ -295,7 +295,7 @@ func (c MessageClass) String() string {
 // Method is uint16 representation of 12-bit STUN method.
 type Method uint16
 
-// possible methods for STUN Message.
+// Possible methods for STUN Message.
 const (
 	MethodBinding Method = 0x01 // 0b000000000001
 )
