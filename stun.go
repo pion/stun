@@ -179,7 +179,7 @@ const (
 // AttrType is attribute type.
 type AttrType uint16
 
-// attributes from comprehension-required range (0x0000-0x7FFF).
+// Attributes from comprehension-required range (0x0000-0x7FFF).
 const (
 	AttrMappedAddress     AttrType = 0x0001 // MAPPED-ADDRESS
 	AttrUsername          AttrType = 0x0006 // USERNAME
@@ -191,7 +191,7 @@ const (
 	AttrXORMappedAddress  AttrType = 0x0020 // XOR-MAPPED-ADDRESS
 )
 
-// attributes from comprehension-optional range (0x8000-0xFFFF).
+// Attributes from comprehension-optional range (0x8000-0xFFFF).
 const (
 	AttrSoftware        AttrType = 0x8022 // SOFTWARE
 	AttrAlternateServer AttrType = 0x8023 // ALTERNATE-SERVER
@@ -266,10 +266,10 @@ func (a Attribute) String() string {
 	return fmt.Sprintf("%s: %x", a.Type, a.Value)
 }
 
-// messageClass is 8-bit representation of 2-bit class of STUN Message Type.
-type messageClass byte
+// MessageClass is 8-bit representation of 2-bit class of STUN Message Class.
+type MessageClass byte
 
-// possible values for message class in STUN Message Type.
+// Possible values for message class in STUN Message Type.
 const (
 	ClassRequest         = 0x00 // 0b00
 	ClassIndication      = 0x01 // 0b01
@@ -277,7 +277,7 @@ const (
 	ClassErrorResponse   = 0x03 // 0b11
 )
 
-func (c messageClass) String() string {
+func (c MessageClass) String() string {
 	switch c {
 	case ClassRequest:
 		return "request"
@@ -311,7 +311,7 @@ func (m Method) String() string {
 
 // MessageType is STUN Message Type Field.
 type MessageType struct {
-	Class  messageClass
+	Class  MessageClass
 	Method Method
 }
 
@@ -371,7 +371,7 @@ func (t *MessageType) ReadValue(v uint16) {
 	c0 := (v >> classC0Shift) & c0Bit
 	c1 := (v >> classC1Shift) & c1Bit
 	class := c0 + c1
-	t.Class = messageClass(class)
+	t.Class = MessageClass(class)
 
 	// decoding method
 	a := v & methodABits                   // A(M0-M3)
