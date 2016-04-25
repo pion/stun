@@ -25,10 +25,3 @@ func reverseUint16(v uint16) uint16 {
 	return d
 }
 
-func bByte(v byte) string {
-	return fmt.Sprintf("0b%08s", strconv.FormatUint(uint64(v), 2))
-}
-
-func bUint16(v uint16) string {
-	return fmt.Sprintf("0b%016s", strconv.FormatUint(uint64(v), 2))
-}
