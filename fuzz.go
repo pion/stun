@@ -8,13 +8,13 @@ import (
 
 // FuzzMessage is go-fuzz endpoint for message.
 func FuzzMessage(data []byte) int {
-	m := message{}
+	m := Message{}
 	binary.BigEndian.PutUint32(data[4:8], magicCookie) // fuzzer dont known about cookies
 	if err := m.Get(data); err != nil {
 		return 0
 	}
 	m.Put(data)
-	m2 := message{}
+	m2 := Message{}
 	if err := m2.Get(data); err != nil {
 		panic(err)
 	}
@@ -32,7 +32,7 @@ func FuzzMessage(data []byte) int {
 
 // FuzzType is go-fuzz endpoint for message type.
 func FuzzType(data []byte) int {
-	t := messageType{}
+	t := MessageType{}
 	vt, _ := binary.Uvarint(data)
 	v := uint16(vt) & 0x1fff // first 3 bits are empty
 	t.ReadValue(v)
@@ -40,7 +40,7 @@ func FuzzType(data []byte) int {
 	if v != v2 {
 		panic("v != v2")
 	}
-	t2 := messageType{}
+	t2 := MessageType{}
 	t2.ReadValue(v2)
 	if t2 != t {
 		panic("t2 != t")

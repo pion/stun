@@ -1,10 +1,16 @@
 package stun
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
 )
+
+func bUint16(v uint16) string {
+	return fmt.Sprintf("0b%016s", strconv.FormatUint(uint64(v), 2))
+}
 
 func init() {
 	log.SetLevel(log.DebugLevel)
@@ -12,13 +18,13 @@ func init() {
 
 func TestMessageType_Value(t *testing.T) {
 	var tests = []struct {
-		in  messageType
+		in  MessageType
 		out uint16
 	}{
-		{messageType{Method: methodBinding, Class: classRequest}, 0x0001},
-		{messageType{Method: methodBinding, Class: classSuccessResponse}, 0x0101},
-		{messageType{Method: methodBinding, Class: classErrorResponse}, 0x0111},
-		{messageType{Method: 0xb6d, Class: 0x3}, 0x2ddd},
+		{MessageType{Method: MethodBinding, Class: ClassRequest}, 0x0001},
+		{MessageType{Method: MethodBinding, Class: ClassSuccessResponse}, 0x0101},
+		{MessageType{Method: MethodBinding, Class: ClassErrorResponse}, 0x0111},
+		{MessageType{Method: 0xb6d, Class: 0x3}, 0x2ddd},
 	}
 	for _, tt := range tests {
 		b := tt.in.Value()
@@ -31,14 +37,14 @@ func TestMessageType_Value(t *testing.T) {
 func TestMessageType_ReadValue(t *testing.T) {
 	var tests = []struct {
 		in  uint16
-		out messageType
+		out MessageType
 	}{
-		{0x0001, messageType{Method: methodBinding, Class: classRequest}},
-		{0x0101, messageType{Method: methodBinding, Class: classSuccessResponse}},
-		{0x0111, messageType{Method: methodBinding, Class: classErrorResponse}},
+		{0x0001, MessageType{Method: MethodBinding, Class: ClassRequest}},
+		{0x0101, MessageType{Method: MethodBinding, Class: ClassSuccessResponse}},
+		{0x0111, MessageType{Method: MethodBinding, Class: ClassErrorResponse}},
 	}
 	for _, tt := range tests {
-		m := messageType{}
+		m := MessageType{}
 		m.ReadValue(tt.in)
 		if m != tt.out {
 			t.Errorf("ReadValue(%s) -> %s, want %s", bUint16(tt.in), m, tt.out)
@@ -47,14 +53,14 @@ func TestMessageType_ReadValue(t *testing.T) {
 }
 
 func TestMessageType_ReadWriteValue(t *testing.T) {
-	var tests = []messageType{
-		{Method: methodBinding, Class: classRequest},
-		{Method: methodBinding, Class: classSuccessResponse},
-		{Method: methodBinding, Class: classErrorResponse},
-		{Method: 0x12, Class: classErrorResponse},
+	var tests = []MessageType{
+		{Method: MethodBinding, Class: ClassRequest},
+		{Method: MethodBinding, Class: ClassSuccessResponse},
+		{Method: MethodBinding, Class: ClassErrorResponse},
+		{Method: 0x12, Class: ClassErrorResponse},
 	}
 	for _, tt := range tests {
-		m := messageType{}
+		m := MessageType{}
 		v := tt.Value()
 		m.ReadValue(v)
 		if m != tt {
@@ -67,12 +73,12 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 }
 
 func TestMessage_PutGet(t *testing.T) {
-	mType := messageType{Method: methodBinding, Class: classRequest}
-	messageAttribute := attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
-	messageAttributes := attributes{
+	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
+	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
+	messageAttributes := Attributes{
 		messageAttribute,
 	}
-	m := message{
+	m := Message{
 		Type:          mType,
 		Length:        6,
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
@@ -80,7 +86,7 @@ func TestMessage_PutGet(t *testing.T) {
 	}
 	buf := make([]byte, 128)
 	m.Put(buf)
-	mDecoded := message{}
+	mDecoded := Message{}
 	if err := mDecoded.Get(buf); err != nil {
 		t.Error(err)
 	}
@@ -101,14 +107,14 @@ func TestMessage_PutGet(t *testing.T) {
 
 func TestMessage_Cookie(t *testing.T) {
 	buf := make([]byte, 20)
-	mDecoded := message{}
+	mDecoded := Message{}
 	if err := mDecoded.Get(buf); err != ErrInvalidMagicCookie {
 		t.Error("should error")
 	}
 }
 
 func BenchmarkMessageType_Value(b *testing.B) {
-	m := messageType{Method: methodBinding, Class: classRequest}
+	m := MessageType{Method: MethodBinding, Class: ClassRequest}
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		m.Value()
@@ -116,8 +122,8 @@ func BenchmarkMessageType_Value(b *testing.B) {
 }
 
 func BenchmarkMessage_Put(b *testing.B) {
-	mType := messageType{Method: methodBinding, Class: classRequest}
-	m := message{
+	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
+	m := Message{
 		Type:          mType,
 		Length:        0,
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
@@ -128,4 +134,3 @@ func BenchmarkMessage_Put(b *testing.B) {
 		m.Put(buf)
 	}
 }
-

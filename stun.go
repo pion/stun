@@ -1,7 +1,5 @@
 // Package stun implements Session Traversal Utilities for NAT (STUN) RFC 5389.
 //
-// See https://tools.ietf.org/html/rfc5389 for specification.
-//
 // Definitions
 //
 // STUN Agent: A STUN agent is an entity that implements the STUN
@@ -48,25 +46,29 @@ const (
 
 const transactionIDSize = 12 // 96 bit
 
-type attributes []attribute
+// Attributes is list of message attributes.
+type Attributes []Attribute
 
-func (a attributes) Get(t attrType) attribute {
+// Get returns first attribute from list which match AttrType. If nothing
+// found, it returns blank attribute.
+func (a Attributes) Get(t AttrType) Attribute {
 	for _, candidate := range a {
 		if candidate.Type == t {
 			return candidate
 		}
 	}
-	return attribute{}
+	return Attribute{}
 }
 
-type message struct {
-	Type          messageType
+// Message represents a single STUN packet.
+type Message struct {
+	Type          MessageType
 	Length        uint16                  // TODO: is it needed?
 	TransactionID [transactionIDSize]byte // used to uniquely identify STUN transactions.
-	Attributes    attributes
+	Attributes    Attributes
 }
 
-func (m message) String() string {
+func (m Message) String() string {
 	return fmt.Sprintf("%s (len=%d) (attr=%d) [%s]",
 		m.Type,
 		m.Length,
@@ -81,14 +83,16 @@ func unexpected(err error) {
 	}
 }
 
-func newTransactionID() (b [transactionIDSize]byte) {
+// NewTransactionID returns new random transaction ID using crypto/rand
+// as source.
+func NewTransactionID() (b [transactionIDSize]byte) {
 	_, err := rand.Read(b[:])
 	unexpected(err)
 	return b
 }
 
 // Put encodes message into buf. If len(buf) is not enough, it panics.
-func (m message) Put(buf []byte) {
+func (m Message) Put(buf []byte) {
 	// encoding header
 	binary.BigEndian.PutUint16(buf[0:2], m.Type.Value())
 	binary.BigEndian.PutUint32(buf[4:8], magicCookie)
@@ -114,7 +118,7 @@ func (m message) Put(buf []byte) {
 //
 // ErrUnexpectedEOF means that there were not enough bytes to read header or
 // value and indicates possible data loss.
-func (m *message) Get(buf []byte) error {
+func (m *Message) Get(buf []byte) error {
 	if len(buf) < messageHeaderSize {
 		return io.ErrUnexpectedEOF
 	}
@@ -145,12 +149,12 @@ func (m *message) Get(buf []byte) error {
 		if len(b) < attributeHeaderSize {
 			return io.ErrUnexpectedEOF
 		}
-		a := attribute{}
+		a := Attribute{}
 
 		// decoding header
 		t := binary.BigEndian.Uint16(b[0:2])       // first 2 bytes
 		a.Length = binary.BigEndian.Uint16(b[2:4]) // second 2 bytes
-		a.Type = attrType(t)
+		a.Type = AttrType(t)
 		l := int(a.Length)
 
 		// reading value
@@ -172,56 +176,56 @@ const (
 	messageHeaderSize   = 20
 )
 
-type attrType uint16
+// AttrType is attribute type.
+type AttrType uint16
 
 // attributes from comprehension-required range (0x0000-0x7FFF).
 const (
-	attrMappedAddress     attrType = 0x0001 // MAPPED-ADDRESS
-	attrUsername          attrType = 0x0006 // USERNAME
-	attrErrorCode         attrType = 0x0009 // ERROR-CODE
-	attrMessageIntegrity  attrType = 0x0008 // MESSAGE-INTEGRITY
-	attrUnknownAttributes attrType = 0x000A // UNKNOWN-ATTRIBUTES
-	attrRealm             attrType = 0x0014 // REALM
-	attrNonce             attrType = 0x0015 // NONCE
-	attrXORMappedAddress  attrType = 0x0020 // XOR-MAPPED-ADDRESS
+	AttrMappedAddress     AttrType = 0x0001 // MAPPED-ADDRESS
+	AttrUsername          AttrType = 0x0006 // USERNAME
+	AttrErrorCode         AttrType = 0x0009 // ERROR-CODE
+	AttrMessageIntegrity  AttrType = 0x0008 // MESSAGE-INTEGRITY
+	AttrUnknownAttributes AttrType = 0x000A // UNKNOWN-ATTRIBUTES
+	AttrRealm             AttrType = 0x0014 // REALM
+	AttrNonce             AttrType = 0x0015 // NONCE
+	AttrXORMappedAddress  AttrType = 0x0020 // XOR-MAPPED-ADDRESS
 )
 
 // attributes from comprehension-optional range (0x8000-0xFFFF).
 const (
-	attrSoftware        attrType = 0x8022 // SOFTWARE
-	attrAlternateServer attrType = 0x8023 // ALTERNATE-SERVER
-	attrFingerprint     attrType = 0x8028 // FINGERPRINT
-
+	AttrSoftware        AttrType = 0x8022 // SOFTWARE
+	AttrAlternateServer AttrType = 0x8023 // ALTERNATE-SERVER
+	AttrFingerprint     AttrType = 0x8028 // FINGERPRINT
 )
 
 // Value returns uint16 representation of attribute type.
-func (t attrType) Value() uint16 {
+func (t AttrType) Value() uint16 {
 	return uint16(t)
 }
 
-func (t attrType) String() string {
+func (t AttrType) String() string {
 	switch t {
-	case attrMappedAddress:
+	case AttrMappedAddress:
 		return "MAPPED-ADDRESS"
-	case attrUsername:
+	case AttrUsername:
 		return "USERNAME"
-	case attrErrorCode:
+	case AttrErrorCode:
 		return "ERROR-CODE"
-	case attrMessageIntegrity:
+	case AttrMessageIntegrity:
 		return "MESSAGE-INTEGRITY"
-	case attrUnknownAttributes:
+	case AttrUnknownAttributes:
 		return "UNKNOWN-ATTRIBUTES"
-	case attrRealm:
+	case AttrRealm:
 		return "REALM"
-	case attrNonce:
+	case AttrNonce:
 		return "NONCE"
-	case attrXORMappedAddress:
+	case AttrXORMappedAddress:
 		return "XOR-MAPPED-ADDRESS"
-	case attrSoftware:
+	case AttrSoftware:
 		return "SOFTWARE"
-	case attrAlternateServer:
+	case AttrAlternateServer:
 		return "ALTERNATE-SERVER"
-	case attrFingerprint:
+	case AttrFingerprint:
 		return "FINGERPRINT"
 	default:
 		// just return hex representation of unknown attribute type
@@ -229,14 +233,21 @@ func (t attrType) String() string {
 	}
 }
 
-type attribute struct {
-	Type   attrType
+// Attribute is a Type-Length-Value (TLV) object that
+// can be added to a STUN message.  Attributes are divided into two
+// types: comprehension-required and comprehension-optional.  STUN
+// agents can safely ignore comprehension-optional attributes they
+// don't understand, but cannot successfully process a message if it
+// contains comprehension-required attributes that are not
+// understood.
+type Attribute struct {
+	Type   AttrType
 	Length uint16
 	Value  []byte
 }
 
 // Equal returns true if a == b.
-func (a attribute) Equal(b attribute) bool {
+func (a Attribute) Equal(b Attribute) bool {
 	if a.Type != b.Type {
 		return false
 	}
@@ -251,7 +262,7 @@ func (a attribute) Equal(b attribute) bool {
 	return true
 }
 
-func (a attribute) String() string {
+func (a Attribute) String() string {
 	return fmt.Sprintf("%s: %x", a.Type, a.Value)
 }
 
@@ -260,48 +271,48 @@ type messageClass byte
 
 // possible values for message class in STUN Message Type.
 const (
-	classRequest         = 0x00 // 0b00
-	classIndication      = 0x01 // 0b01
-	classSuccessResponse = 0x02 // 0b10
-	classErrorResponse   = 0x03 // 0b11
+	ClassRequest         = 0x00 // 0b00
+	ClassIndication      = 0x01 // 0b01
+	ClassSuccessResponse = 0x02 // 0b10
+	ClassErrorResponse   = 0x03 // 0b11
 )
 
 func (c messageClass) String() string {
 	switch c {
-	case classRequest:
+	case ClassRequest:
 		return "request"
-	case classIndication:
+	case ClassIndication:
 		return "indication"
-	case classSuccessResponse:
+	case ClassSuccessResponse:
 		return "success response"
-	case classErrorResponse:
+	case ClassErrorResponse:
 		return "error response"
 	default:
 		panic("unknown message class")
 	}
 }
 
-// method is uint16 representation of 12-bit STUN method.
-type method uint16
+// Method is uint16 representation of 12-bit STUN method.
+type Method uint16
 
 // possible methods for STUN Message.
 const (
-	methodBinding method = 0x01 // 0b000000000001
+	MethodBinding Method = 0x01 // 0b000000000001
 )
 
-func (m method) String() string {
+func (m Method) String() string {
 	switch m {
-	case methodBinding:
+	case MethodBinding:
 		return "binding"
 	default:
 		return fmt.Sprintf("0x%s", strconv.FormatUint(uint64(m), 16))
 	}
 }
 
-// messageType is STUN Message Type Field.
-type messageType struct {
+// MessageType is STUN Message Type Field.
+type MessageType struct {
 	Class  messageClass
-	Method method
+	Method Method
 }
 
 const (
@@ -323,7 +334,7 @@ const (
 )
 
 // Value returns bit representation of messageType.
-func (t messageType) Value() uint16 {
+func (t MessageType) Value() uint16 {
 	//	 0                 1
 	//	 2  3  4 5 6 7 8 9 0 1 2 3 4 5
 	//	+--+--+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -353,7 +364,8 @@ func (t messageType) Value() uint16 {
 	return m + class
 }
 
-func (t *messageType) ReadValue(v uint16) {
+// ReadValue decodes uint16 into MessageType.
+func (t *MessageType) ReadValue(v uint16) {
 	// decoding class
 	// we are taking first bit from v >> 4 and second from v >> 7.
 	c0 := (v >> classC0Shift) & c0Bit
@@ -366,10 +378,10 @@ func (t *messageType) ReadValue(v uint16) {
 	b := (v >> methodBShift) & methodBBits // B(M4-M6)
 	d := (v >> methodDShift) & methodDBits // D(M7-M11)
 	m := a + b + d
-	t.Method = method(m)
+	t.Method = Method(m)
 }
 
-func (t messageType) String() string {
+func (t MessageType) String() string {
 	return fmt.Sprintf("%s %s", t.Method, t.Class)
 }
 
@@ -378,5 +390,5 @@ var (
 	ErrInvalidMagicCookie = errors.New("Magic cookie value is invalid")
 	// ErrInvalidMessageLength means that actual message size is smaller that length
 	// from header field.
-	ErrInvalidMessageLength = errors.New("Message size is smaller than specified length")
+	ErrInvalidMessageLength = errors.New("Message size is smaller than length")
 )

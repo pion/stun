@@ -44,11 +44,11 @@ func TestClientSend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mType := messageType{Method: methodBinding, Class: classRequest}
-	m := message{
+	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
+	m := Message{
 		Type:          mType,
 		Length:        0,
-		TransactionID: newTransactionID(),
+		TransactionID: NewTransactionID(),
 	}
 	buf := make([]byte, 256)
 	m.Put(buf)
@@ -67,8 +67,8 @@ func TestClientSend(t *testing.T) {
 		}
 		_, err = conn.Read(buf)
 		if err == nil {
-			kek := message{}
-			if err := kek.Get(buf); err != nil {
+			kek := Message{}
+			if err = kek.Get(buf); err != nil {
 				t.Error(err)
 			}
 			log.Println(kek)
