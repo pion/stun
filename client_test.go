@@ -61,7 +61,9 @@ func TestClientSend(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		conn.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Millisecond))
+		if err = conn.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Millisecond)); err != nil {
+			t.Error(err)
+		}
 		if timeout < 1600 {
 			timeout *= 2
 		}
