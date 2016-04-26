@@ -143,14 +143,17 @@ func (m *Message) Add(t AttrType, v []byte) {
 	// allocating space for buffer
 	// m.buf.B[0:20] is reserved by header
 	attrLength := uint32(len(v))
-	m.buf.Grow(4 + len(v))
+	m.buf.Grow(attributeHeaderSize + len(v))
 	newLength := messageHeaderSize + atomic.AddUint32(&m.Length,
 		attrLength+attributeHeaderSize) - attributeHeaderSize
+	// writing attribute to allocated space
 	buf := m.buf.B[newLength-attrLength : newLength]
 	binary.BigEndian.PutUint16(buf[0:2], t.Value())
 	binary.BigEndian.PutUint16(buf[2:4], uint16(attrLength))
 	attrValue := buf[attributeHeaderSize : attributeHeaderSize+len(v)]
 	copy(attrValue, v)
+
+	// appending attribute
 	m.Attributes = append(m.Attributes, Attribute{
 		Type:   t,
 		Value:  attrValue,
