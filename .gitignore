@@ -1,3 +1,5 @@
 stun-msg-fuzz.zip
 stun-typ-fuzz.zip
 .idea
+mem.out
+benchmark.*.write
