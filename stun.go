@@ -28,9 +28,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-
 	"sync/atomic"
-
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
