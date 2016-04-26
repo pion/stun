@@ -1,8 +1,18 @@
 package stun
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 )
+
+func bUint16(v uint16) string {
+	return fmt.Sprintf("0b%016s", strconv.FormatUint(uint64(v), 2))
+}
+
+func bByte(v byte) string {
+	return fmt.Sprintf("0b%08s", strconv.FormatUint(uint64(v), 2))
+}
 
 func TestReverseByte(t *testing.T) {
 	var tests = []struct {

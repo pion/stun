@@ -1,10 +1,5 @@
 package stun
 
-import (
-	"fmt"
-	"strconv"
-)
-
 func reverseByte(b byte) byte {
 	var d byte
 	for i := 0; i < 8; i++ {
@@ -24,4 +19,3 @@ func reverseUint16(v uint16) uint16 {
 	}
 	return d
 }
-

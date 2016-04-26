@@ -16,6 +16,38 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
+func TestMessageBuffer(t *testing.T) {
+	m := AcquireMessage()
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.WriteHeader()
+	mDecoded := &Message{}
+	if err := mDecoded.Get(m.buf.B); err != nil {
+		t.Error(err)
+	}
+	if !mDecoded.Equal(*m) {
+		t.Error(mDecoded, "!", m)
+	}
+}
+
+func BenchmarkMessage_Write(b *testing.B) {
+	b.ReportAllocs()
+	attributeValue := []byte{0xff, 0x11, 0x12, 0x34}
+	b.SetBytes(int64(len(attributeValue) + messageHeaderSize +
+		attributeHeaderSize))
+	transactionID := NewTransactionID()
+
+	for i := 0; i < b.N; i++ {
+		m := AcquireMessage()
+		m.Add(AttrErrorCode, attributeValue)
+		m.TransactionID = transactionID
+		m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+		m.WriteHeader()
+		ReleaseMessage(m)
+	}
+}
+
 func TestMessageType_Value(t *testing.T) {
 	var tests = []struct {
 		in  MessageType

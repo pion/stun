@@ -29,7 +29,12 @@ import (
 	"io"
 	"strconv"
 
+	"sync/atomic"
+
+	"sync"
+
 	log "github.com/Sirupsen/logrus"
+	"github.com/cydev/buffer"
 )
 
 const (
@@ -49,6 +54,12 @@ const transactionIDSize = 12 // 96 bit
 // Attributes is list of message attributes.
 type Attributes []Attribute
 
+var (
+	// BlankAttribute is attribute that is returned by
+	// Attributes.Get if nothing found.
+	BlankAttribute = Attribute{}
+)
+
 // Get returns first attribute from list which match AttrType. If nothing
 // found, it returns blank attribute.
 func (a Attributes) Get(t AttrType) Attribute {
@@ -57,15 +68,19 @@ func (a Attributes) Get(t AttrType) Attribute {
 			return candidate
 		}
 	}
-	return Attribute{}
+	return BlankAttribute
 }
 
 // Message represents a single STUN packet.
 type Message struct {
-	Type          MessageType
-	Length        uint16                  // TODO: is it needed?
-	TransactionID [transactionIDSize]byte // used to uniquely identify STUN transactions.
+	Type   MessageType
+	Length uint32
+	// TransactionID is used to uniquely identify STUN transactions.
+	TransactionID [transactionIDSize]byte
 	Attributes    Attributes
+
+	// buf is underlying raw data buffer.
+	buf *buffer.Buffer
 }
 
 func (m Message) String() string {
@@ -77,6 +92,7 @@ func (m Message) String() string {
 	)
 }
 
+// unexpected panics if err is not nil.
 func unexpected(err error) {
 	if err != nil {
 		panic(err)
@@ -89,6 +105,97 @@ func NewTransactionID() (b [transactionIDSize]byte) {
 	_, err := rand.Read(b[:])
 	unexpected(err)
 	return b
+}
+
+var messagePool sync.Pool
+
+const (
+	defaultAttributesSize    = 12
+	defaultMessageBufferSize = 416
+)
+
+// AcquireMessage returns new message from pool.
+func AcquireMessage() *Message {
+	v := messagePool.Get()
+	if v == nil {
+		b := &buffer.Buffer{
+			B: make([]byte, 0, defaultMessageBufferSize),
+		}
+		b.Grow(messageHeaderSize)
+		m := &Message{
+			Attributes: make(Attributes, 0, defaultAttributesSize),
+			buf:        b,
+		}
+		return m
+	}
+	return v.(*Message)
+}
+
+// ReleaseMessage returns message to pool rendering it to unusable state.
+// After release, any usage of message and its attributes is invalid.
+func ReleaseMessage(m *Message) {
+	m.buf.Reset()
+	m.Length = 0
+	m.Attributes = m.Attributes[:0]
+	messagePool.Put(m)
+}
+
+// Add appends new attribute to message.
+func (m *Message) Add(t AttrType, v []byte) {
+	// allocating space for buffer
+	// m.buf.B[0:20] is reserved by header
+	attrLength := uint32(len(v))
+	m.buf.Grow(4 + len(v))
+	newLength := messageHeaderSize + atomic.AddUint32(&m.Length,
+		attrLength+attributeHeaderSize) - attributeHeaderSize
+	buf := m.buf.B[newLength-attrLength : newLength]
+	binary.BigEndian.PutUint16(buf[0:2], t.Value())
+	binary.BigEndian.PutUint16(buf[2:4], uint16(attrLength))
+	attrValue := buf[attributeHeaderSize : attributeHeaderSize+len(v)]
+	copy(attrValue, v)
+	m.Attributes = append(m.Attributes, Attribute{
+		Type:   t,
+		Value:  attrValue,
+		Length: uint16(attrLength),
+	})
+}
+
+// Equal returns true if Message b equals to m.
+func (m Message) Equal(b Message) bool {
+	if m.Type != b.Type {
+		return false
+	}
+	if m.TransactionID != b.TransactionID {
+		return false
+	}
+	if m.Length != b.Length {
+		return false
+	}
+	for _, a := range m.Attributes {
+		aB := b.Attributes.Get(a.Type)
+		if !aB.Equal(a) {
+			return false
+		}
+	}
+	return true
+}
+
+// WriteHeader writes header to underlying buffer.
+func (m *Message) WriteHeader() {
+	buf := m.buf.B
+	// encoding header
+	binary.BigEndian.PutUint16(buf[0:2], m.Type.Value())
+	binary.BigEndian.PutUint32(buf[4:8], magicCookie)
+	copy(buf[8:messageHeaderSize], m.TransactionID[:])
+	// attributes are already encoded
+	// writing length as size, in bytes, not including the 20-byte STUN header.
+	binary.BigEndian.PutUint16(buf[2:4], uint16(len(buf)-20))
+}
+
+// Read implements Reader.
+func (m Message) Read(b []byte) (int, error) {
+	copy(b, m.buf.B)
+	return len(m.buf.B), nil
 }
 
 // Put encodes message into buf. If len(buf) is not enough, it panics.
@@ -120,12 +227,14 @@ func (m Message) Put(buf []byte) {
 // value and indicates possible data loss.
 func (m *Message) Get(buf []byte) error {
 	if len(buf) < messageHeaderSize {
+		log.Debugln(len(buf), "<", messageHeaderSize, "message")
 		return io.ErrUnexpectedEOF
 	}
 
 	// decoding message header
 	m.Type.ReadValue(binary.BigEndian.Uint16(buf[0:2])) // first 2 bytes
-	m.Length = binary.BigEndian.Uint16(buf[2:4])        // second 2 bytes
+	tLength := binary.BigEndian.Uint16(buf[2:4])        // second 2 bytes
+	m.Length = uint32(tLength)
 	cookie := binary.BigEndian.Uint32(buf[4:8])
 	copy(m.TransactionID[:], buf[8:messageHeaderSize])
 
@@ -147,6 +256,7 @@ func (m *Message) Get(buf []byte) error {
 		b := buf[offset:]
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
+			log.Debugln(len(buf), "<", attributeHeaderSize, "header")
 			return io.ErrUnexpectedEOF
 		}
 		a := Attribute{}
@@ -158,12 +268,11 @@ func (m *Message) Get(buf []byte) error {
 		l := int(a.Length)
 
 		// reading value
-		a.Value = make([]byte, l)   // we could possibly use pool here
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
 		if len(b) < l {             // checking size
 			return io.ErrUnexpectedEOF
 		}
-		copy(a.Value, b[:l])
+		a.Value = b[:l]
 
 		m.Attributes = append(m.Attributes, a)
 		offset += l + attributeHeaderSize
@@ -346,16 +455,19 @@ func (t MessageType) Value() uint16 {
 	// warning: Abandon all hope ye who enter here.
 	// splitting M into A(M0-M3), B(M4-M6), D(M7-M11)
 	m := uint16(t.Method)
-	a := m & methodABits                              // A = M * 0b0000000000001111 (right 4 bits)
-	b := m & methodBBits                              // B = M * 0b0000000001110000 (3 bits after A)
-	d := m & methodDBits                              // D = M * 0b0000111110000000 (5 bits after B)
-	m = a + (b << methodBShift) + (d << methodDShift) // shifting to add "holes" for C0 (at 4 bit) and C1 (8 bit)
+	a := m & methodABits // A = M * 0b0000000000001111 (right 4 bits)
+	b := m & methodBBits // B = M * 0b0000000001110000 (3 bits after A)
+	d := m & methodDBits // D = M * 0b0000111110000000 (5 bits after B)
+
+	// shifting to add "holes" for C0 (at 4 bit) and C1 (8 bit)
+	m = a + (b << methodBShift) + (d << methodDShift)
 
 	// C0 is zero bit of C, C1 is fist bit.
 	// C0 = C * 0b01, C1 = (C * 0b10) >> 1
 	// Ct = C0 << 4 + C1 << 8.
 	// Optimizations: "((C * 0b10) >> 1) << 8" as "(C * 0b10) << 7"
-	// We need C0 shifted by 4, and C1 by 8 to fit "11" and "7" positions (see figure 3).
+	// We need C0 shifted by 4, and C1 by 8 to fit "11" and "7" positions
+	// (see figure 3).
 	c := uint16(t.Class)
 	c0 := (c & c0Bit) << classC0Shift
 	c1 := (c & c1Bit) << classC1Shift
@@ -388,7 +500,7 @@ func (t MessageType) String() string {
 var (
 	// ErrInvalidMagicCookie means that magic cookie field has invalid value.
 	ErrInvalidMagicCookie = errors.New("Magic cookie value is invalid")
-	// ErrInvalidMessageLength means that actual message size is smaller that length
-	// from header field.
+	// ErrInvalidMessageLength means that actual message size is smaller that
+	// length from header field.
 	ErrInvalidMessageLength = errors.New("Message size is smaller than length")
 )
