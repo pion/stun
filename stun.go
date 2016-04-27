@@ -139,7 +139,7 @@ func ReleaseMessage(m *Message) {
 	messagePool.Put(m)
 }
 
-// Add appends new attribute to message.
+// Add appends new attribute to message. Not goroutine-safe.
 //
 // Value of attribute is copied to internal buffer so there are no
 // constraints on validity.
@@ -201,7 +201,7 @@ func (m Message) Equal(b Message) bool {
 	return true
 }
 
-// WriteHeader writes header to underlying buffer.
+// WriteHeader writes header to underlying buffer. Not goroutine-safe.
 func (m *Message) WriteHeader() {
 	buf := m.buf.B
 	// encoding header
