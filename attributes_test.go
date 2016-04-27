@@ -20,7 +20,6 @@ func TestMessage_AddSoftware(t *testing.T) {
 	}
 }
 
-
 func TestMessage_GetSoftware(t *testing.T) {
 	m := AcquireMessage()
 	defer ReleaseMessage(m)
