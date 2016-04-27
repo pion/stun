@@ -22,8 +22,8 @@ package stun
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -81,13 +81,13 @@ type Message struct {
 }
 
 func (m Message) String() string {
-	return fmt.Sprintf("%s (l=%d,%d of %d) (attr=%d) [%s]",
+	return fmt.Sprintf("%s (l=%d,%d/%d) attr[%d] id[%s]",
 		m.Type,
 		m.Length,
 		len(m.buf.B),
 		cap(m.buf.B),
 		len(m.Attributes),
-		hex.EncodeToString(m.TransactionID[:]),
+		base64.StdEncoding.EncodeToString(m.TransactionID[:]),
 	)
 }
 
