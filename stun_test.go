@@ -18,6 +18,7 @@ func init() {
 
 func TestMessageBuffer(t *testing.T) {
 	m := AcquireMessage()
+	defer ReleaseMessage(m)
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
 	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})

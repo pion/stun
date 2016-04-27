@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"sync/atomic"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -82,9 +81,11 @@ type Message struct {
 }
 
 func (m Message) String() string {
-	return fmt.Sprintf("%s (len=%d) (attr=%d) [%s]",
+	return fmt.Sprintf("%s (l=%d,%d of %d) (attr=%d) [%s]",
 		m.Type,
 		m.Length,
+		len(m.buf.B),
+		cap(m.buf.B),
 		len(m.Attributes),
 		hex.EncodeToString(m.TransactionID[:]),
 	)
@@ -108,20 +109,20 @@ func NewTransactionID() (b [transactionIDSize]byte) {
 var messagePool = sync.Pool{
 	New: func() interface{} {
 		b := &buffer.Buffer{
-			B: make([]byte, 0, defaultMessageBufferSize),
+			B: make([]byte, 0, defaultMessageBufferCapacity),
 		}
 		b.Grow(messageHeaderSize)
-		m := &Message{
-			Attributes: make(Attributes, 0, defaultAttributesSize),
+		return &Message{
+			Attributes: make(Attributes, 0, defaultAttributesCapacity),
 			buf:        b,
 		}
-		return m
 	},
 }
 
+// defaults for
 const (
-	defaultAttributesSize    = 12
-	defaultMessageBufferSize = 416
+	defaultAttributesCapacity    = 12
+	defaultMessageBufferCapacity = 416
 )
 
 // AcquireMessage returns new message from pool.
@@ -139,24 +140,43 @@ func ReleaseMessage(m *Message) {
 }
 
 // Add appends new attribute to message.
+//
+// Value of attribute is copied to internal buffer so there are no
+// constraints on validity.
 func (m *Message) Add(t AttrType, v []byte) {
 	// allocating space for buffer
 	// m.buf.B[0:20] is reserved by header
 	attrLength := uint32(len(v))
-	m.buf.Grow(attributeHeaderSize + len(v))
-	newLength := messageHeaderSize + atomic.AddUint32(&m.Length,
-		attrLength+attributeHeaderSize) - attributeHeaderSize
-	// writing attribute to allocated space
-	buf := m.buf.B[newLength-attrLength : newLength]
+
+	// [0:20]                               <- header
+	// [20:20+m.Length]                     <- attributes
+	// [20+m.Length:20+m.Length+len(v) + 4] <- allocated
+
+	allocSize := attributeHeaderSize + len(v)  // total attr size
+	first := messageHeaderSize + int(m.Length) // first byte
+	last := first + allocSize                  // last byte
+
+	// growing buffer if attribute value+header won't fit
+	// not performing any optimizations here
+	// because initial capacity and maximum theoretical size of buffer
+	// are not far from each other.
+	if cap(m.buf.B) < last {
+		m.buf.Grow(cap(m.buf.B) - last)
+	}
+	m.buf.B = m.buf.B[:last]      // now len(b) = last
+	m.Length += uint32(allocSize) // rendering changes
+
+	// encoding attribute TLV to internal buffer
+	buf := m.buf.B[first:last]
 	binary.BigEndian.PutUint16(buf[0:2], t.Value())
 	binary.BigEndian.PutUint16(buf[2:4], uint16(attrLength))
-	attrValue := buf[attributeHeaderSize : attributeHeaderSize+len(v)]
-	copy(attrValue, v)
+	copy(buf[attributeHeaderSize:], v)
 
 	// appending attribute
+	// note that we are reusing buf (actually a slice of m.buf.B) there
 	m.Attributes = append(m.Attributes, Attribute{
 		Type:   t,
-		Value:  attrValue,
+		Value:  buf[attributeHeaderSize:],
 		Length: uint16(attrLength),
 	})
 }
