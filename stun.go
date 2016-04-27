@@ -133,10 +133,15 @@ func AcquireMessage() *Message {
 // ReleaseMessage returns message to pool rendering it to unusable state.
 // After release, any usage of message and its attributes is invalid.
 func ReleaseMessage(m *Message) {
+	m.Reset()
+	messagePool.Put(m)
+}
+
+// Reset resets Message length, attributes and underlying buffer.
+func (m *Message) Reset() {
 	m.buf.Reset()
 	m.Length = 0
 	m.Attributes = m.Attributes[:0]
-	messagePool.Put(m)
 }
 
 // Add appends new attribute to message. Not goroutine-safe.

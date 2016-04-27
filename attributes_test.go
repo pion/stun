@@ -1,6 +1,11 @@
 package stun
 
-import "testing"
+import (
+	"encoding/base64"
+	"encoding/hex"
+	"net"
+	"testing"
+)
 
 func TestMessage_AddSoftware(t *testing.T) {
 	m := AcquireMessage()
@@ -31,5 +36,91 @@ func TestMessage_GetSoftware(t *testing.T) {
 	vByte := m.GetSoftwareBytes()
 	if vByte != nil {
 		t.Errorf("%s should be nil.", vByte)
+	}
+}
+
+func BenchmarkMessage_AddXORMappedAddress(b *testing.B) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	b.ReportAllocs()
+	ip := net.ParseIP("192.168.1.32")
+	for i := 0; i < b.N; i++ {
+		m.AddXORMappedAddress(ip, 3654)
+		m.Reset()
+	}
+}
+
+func BenchmarkMessage_GetXORMappedAddress(b *testing.B) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	b.ReportAllocs()
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		b.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	addrValue, err := hex.DecodeString("00019cd5f49f38ae")
+	if err != nil {
+		b.Error(err)
+	}
+	for i := 0; i < b.N; i++ {
+		m.Add(AttrXORMappedAddress, addrValue)
+		m.GetXORMappedAddress()
+		m.Reset()
+	}
+}
+
+func TestMessage_GetXORMappedAddress(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		t.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	addrValue, err := hex.DecodeString("00019cd5f49f38ae")
+	if err != nil {
+		t.Error(err)
+	}
+	m.Add(AttrXORMappedAddress, addrValue)
+	ip, port, err := m.GetXORMappedAddress()
+	if err != nil {
+		t.Error(err)
+	}
+	if !ip.Equal(net.ParseIP("213.141.156.236")) {
+		t.Error("bad ip", ip, "!=", "213.141.156.236")
+	}
+	if port != 48583 {
+		t.Error("bad port", port, "!=", 48583)
+	}
+}
+
+func TestMessage_AddXORMappedAddress(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		t.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	expectedIP := net.ParseIP("213.141.156.236")
+	expectedPort := 21254
+	m.AddXORMappedAddress(expectedIP, expectedPort)
+	m.WriteHeader()
+
+	mRes := AcquireMessage()
+	defer ReleaseMessage(mRes)
+	if err := mRes.Get(m.buf.B); err != nil {
+		t.Fatal(err)
+	}
+	ip, port, err := m.GetXORMappedAddress()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ip.Equal(expectedIP) {
+		t.Error("bad ip", ip, "!=", expectedIP)
+	}
+	if port != expectedPort {
+		t.Error("bad port", port, "!=", expectedPort)
 	}
 }

@@ -73,6 +73,13 @@ func TestClientSend(t *testing.T) {
 			if mRec.TransactionID != m.TransactionID {
 				t.Error("TransactionID missmatch")
 			}
+			v := mRec.getAttrValue(AttrXORMappedAddress)
+			log.Println(v)
+			ip, port, err := mRec.GetXORMappedAddress()
+			if err != nil {
+				t.Error(err)
+			}
+			log.Println(ip, port)
 			ReleaseMessage(mRec)
 			break
 		} else {
