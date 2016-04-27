@@ -105,17 +105,8 @@ func NewTransactionID() (b [transactionIDSize]byte) {
 	return b
 }
 
-var messagePool sync.Pool
-
-const (
-	defaultAttributesSize    = 12
-	defaultMessageBufferSize = 416
-)
-
-// AcquireMessage returns new message from pool.
-func AcquireMessage() *Message {
-	v := messagePool.Get()
-	if v == nil {
+var messagePool = sync.Pool{
+	New: func() interface{} {
 		b := &buffer.Buffer{
 			B: make([]byte, 0, defaultMessageBufferSize),
 		}
@@ -125,8 +116,17 @@ func AcquireMessage() *Message {
 			buf:        b,
 		}
 		return m
-	}
-	return v.(*Message)
+	},
+}
+
+const (
+	defaultAttributesSize    = 12
+	defaultMessageBufferSize = 416
+)
+
+// AcquireMessage returns new message from pool.
+func AcquireMessage() *Message {
+	return messagePool.Get().(*Message)
 }
 
 // ReleaseMessage returns message to pool rendering it to unusable state.
