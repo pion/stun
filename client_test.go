@@ -44,40 +44,36 @@ func TestClientSend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	m := Message{
-		Type:          mType,
-		Length:        0,
-		TransactionID: NewTransactionID(),
-	}
-	buf := make([]byte, 256)
-	m.Put(buf)
-	if _, err := conn.Write(buf); err != nil {
-		t.Fatal(err)
-	}
-	timeout := 100
+	m := AcquireMessage()
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.AddSoftware("cydev/stun alpha")
+	m.WriteHeader()
+	timeout := 100 * time.Millisecond
+	recvBuf := make([]byte, 1024)
 	for i := 0; i < 9; i++ {
-		_, err := conn.Write(buf)
+		_, err := conn.Write(m.buf.B)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err = conn.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Millisecond)); err != nil {
+		if err = conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
 			t.Error(err)
 		}
-		if timeout < 1600 {
+		if timeout < 1600*time.Millisecond {
 			timeout *= 2
 		}
-		_, err = conn.Read(buf)
+		n, err := conn.Read(recvBuf)
 		if err == nil {
-			kek := Message{}
-			if err = kek.Get(buf); err != nil {
+			mRec := AcquireMessage()
+			if err = mRec.Get(recvBuf[:n]); err != nil {
 				t.Error(err)
 			}
-			log.Println(kek)
-			log.Println(kek.Attributes)
-			if kek.TransactionID != m.TransactionID {
+			log.Println(mRec)
+			log.Println(mRec.Attributes)
+			if mRec.TransactionID != m.TransactionID {
 				t.Error("TransactionID missmatch")
 			}
+			ReleaseMessage(mRec)
 			break
 		} else {
 			if !err.(net.Error).Timeout() {
