@@ -8,6 +8,7 @@ import (
 	//"encoding/binary"
 
 	"encoding/binary"
+	"strings"
 )
 
 func TestMessage_AddSoftware(t *testing.T) {
@@ -25,6 +26,12 @@ func TestMessage_AddSoftware(t *testing.T) {
 	vRead := m.GetSoftware()
 	if vRead != v {
 		t.Errorf("Expected %s, got %s.", v, vRead)
+	}
+
+	sAttr := m.Attributes.Get(AttrSoftware)
+	s := sAttr.String()
+	if !strings.HasPrefix(s, "SOFTWARE:") {
+		t.Error("bad string representation", s)
 	}
 }
 
