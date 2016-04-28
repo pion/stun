@@ -73,7 +73,7 @@ func (a Attributes) Get(t AttrType) Attribute {
 // so there are some usage constraints:
 //
 // 		* Message and its fields is valid only until AcquireMessage call.
-//      * Decoded message is read-only and any changes will cause panic.
+// 		* Decoded message is read-only and any changes will cause panic.
 //
 // To change read-only message one must allocate new Message and copy
 // contents. The main reason of making Message read-only are
