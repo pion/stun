@@ -16,6 +16,19 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
+func TestMessageCopy(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.WriteHeader()
+	mCopy := m.Clone()
+	if !mCopy.Equal(*m) {
+		t.Error(mCopy, "!=", m)
+	}
+}
+
 func TestMessageBuffer(t *testing.T) {
 	m := AcquireMessage()
 	defer ReleaseMessage(m)

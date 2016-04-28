@@ -53,9 +53,8 @@ func safeXORBytes(dst, a, b []byte) int {
 func xorBytes(dst, a, b []byte) int {
 	if supportsUnaligned {
 		return fastXORBytes(dst, a, b)
-	} else {
-		return safeXORBytes(dst, a, b)
 	}
+	return safeXORBytes(dst, a, b)
 }
 
 // fastXORWords XORs multiples of 4 or 8 bytes (depending on architecture.)

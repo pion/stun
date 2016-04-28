@@ -68,7 +68,18 @@ func (a Attributes) Get(t AttrType) Attribute {
 	return BlankAttribute
 }
 
-// Message represents a single STUN packet.
+// Message represents a single STUN packet. It uses agressive internal
+// byte buffer to enable zero-allocation encoding and decoding,
+// so there are some usage constraints:
+//
+// 		* Message and its fields is valid only until AcquireMessage call.
+//      * Decoded message is read-only and any changes will cause panic.
+//
+// To change read-only message one must allocate new Message and copy
+// contents. The main reason of making Message read-only are
+// decode methods for attributes. They grow internal buffer and sub-slice
+// it instead of allocating one, but it is used for encoding, so
+// one Message instance cannot be used to encode and decode.
 type Message struct {
 	Type   MessageType
 	Length uint32
@@ -77,7 +88,29 @@ type Message struct {
 	Attributes    Attributes
 
 	// buf is underlying raw data buffer.
-	buf *buffer.Buffer
+	buf      *buffer.Buffer
+	readOnly bool
+}
+
+// Clone returns new copy of m.
+func (m Message) Clone() *Message {
+	c := AcquireMessage()
+	c.Type = m.Type
+	c.Length = m.Length
+	copy(c.TransactionID[:], m.TransactionID[:])
+	buf := m.buf.B[:int(m.Length)+messageHeaderSize]
+	c.buf.Append(buf)
+	buf = c.buf.B[messageHeaderSize:]
+	for _, a := range m.Attributes {
+		buf = buf[attributeHeaderSize:]
+		c.Attributes = append(c.Attributes, Attribute{
+			Length: a.Length,
+			Type:   a.Type,
+			Value:  buf[:int(a.Length)],
+		})
+		buf = buf[int(a.Length):]
+	}
+	return c
 }
 
 func (m Message) String() string {
@@ -106,6 +139,8 @@ func NewTransactionID() (b [transactionIDSize]byte) {
 	return b
 }
 
+// messagePool minimizes memory allocation by pooling Message,
+// attribute slices and underlying buffers.
 var messagePool = sync.Pool{
 	New: func() interface{} {
 		b := &buffer.Buffer{
@@ -119,7 +154,7 @@ var messagePool = sync.Pool{
 	},
 }
 
-// defaults for
+// defaults for pool.
 const (
 	defaultAttributesCapacity    = 12
 	defaultMessageBufferCapacity = 416
@@ -131,7 +166,8 @@ func AcquireMessage() *Message {
 }
 
 // ReleaseMessage returns message to pool rendering it to unusable state.
-// After release, any usage of message and its attributes is invalid.
+// After release, any usage of message and its attributes, also any
+// value obtained via attribute decoding methods is invalid.
 func ReleaseMessage(m *Message) {
 	m.Reset()
 	messagePool.Put(m)
@@ -141,7 +177,15 @@ func ReleaseMessage(m *Message) {
 func (m *Message) Reset() {
 	m.buf.Reset()
 	m.Length = 0
+	m.readOnly = false
 	m.Attributes = m.Attributes[:0]
+}
+
+// mustWrite panics if message is read-only.
+func (m *Message) mustWrite() {
+	if m.readOnly {
+		panic("message is read-only")
+	}
 }
 
 // Add appends new attribute to message. Not goroutine-safe.
@@ -149,6 +193,7 @@ func (m *Message) Reset() {
 // Value of attribute is copied to internal buffer so there are no
 // constraints on validity.
 func (m *Message) Add(t AttrType, v []byte) {
+	m.mustWrite()
 	// allocating space for buffer
 	// m.buf.B[0:20] is reserved by header
 	attrLength := uint32(len(v))
@@ -208,6 +253,8 @@ func (m Message) Equal(b Message) bool {
 
 // WriteHeader writes header to underlying buffer. Not goroutine-safe.
 func (m *Message) WriteHeader() {
+	m.mustWrite()
+
 	buf := m.buf.B
 	// encoding header
 	binary.BigEndian.PutUint16(buf[0:2], m.Type.Value())
@@ -252,6 +299,8 @@ func (m Message) Put(buf []byte) {
 // ErrUnexpectedEOF means that there were not enough bytes to read header or
 // value and indicates possible data loss.
 func (m *Message) Get(buf []byte) error {
+	m.mustWrite()
+
 	if len(buf) < messageHeaderSize {
 		log.Debugln(len(buf), "<", messageHeaderSize, "message")
 		return io.ErrUnexpectedEOF

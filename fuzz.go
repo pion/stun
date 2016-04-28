@@ -9,7 +9,8 @@ import (
 // FuzzMessage is go-fuzz endpoint for message.
 func FuzzMessage(data []byte) int {
 	m := Message{}
-	binary.BigEndian.PutUint32(data[4:8], magicCookie) // fuzzer dont known about cookies
+	// fuzzer dont known about cookiess
+	binary.BigEndian.PutUint32(data[4:8], magicCookie) 
 	if err := m.Get(data); err != nil {
 		return 0
 	}
