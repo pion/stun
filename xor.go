@@ -56,23 +56,3 @@ func xorBytes(dst, a, b []byte) int {
 	}
 	return safeXORBytes(dst, a, b)
 }
-
-// fastXORWords XORs multiples of 4 or 8 bytes (depending on architecture.)
-// The arguments are assumed to be of equal length.
-func fastXORWords(dst, a, b []byte) {
-	dw := *(*[]uintptr)(unsafe.Pointer(&dst))
-	aw := *(*[]uintptr)(unsafe.Pointer(&a))
-	bw := *(*[]uintptr)(unsafe.Pointer(&b))
-	n := len(b) / wordSize
-	for i := 0; i < n; i++ {
-		dw[i] = aw[i] ^ bw[i]
-	}
-}
-
-func xorWords(dst, a, b []byte) {
-	if supportsUnaligned {
-		fastXORWords(dst, a, b)
-	} else {
-		safeXORBytes(dst, a, b)
-	}
-}
