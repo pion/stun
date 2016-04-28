@@ -81,6 +81,7 @@ func (a Attributes) Get(t AttrType) Attribute {
 // one Message instance cannot be used to encode and decode.
 type Message struct {
 	Type   MessageType
+	readOnly bool // moved here to minimize padding overhead
 	Length uint32
 	// TransactionID is used to uniquely identify STUN transactions.
 	TransactionID [transactionIDSize]byte
@@ -88,7 +89,6 @@ type Message struct {
 
 	// buf is underlying raw data buffer.
 	buf      *buffer.Buffer
-	readOnly bool
 }
 
 // Clone returns new copy of m.
@@ -346,7 +346,8 @@ func (m *Message) Get(buf []byte) error {
 		// reading value
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
 		if len(b) < l {             // checking size
-			return errors.Wrap(io.ErrUnexpectedEOF, "bad value length")
+			msg := fmt.Sprintf("attr len(b) == %d < %d", len(b), l)
+			return errors.Wrap(io.ErrUnexpectedEOF, msg)
 		}
 		a.Value = b[:l]
 

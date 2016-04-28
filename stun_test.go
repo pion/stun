@@ -276,7 +276,8 @@ func TestMessageClass_String(t *testing.T) {
 	}
 
 	// should panic
-	MessageClass(0x05).String()
+	p := MessageClass(0x05).String()
+	t.Error("should panic!", p)
 }
 
 func TestAttrType_String(t *testing.T) {
