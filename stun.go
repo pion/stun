@@ -68,8 +68,8 @@ func (a Attributes) Get(t AttrType) Attribute {
 	return BlankAttribute
 }
 
-// Message represents a single STUN packet. It uses agressive internal
-// byte buffer to enable zero-allocation encoding and decoding,
+// Message represents a single STUN packet. It uses aggressive internal
+// buffering to enable zero-allocation encoding and decoding,
 // so there are some usage constraints:
 //
 // 		* Message and its fields is valid only until AcquireMessage call.

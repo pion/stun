@@ -10,7 +10,7 @@ import (
 func FuzzMessage(data []byte) int {
 	m := Message{}
 	// fuzzer dont known about cookiess
-	binary.BigEndian.PutUint32(data[4:8], magicCookie) 
+	binary.BigEndian.PutUint32(data[4:8], magicCookie)
 	if err := m.Get(data); err != nil {
 		return 0
 	}

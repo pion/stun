@@ -24,7 +24,7 @@ func (m *Message) AddSoftware(software string) {
 	m.Add(AttrSoftware, []byte(software))
 }
 
-// GetSoftwareByte returns SOFTWARE attribute value in byte slice.
+// GetSoftwareBytes returns SOFTWARE attribute value in byte slice.
 // If not found, returns nil.
 func (m *Message) GetSoftwareBytes() []byte {
 	return m.Attributes.Get(AttrSoftware).Value
@@ -46,6 +46,7 @@ const (
 	FamilyIPv6 byte = 0x02
 )
 
+// AddXORMappedAddress adds XOR MAPPED ADDRESS attribute to message.
 func (m *Message) AddXORMappedAddress(ip net.IP, port int) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
