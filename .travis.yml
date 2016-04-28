@@ -18,8 +18,12 @@ matrix:
     - env: TEST_EXTERNAL=1
   fast_finish: true  
 
+before_install:
+  - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
+
 install:
  - go get -v -t .
 
 script:
- - go test -v
+ - $HOME/gopath/bin/goveralls -service=travis-ci -v
