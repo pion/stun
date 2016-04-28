@@ -25,6 +25,24 @@ func TestMessage_AddSoftware(t *testing.T) {
 	}
 }
 
+func TestMessage_AddSoftwareBytes(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	v := "Client v0.0.1"
+	m.AddSoftwareBytes([]byte(v))
+	m.WriteHeader()
+
+	m2 := AcquireMessage()
+	defer ReleaseMessage(m2)
+	if err := m2.Get(m.buf.B); err != nil {
+		t.Error(err)
+	}
+	vRead := m.GetSoftware()
+	if vRead != v {
+		t.Errorf("Expected %s, got %s.", v, vRead)
+	}
+}
+
 func TestMessage_GetSoftware(t *testing.T) {
 	m := AcquireMessage()
 	defer ReleaseMessage(m)

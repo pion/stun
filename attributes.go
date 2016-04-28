@@ -2,8 +2,9 @@ package stun
 
 import (
 	"encoding/binary"
-	"errors"
 	"net"
+
+	"github.com/pkg/errors"
 )
 
 // blank is just blank string and exists just because it is ugly to keep it
@@ -70,9 +71,7 @@ func (m *Message) AddXORMappedAddress(ip net.IP, port int) {
 
 func (m *Message) allocBuffer(size int) []byte {
 	capacity := len(m.buf.B) + size
-	if cap(m.buf.B) < capacity {
-		m.buf.Grow(cap(m.buf.B) - capacity)
-	}
+	m.grow(capacity)
 	m.buf.B = m.buf.B[:capacity]
 	return m.buf.B[len(m.buf.B)-size:]
 }
@@ -80,24 +79,25 @@ func (m *Message) allocBuffer(size int) []byte {
 // GetXORMappedAddress returns ip, port from attribute and error if any.
 // Value for ip is valid until Message is released or underlying buffer is
 // corrupted.
-func (m *Message) GetXORMappedAddress() (ip net.IP, port int, err error) {
+func (m *Message) GetXORMappedAddress() (net.IP, int, error) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
 	// then the converting the result to network byte order.
 	v := m.getAttrValue(AttrXORMappedAddress)
 	if len(v) == 0 {
-		return ip, port, ErrAttributeNotFound
+		return nil, 0, errors.Wrap(ErrAttributeNotFound, "Length is 0")
 	}
 	family := byte(binary.BigEndian.Uint16(v[0:2]))
 	if family != FamilyIPv6 && family != FamilyIPv4 {
-		return ip, port, ErrAttributeDecodeError
+		err := errors.Wrapf(ErrAttributeDecodeError, "Bad family %d", family)
+		return nil, 0, err
 	}
 	ipLen := net.IPv4len
 	if family == FamilyIPv6 {
 		ipLen = net.IPv6len
 	}
-	ip = net.IP(m.allocBuffer(ipLen))
-	port = int(binary.BigEndian.Uint16(v[2:4])) ^ (magicCookie >> 16)
+	ip := net.IP(m.allocBuffer(ipLen))
+	port := int(binary.BigEndian.Uint16(v[2:4])) ^ (magicCookie >> 16)
 	xorValue := make([]byte, 128)
 	binary.BigEndian.PutUint32(xorValue[0:4], magicCookie)
 	copy(xorValue[4:], m.TransactionID[:])

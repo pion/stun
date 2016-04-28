@@ -24,14 +24,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"sync"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/cydev/buffer"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -185,7 +184,17 @@ func (m *Message) Reset() {
 // mustWrite panics if message is read-only.
 func (m *Message) mustWrite() {
 	if m.readOnly {
-		panic("message is read-only")
+		unexpected(ErrMessageIsReadOnly)
+	}
+}
+
+func (m *Message) grow(v int) {
+	// growing buffer if attribute value+header won't fit
+	// not performing any optimizations here
+	// because initial capacity and maximum theoretical size of buffer
+	// are not far from each other.
+	if cap(m.buf.B) < v {
+		m.buf.Grow(v - cap(m.buf.B))
 	}
 }
 
@@ -206,14 +215,7 @@ func (m *Message) Add(t AttrType, v []byte) {
 	allocSize := attributeHeaderSize + len(v)  // total attr size
 	first := messageHeaderSize + int(m.Length) // first byte
 	last := first + allocSize                  // last byte
-
-	// growing buffer if attribute value+header won't fit
-	// not performing any optimizations here
-	// because initial capacity and maximum theoretical size of buffer
-	// are not far from each other.
-	if cap(m.buf.B) < last {
-		m.buf.Grow(cap(m.buf.B) - last)
-	}
+	m.grow(last)
 	m.buf.B = m.buf.B[:last]      // now len(b) = last
 	m.Length += uint32(allocSize) // rendering changes
 
@@ -266,11 +268,11 @@ func (m *Message) WriteHeader() {
 	binary.BigEndian.PutUint16(buf[2:4], uint16(len(buf)-20))
 }
 
-// Read implements Reader.
-func (m Message) Read(b []byte) (int, error) {
-	copy(b, m.buf.B)
-	return len(m.buf.B), nil
-}
+//// Read implements Reader.
+//func (m Message) Read(b []byte) (int, error) {
+//	copy(b, m.buf.B)
+//	return len(m.buf.B), nil
+//}
 
 // Put encodes message into buf. If len(buf) is not enough, it panics.
 func (m Message) Put(buf []byte) {
@@ -303,8 +305,8 @@ func (m *Message) Get(buf []byte) error {
 	m.mustWrite()
 
 	if len(buf) < messageHeaderSize {
-		log.Debugln(len(buf), "<", messageHeaderSize, "message")
-		return io.ErrUnexpectedEOF
+		msg := fmt.Sprintln(len(buf), "<", messageHeaderSize, "message")
+		return errors.Wrap(io.ErrUnexpectedEOF, msg)
 	}
 
 	// decoding message header
@@ -315,25 +317,22 @@ func (m *Message) Get(buf []byte) error {
 	copy(m.TransactionID[:], buf[8:messageHeaderSize])
 
 	if cookie != magicCookie {
-		return ErrInvalidMagicCookie
+		return errors.Wrap(ErrInvalidMessageLength, "missmatch")
 	}
 
 	offset := messageHeaderSize
 	mLength := int(m.Length)
 	if (mLength + offset) > len(buf) {
-		log.WithFields(log.Fields{
-			"len(b)": len(buf),
-			"offset": offset,
-		}).Debugln("message length", mLength, "is invalid?")
-		return ErrInvalidMessageLength
+		msg := fmt.Sprintln((mLength + offset), ">", len(buf))
+		return errors.Wrap(ErrInvalidMessageLength, msg)
 	}
 
 	for (mLength + messageHeaderSize - offset) > 0 {
 		b := buf[offset:]
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
-			log.Debugln(len(buf), "<", attributeHeaderSize, "header")
-			return io.ErrUnexpectedEOF
+			msg := fmt.Sprintln(len(buf), "<", attributeHeaderSize, "header")
+			return errors.Wrap(io.ErrUnexpectedEOF, msg)
 		}
 		a := Attribute{}
 
@@ -346,7 +345,7 @@ func (m *Message) Get(buf []byte) error {
 		// reading value
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
 		if len(b) < l {             // checking size
-			return io.ErrUnexpectedEOF
+			return errors.Wrap(io.ErrUnexpectedEOF, "bad value length")
 		}
 		a.Value = b[:l]
 
@@ -437,6 +436,9 @@ func (a Attribute) Equal(b Attribute) bool {
 		return false
 	}
 	if a.Length != b.Length {
+		return false
+	}
+	if len(b.Value) != len(a.Value) {
 		return false
 	}
 	for i, v := range a.Value {
@@ -579,4 +581,7 @@ var (
 	// ErrInvalidMessageLength means that actual message size is smaller that
 	// length from header field.
 	ErrInvalidMessageLength = errors.New("Message size is smaller than length")
+	// ErrMessageIsReadOnly means that one is trying to modify readonly
+	// Message.
+	ErrMessageIsReadOnly = errors.New("Message is readonly")
 )
