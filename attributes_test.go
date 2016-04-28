@@ -5,6 +5,9 @@ import (
 	"encoding/hex"
 	"net"
 	"testing"
+	//"encoding/binary"
+
+	"encoding/binary"
 )
 
 func TestMessage_AddSoftware(t *testing.T) {
@@ -110,6 +113,37 @@ func TestMessage_GetXORMappedAddress(t *testing.T) {
 	}
 	if port != 48583 {
 		t.Error("bad port", port, "!=", 48583)
+	}
+}
+
+func TestMessage_GetXORMappedAddressBad(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		t.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	expectedIP := net.ParseIP("213.141.156.236")
+	expectedPort := 21254
+
+	_, _, err = m.GetXORMappedAddress()
+	if err == nil {
+		t.Fatal(err, "should be nil")
+	}
+
+	m.AddXORMappedAddress(expectedIP, expectedPort)
+	m.WriteHeader()
+
+	mRes := AcquireMessage()
+	defer ReleaseMessage(mRes)
+	binary.BigEndian.PutUint16(m.buf.B[20+4:20+4+2], 0x21)
+	if err := mRes.Get(m.buf.B); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = m.GetXORMappedAddress()
+	if err == nil {
+		t.Fatal(err, "should not be nil")
 	}
 }
 
