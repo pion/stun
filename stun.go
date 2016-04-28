@@ -99,6 +99,7 @@ func (m Message) Clone() *Message {
 	c.Length = m.Length
 	copy(c.TransactionID[:], m.TransactionID[:])
 	buf := m.buf.B[:int(m.Length)+messageHeaderSize]
+	c.buf.B = c.buf.B[:0]
 	c.buf.Append(buf)
 	buf = c.buf.B[messageHeaderSize:]
 	for _, a := range m.Attributes {
