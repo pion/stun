@@ -5,11 +5,12 @@ import (
 	"strconv"
 	"testing"
 
+	"encoding/binary"
+	"io"
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
-	"io"
-	"encoding/binary"
-	"strings"
 )
 
 func bUint16(v uint16) string {
@@ -233,8 +234,6 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	}
 }
 
-
-
 func BenchmarkMessageType_Value(b *testing.B) {
 	m := MessageType{Method: MethodBinding, Class: ClassRequest}
 	b.ReportAllocs()
@@ -328,8 +327,8 @@ func TestMessageReadOnly(t *testing.T) {
 }
 
 func TestAttribute_Equal(t *testing.T) {
-	a := Attribute{Length: 2, Value:[]byte{0x1, 0x2}}
-	b := Attribute{Length: 2, Value:[]byte{0x1, 0x2}}
+	a := Attribute{Length: 2, Value: []byte{0x1, 0x2}}
+	b := Attribute{Length: 2, Value: []byte{0x1, 0x2}}
 	if !a.Equal(b) {
 		t.Error("should equal")
 	}
@@ -342,16 +341,16 @@ func TestAttribute_Equal(t *testing.T) {
 	if a.Equal(Attribute{Length: 0x3}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(Attribute{Length: 2, Value:[]byte{0x1, 0x3}}) {
+	if a.Equal(Attribute{Length: 2, Value: []byte{0x1, 0x3}}) {
 		t.Error("should not equal")
 	}
 }
 
 func TestMessage_Equal(t *testing.T) {
-	attr := Attribute{Length: 2, Value:[]byte{0x1, 0x2}}
+	attr := Attribute{Length: 2, Value: []byte{0x1, 0x2}}
 	attrs := Attributes{attr}
-	a := Message{Attributes: attrs, Length: 4+2}
-	b := Message{Attributes: attrs, Length: 4+2}
+	a := Message{Attributes: attrs, Length: 4 + 2}
+	b := Message{Attributes: attrs, Length: 4 + 2}
 	if !a.Equal(b) {
 		t.Error("should equal")
 	}
@@ -359,7 +358,7 @@ func TestMessage_Equal(t *testing.T) {
 		t.Error("should not equal")
 	}
 	tID := [transactionIDSize]byte{
-		1,2,3,4,5,6,7,8,9,10,11,12,
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 	}
 	if a.Equal(Message{TransactionID: tID}) {
 		t.Error("should not equal")
@@ -370,7 +369,7 @@ func TestMessage_Equal(t *testing.T) {
 	tAttrs := Attributes{
 		{Length: 1, Value: []byte{0x1}},
 	}
-	if a.Equal(Message{Attributes: tAttrs, Length: 4+2}) {
+	if a.Equal(Message{Attributes: tAttrs, Length: 4 + 2}) {
 		t.Error("should not equal")
 	}
 }
@@ -379,4 +378,27 @@ func TestMessageGrow(t *testing.T) {
 	m := AcquireMessage()
 	defer ReleaseMessage(m)
 	m.grow(512)
+	if len(m.buf.B) < 532 {
+		t.Error("Bad length", len(m.buf.B))
+	}
+}
+
+func TestMessageGrowSmaller(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	m.grow(2)
+	if cap(m.buf.B) < 22 {
+		t.Error("Bad capacity", cap(m.buf.B))
+	}
+	if len(m.buf.B) < 22 {
+		t.Error("Bad length", len(m.buf.B))
+	}
+}
+
+func TestMessage_String(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	if len(m.String()) == 0 {
+		t.Error("bad string")
+	}
 }

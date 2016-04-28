@@ -146,7 +146,6 @@ var messagePool = sync.Pool{
 		b := &buffer.Buffer{
 			B: make([]byte, 0, defaultMessageBufferCapacity),
 		}
-		b.Grow(messageHeaderSize)
 		return &Message{
 			Attributes: make(Attributes, 0, defaultAttributesCapacity),
 			buf:        b,
@@ -162,7 +161,9 @@ const (
 
 // AcquireMessage returns new message from pool.
 func AcquireMessage() *Message {
-	return messagePool.Get().(*Message)
+	m := messagePool.Get().(*Message)
+	m.grow(messageHeaderSize)
+	return m
 }
 
 // ReleaseMessage returns message to pool rendering it to unusable state.
@@ -188,14 +189,14 @@ func (m *Message) mustWrite() {
 	}
 }
 
+// grow ensures that internal buffer will fit v more bytes and
+// increases it length.
 func (m *Message) grow(v int) {
 	// growing buffer if attribute value+header won't fit
 	// not performing any optimizations here
 	// because initial capacity and maximum theoretical size of buffer
 	// are not far from each other.
-	if cap(m.buf.B) < v {
-		m.buf.Grow(v - cap(m.buf.B))
-	}
+	m.buf.Grow(v)
 }
 
 // Add appends new attribute to message. Not goroutine-safe.
