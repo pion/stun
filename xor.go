@@ -10,6 +10,7 @@ import (
 )
 
 const wordSize = int(unsafe.Sizeof(uintptr(0)))
+
 var supportsUnaligned = runtime.GOARCH == "386" || runtime.GOARCH == "amd64"
 
 // fastXORBytes xors in bulk. It only works on architectures that
