@@ -73,6 +73,7 @@ func (m *Message) allocBuffer(size int) []byte {
 	if cap(m.buf.B) < capacity {
 		m.buf.Grow(cap(m.buf.B) - capacity)
 	}
+	m.buf.B = m.buf.B[:capacity]
 	return m.buf.B[len(m.buf.B)-size:]
 }
 
