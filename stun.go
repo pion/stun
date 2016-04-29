@@ -80,15 +80,15 @@ func (a Attributes) Get(t AttrType) Attribute {
 // it instead of allocating one, but it is used for encoding, so
 // one Message instance cannot be used to encode and decode.
 type Message struct {
-	Type   MessageType
+	Type     MessageType
 	readOnly bool // RO flag. Moved here to minimize padding overhead.
-	Length uint32
+	Length   uint32
 	// TransactionID is used to uniquely identify STUN transactions.
 	TransactionID [transactionIDSize]byte
 	Attributes    Attributes
 
 	// buf is underlying raw data buffer.
-	buf      *buffer.Buffer
+	buf *buffer.Buffer
 }
 
 // Clone returns new copy of m.
