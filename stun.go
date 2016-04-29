@@ -460,10 +460,10 @@ type MessageClass byte
 
 // Possible values for message class in STUN Message Type.
 const (
-	ClassRequest         = 0x00 // 0b00
-	ClassIndication      = 0x01 // 0b01
-	ClassSuccessResponse = 0x02 // 0b10
-	ClassErrorResponse   = 0x03 // 0b11
+	ClassRequest         MessageClass = 0x00 // 0b00
+	ClassIndication      MessageClass = 0x01 // 0b01
+	ClassSuccessResponse MessageClass = 0x02 // 0b10
+	ClassErrorResponse   MessageClass = 0x03 // 0b11
 )
 
 func (c MessageClass) String() string {
