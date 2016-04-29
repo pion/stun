@@ -23,3 +23,7 @@ blackbox:
 	@TEST_EXTERNAL=1 go test -run TestClientSend -v
 format:
 	goimports -w .
+bench-compare:
+	go test -bench . > bench.go-16
+	go-tip test -bench . > bench.go-tip
+	@benchcmp bench.go-16 bench.go-tip

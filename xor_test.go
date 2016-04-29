@@ -2,6 +2,7 @@ package stun
 
 import (
 	"testing"
+	"math/rand"
 )
 
 func TestXORSafe(t *testing.T) {
@@ -80,4 +81,53 @@ func TestXORFallback(t *testing.T) {
 			t.Error(b[i], "!=", v)
 		}
 	}
+}
+
+
+func BenchmarkXOR(b *testing.B) {
+	rand.Seed(666)
+	a := make([]byte, 1024)
+	c := make([]byte, 1024)
+	rand.Read(a)
+	rand.Read(c)
+	b.SetBytes(1024)
+	b.RunParallel(func(pb *testing.PB) {
+		dst := make([]byte, len(a))
+		for pb.Next() {
+			xorBytes(dst, a, c)
+		}
+	})
+}
+
+func BenchmarkXORSafe(b *testing.B) {
+	rand.Seed(666)
+	a := make([]byte, 1024)
+	c := make([]byte, 1024)
+	rand.Read(a)
+	rand.Read(c)
+	b.SetBytes(1024)
+	b.RunParallel(func(pb *testing.PB) {
+		dst := make([]byte, len(a))
+		for pb.Next() {
+			safeXORBytes(dst, a, c)
+		}
+	})
+}
+
+func BenchmarkXORFast(b *testing.B) {
+	if !supportsUnaligned {
+		b.Skip("No support for unaligned operations.")
+	}
+	rand.Seed(666)
+	a := make([]byte, 1024)
+	c := make([]byte, 1024)
+	rand.Read(a)
+	rand.Read(c)
+	b.SetBytes(1024)
+	b.RunParallel(func(pb *testing.PB) {
+		dst := make([]byte, len(a))
+		for pb.Next() {
+			fastXORBytes(dst, a, c)
+		}
+	})
 }
