@@ -1,8 +1,8 @@
 package stun
 
 import (
-	"testing"
 	"math/rand"
+	"testing"
 )
 
 func TestXORSafe(t *testing.T) {
@@ -82,7 +82,6 @@ func TestXORFallback(t *testing.T) {
 		}
 	}
 }
-
 
 func BenchmarkXOR(b *testing.B) {
 	rand.Seed(666)

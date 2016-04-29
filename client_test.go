@@ -63,6 +63,10 @@ func TestClientSend(t *testing.T) {
 			timeout *= 2
 		}
 		n, err := conn.Read(recvBuf)
+		var (
+			ip   net.IP
+			port int
+		)
 		if err == nil {
 			mRec := AcquireMessage()
 			if err = mRec.Get(recvBuf[:n]); err != nil {
@@ -75,7 +79,7 @@ func TestClientSend(t *testing.T) {
 			}
 			v := mRec.getAttrValue(AttrXORMappedAddress)
 			log.Println(v)
-			ip, port, err := mRec.GetXORMappedAddress()
+			ip, port, err = mRec.GetXORMappedAddress()
 			if err != nil {
 				t.Error(err)
 			}

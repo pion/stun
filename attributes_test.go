@@ -145,7 +145,7 @@ func TestMessage_GetXORMappedAddressBad(t *testing.T) {
 	mRes := AcquireMessage()
 	defer ReleaseMessage(mRes)
 	binary.BigEndian.PutUint16(m.buf.B[20+4:20+4+2], 0x21)
-	if err := mRes.Get(m.buf.B); err != nil {
+	if err = mRes.Get(m.buf.B); err != nil {
 		t.Fatal(err)
 	}
 	_, _, err = m.GetXORMappedAddress()
@@ -169,7 +169,7 @@ func TestMessage_AddXORMappedAddress(t *testing.T) {
 
 	mRes := AcquireMessage()
 	defer ReleaseMessage(mRes)
-	if err := mRes.Get(m.buf.B); err != nil {
+	if err = mRes.Get(m.buf.B); err != nil {
 		t.Fatal(err)
 	}
 	ip, port, err := m.GetXORMappedAddress()
