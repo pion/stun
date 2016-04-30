@@ -8,6 +8,5 @@ mkdir -p src/github.com/cydev
 cp -R cydev-stun src/github.com/cydev/stun
 
 pushd ${GOPATH}/src/github.com/cydev/stun
-    go get -t
-    TEST_EXTERNAL=1 go test
+    make lint
 popd

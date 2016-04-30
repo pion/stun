@@ -6,9 +6,21 @@ resources:
     branch: master
 
 jobs:
-- name: stun
+- name: build
   plan:
   - get: cydev-stun
     trigger: true
-  - task: tests
+  - task: build
     file: cydev-stun/ci/build.yml
+- name: test
+  plan:
+  - get: cydev-stun
+    trigger: true
+  - task: test
+    file: cydev-stun/ci/test.yml
+- name: lint
+  plan:
+  - get: cydev-stun
+    trigger: true
+  - task: lint
+    file: cydev-stun/ci/lint.yml
