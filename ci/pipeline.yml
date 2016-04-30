@@ -9,5 +9,6 @@ jobs:
 - name: stun
   plan:
   - get: cydev-stun
+    trigger: true
   - task: tests
-    file: cydev-stun/ci/build.yml    
+    file: cydev-stun/ci/build.yml
