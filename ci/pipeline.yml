@@ -1,26 +1,40 @@
 resources:
-- name: cydev-stun
+- name: stun-master
   type: git
   source:
     uri: https://github.com/cydev/stun
     branch: master
+- name: stun-dev
+  type: git
+  source:
+    uri: git@github.com:cydev/stun.git
+    branch: dev
 
 jobs:
 - name: build
   plan:
-  - get: cydev-stun
+  - get: stun-dev
     trigger: true
   - task: build
     file: cydev-stun/ci/build.yml
+
 - name: test
   plan:
-  - get: cydev-stun
+  - get: stun-dev
     trigger: true
   - task: test
     file: cydev-stun/ci/test.yml
+
 - name: lint
   plan:
-  - get: cydev-stun
+  - get: stun-dev
     trigger: true
   - task: lint
     file: cydev-stun/ci/lint.yml
+
+- name: integration
+  plan:
+   - aggregate:
+     - get: stun-dev
+       passed: [lint, test, build]
+   - put: stun-master     
