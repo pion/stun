@@ -38,6 +38,7 @@ jobs:
 - name: integration
   plan:
    - get: dev
+     trigger: true
      passed: [lint, test, build]
    - put: master
      params:

@@ -20,3 +20,4 @@ This project uses [concourse](https://concourse.ci/) continious integration.
 
 All development is made in [dev](https://github.com/cydev/stun/tree/dev) branch.
 It is automatically merged to master with [concourse job](http://ci.cydev.ru/pipelines/stun/jobs/integration).
+Staging branch will be introduced after alpha version, and will be used instead of master.
