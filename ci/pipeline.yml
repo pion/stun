@@ -2,13 +2,16 @@ resources:
 - name: stun-master
   type: git
   source:
-    uri: https://github.com/cydev/stun
+    uri: git@github.com:cydev/stun.git
     branch: master
+    private_key: {{stun-repo-key}}
+
 - name: stun-dev
   type: git
   source:
     uri: git@github.com:cydev/stun.git
     branch: dev
+    private_key: {{stun-repo-key}}
 
 jobs:
 - name: build
@@ -37,4 +40,4 @@ jobs:
    - aggregate:
      - get: stun-dev
        passed: [lint, test, build]
-   - put: stun-master     
+   - put: stun-master
