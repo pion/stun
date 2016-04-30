@@ -19,21 +19,21 @@ jobs:
   - get: dev
     trigger: true
   - task: build
-    file: cydev-stun/ci/build.yml
+    file: dev/ci/build.yml
 
 - name: test
   plan:
   - get: dev
     trigger: true
   - task: test
-    file: cydev-stun/ci/test.yml
+    file: dev/ci/test.yml
 
 - name: lint
   plan:
   - get: dev
     trigger: true
   - task: lint
-    file: cydev-stun/ci/lint.yml
+    file: dev/ci/lint.yml
 
 - name: integration
   plan:
