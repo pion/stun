@@ -1,10 +1,10 @@
 platform: linux
 
 inputs:
-- name: cydev-stun
+- name: dev
 
 run:
-  path: cydev-stun/ci/build.sh
+  path: dev/ci/build.sh
 
 image_resource:
   type: docker-image
