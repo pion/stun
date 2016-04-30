@@ -1,12 +1,12 @@
 resources:
-- name: stun-master
+- name: master
   type: git
   source:
     uri: git@github.com:cydev/stun.git
     branch: master
     private_key: {{stun-repo-key}}
 
-- name: stun-dev
+- name: dev
   type: git
   source:
     uri: git@github.com:cydev/stun.git
@@ -16,21 +16,21 @@ resources:
 jobs:
 - name: build
   plan:
-  - get: stun-dev
+  - get: dev
     trigger: true
   - task: build
     file: cydev-stun/ci/build.yml
 
 - name: test
   plan:
-  - get: stun-dev
+  - get: dev
     trigger: true
   - task: test
     file: cydev-stun/ci/test.yml
 
 - name: lint
   plan:
-  - get: stun-dev
+  - get: dev
     trigger: true
   - task: lint
     file: cydev-stun/ci/lint.yml
@@ -38,6 +38,6 @@ jobs:
 - name: integration
   plan:
    - aggregate:
-     - get: stun-dev
+     - get: dev
        passed: [lint, test, build]
-   - put: stun-master
+   - put: master
