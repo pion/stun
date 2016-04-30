@@ -37,7 +37,8 @@ jobs:
 
 - name: integration
   plan:
-   - aggregate:
-     - get: dev
-       passed: [lint, test, build]
+   - get: dev
+     passed: [lint, test, build]
    - put: master
+     params:
+       repository: dev
