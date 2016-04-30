@@ -4,7 +4,7 @@ inputs:
 - name: cydev-stun
 
 run:
-  path: cydev-stun/ci/test.sh
+  path: cydev-stun/ci/build.sh
 
 image_resource:
   type: docker-image
