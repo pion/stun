@@ -1,0 +1,13 @@
+resources:
+- name: cydev-stun
+  type: git
+  source:
+    uri: https://github.com/cydev/stun
+    branch: master
+
+jobs:
+- name: stun
+  plan:
+  - get: cydev-stun
+  - task: tests
+    file: cydev-stun/ci/build.yml    
