@@ -269,11 +269,10 @@ func (m *Message) WriteHeader() {
 	binary.BigEndian.PutUint16(buf[2:4], uint16(len(buf)-20))
 }
 
-//// Read implements Reader.
-//func (m Message) Read(b []byte) (int, error) {
-//	copy(b, m.buf.B)
-//	return len(m.buf.B), nil
-//}
+// WriteTo implements WriterTo
+func (m Message) WriteTo(w io.Writer) (int, error) {
+	return w.Write(m.buf.B)
+}
 
 // Put encodes message into buf. If len(buf) is not enough, it panics.
 func (m Message) Put(buf []byte) {
