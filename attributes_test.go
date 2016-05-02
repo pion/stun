@@ -7,6 +7,7 @@ import (
 	"testing"
 	//"encoding/binary"
 
+	"bytes"
 	"encoding/binary"
 	"strings"
 )
@@ -20,7 +21,7 @@ func TestMessage_AddSoftware(t *testing.T) {
 
 	m2 := AcquireMessage()
 	defer ReleaseMessage(m2)
-	if err := m2.Get(m.buf.B); err != nil {
+	if _, err := m2.ReadFrom(m.reader()); err != nil {
 		t.Error(err)
 	}
 	vRead := m.GetSoftware()
@@ -44,7 +45,7 @@ func TestMessage_AddSoftwareBytes(t *testing.T) {
 
 	m2 := AcquireMessage()
 	defer ReleaseMessage(m2)
-	if err := m2.Get(m.buf.B); err != nil {
+	if _, err := m2.ReadFrom(m.reader()); err != nil {
 		t.Error(err)
 	}
 	vRead := m.GetSoftware()
@@ -145,7 +146,7 @@ func TestMessage_GetXORMappedAddressBad(t *testing.T) {
 	mRes := AcquireMessage()
 	defer ReleaseMessage(mRes)
 	binary.BigEndian.PutUint16(m.buf.B[20+4:20+4+2], 0x21)
-	if err = mRes.Get(m.buf.B); err != nil {
+	if _, err = mRes.ReadFrom(bytes.NewReader(m.buf.B)); err != nil {
 		t.Fatal(err)
 	}
 	_, _, err = m.GetXORMappedAddress()
@@ -169,7 +170,7 @@ func TestMessage_AddXORMappedAddress(t *testing.T) {
 
 	mRes := AcquireMessage()
 	defer ReleaseMessage(mRes)
-	if err = mRes.Get(m.buf.B); err != nil {
+	if _, err = mRes.ReadFrom(m.reader()); err != nil {
 		t.Fatal(err)
 	}
 	ip, port, err := m.GetXORMappedAddress()

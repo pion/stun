@@ -29,6 +29,8 @@ import (
 	"strconv"
 	"sync"
 
+	"bytes"
+
 	"github.com/cydev/buffer"
 	"github.com/pkg/errors"
 )
@@ -269,70 +271,73 @@ func (m *Message) WriteHeader() {
 	binary.BigEndian.PutUint16(buf[2:4], uint16(len(buf)-20))
 }
 
-// WriteTo implements WriterTo
-func (m Message) WriteTo(w io.Writer) (int, error) {
-	return w.Write(m.buf.B)
+// WriteTo implements WriterTo.
+func (m Message) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(m.buf.B)
+	return int64(n), err
 }
 
-// Put encodes message into buf. If len(buf) is not enough, it panics.
-func (m Message) Put(buf []byte) {
-	// encoding header
-	binary.BigEndian.PutUint16(buf[0:2], m.Type.Value())
-	binary.BigEndian.PutUint32(buf[4:8], magicCookie)
-	copy(buf[8:messageHeaderSize], m.TransactionID[:])
-	offset := messageHeaderSize
-	// encoding attributes
-	for _, a := range m.Attributes {
-		binary.BigEndian.PutUint16(buf[offset:offset+2], a.Type.Value())
-		offset += 2
-		binary.BigEndian.PutUint16(buf[offset:offset+2], a.Length)
-		offset += 2
-		copy(buf[offset:offset+len(a.Value)], a.Value[:])
-		offset += len(a.Value)
+func AcquireFields(message Message) *Message {
+	m := AcquireMessage()
+	copy(m.TransactionID[:], message.TransactionID[:])
+	m.Type = message.Type
+	for _, a := range message.Attributes {
+		m.Add(a.Type, a.Value)
 	}
-	// writing length as size, in bytes, not including the 20-byte STUN header.
-	binary.BigEndian.PutUint16(buf[2:4], uint16(offset-20))
+	m.WriteHeader()
+	return m
 }
 
-// Get decodes message from byte slice and return error if any.
+func (m *Message) reader() *bytes.Reader {
+	return bytes.NewReader(m.buf.B)
+}
+
+// ReadFrom implements ReaderFrom. Decodes message and return error if any.
 //
 // Can return ErrUnexpectedEOF, ErrInvalidMagicCookie, ErrInvalidMessageLength.
 // Any error is unrecoverable, but message could be partially decoded.
 //
 // ErrUnexpectedEOF means that there were not enough bytes to read header or
-// value and indicates possible data loss.
-func (m *Message) Get(buf []byte) error {
+func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	m.mustWrite()
+	var (
+		read int64
+		n    int
+		err  error
+	)
 
-	if len(buf) < messageHeaderSize {
-		msg := fmt.Sprintln(len(buf), "<", messageHeaderSize, "message")
-		return errors.Wrap(io.ErrUnexpectedEOF, msg)
+	// reading packet into buffer
+	buf := make([]byte, MaxPacketSize)
+	if n, err = r.Read(buf); err != nil {
+		return int64(n), err
 	}
+	// writing to internal buffer
+	m.buf.B = m.buf.B[:0]
+	m.buf.Write(buf[:n])
+	read += int64(n)
+	// buf is now internal buffer
+	buf = m.buf.B[:n]
 
 	// decoding message header
 	m.Type.ReadValue(binary.BigEndian.Uint16(buf[0:2])) // first 2 bytes
 	tLength := binary.BigEndian.Uint16(buf[2:4])        // second 2 bytes
 	m.Length = uint32(tLength)
+	l := int(tLength)
 	cookie := binary.BigEndian.Uint32(buf[4:8])
 	copy(m.TransactionID[:], buf[8:messageHeaderSize])
 
 	if cookie != magicCookie {
-		return errors.Wrap(ErrInvalidMessageLength, "missmatch")
+		return read, ErrInvalidMagicCookie
 	}
 
-	offset := messageHeaderSize
-	mLength := int(m.Length)
-	if (mLength + offset) > len(buf) {
-		msg := fmt.Sprintln((mLength + offset), ">", len(buf))
-		return errors.Wrap(ErrInvalidMessageLength, msg)
-	}
-
-	for (mLength + messageHeaderSize - offset) > 0 {
+	buf = buf[messageHeaderSize:messageHeaderSize+l]
+	offset := 0
+	for offset < l {
 		b := buf[offset:]
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
 			msg := fmt.Sprintln(len(buf), "<", attributeHeaderSize, "header")
-			return errors.Wrap(io.ErrUnexpectedEOF, msg)
+			return int64(offset) + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
 		}
 		a := Attribute{}
 
@@ -340,25 +345,31 @@ func (m *Message) Get(buf []byte) error {
 		t := binary.BigEndian.Uint16(b[0:2])       // first 2 bytes
 		a.Length = binary.BigEndian.Uint16(b[2:4]) // second 2 bytes
 		a.Type = AttrType(t)
-		l := int(a.Length)
+		aL := int(a.Length)
 
 		// reading value
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
-		if len(b) < l {             // checking size
-			msg := fmt.Sprintf("attr len(b) == %d < %d", len(b), l)
-			return errors.Wrap(io.ErrUnexpectedEOF, msg)
+		if len(b) < aL {            // checking size
+			msg := fmt.Sprintf("attr len(b) == %d < %d", len(b), aL)
+			return int64(offset) + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
 		}
-		a.Value = b[:l]
+		a.Value = b[:aL]
 
 		m.Attributes = append(m.Attributes, a)
-		offset += l + attributeHeaderSize
+		offset += aL + attributeHeaderSize
 	}
-	return nil
+	return int64(l + messageHeaderSize), nil
 }
 
 const (
 	attributeHeaderSize = 4
 	messageHeaderSize   = 20
+)
+
+const (
+	// MaxPacketSize is maximum size of UDP packet that is processable in
+	// this package for STUN message.
+	MaxPacketSize = 2048
 )
 
 // AttrType is attribute type.

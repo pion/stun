@@ -50,9 +50,8 @@ func TestClientSend(t *testing.T) {
 	m.AddSoftware("cydev/stun alpha")
 	m.WriteHeader()
 	timeout := 100 * time.Millisecond
-	recvBuf := make([]byte, 1024)
 	for i := 0; i < 9; i++ {
-		_, err := conn.Write(m.buf.B)
+		_, err := m.WriteTo(conn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -62,18 +61,18 @@ func TestClientSend(t *testing.T) {
 		if timeout < 1600*time.Millisecond {
 			timeout *= 2
 		}
-		n, err := conn.Read(recvBuf)
 		var (
 			ip   net.IP
 			port int
 		)
 		if err == nil {
 			mRec := AcquireMessage()
-			if err = mRec.Get(recvBuf[:n]); err != nil {
+			if _, err = mRec.ReadFrom(conn); err != nil {
 				t.Error(err)
 			}
-			log.Println(mRec)
-			log.Println(mRec.Attributes)
+			log.Println("got message:", mRec)
+			log.Println("got attributes:", mRec.Attributes)
+			log.Println("got error:", err)
 			if mRec.TransactionID != m.TransactionID {
 				t.Error("TransactionID missmatch")
 			}

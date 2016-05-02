@@ -26,7 +26,6 @@ func discover(c *cli.Context) error {
 	m.AddSoftware("cydev/stun alpha")
 	m.WriteHeader()
 	timeout := 100 * time.Millisecond
-	recvBuf := make([]byte, 1024)
 	for i := 0; i < 9; i++ {
 		_, err := m.WriteTo(conn)
 		if err != nil {
@@ -38,14 +37,13 @@ func discover(c *cli.Context) error {
 		if timeout < 1600*time.Millisecond {
 			timeout *= 2
 		}
-		n, err := conn.Read(recvBuf)
 		var (
 			ip   net.IP
 			port int
 		)
 		if err == nil {
 			mRec := stun.AcquireMessage()
-			if err = mRec.Get(recvBuf[:n]); err != nil {
+			if _, err = mRec.ReadFrom(conn); err != nil {
 				return err
 			}
 			if mRec.TransactionID != m.TransactionID {

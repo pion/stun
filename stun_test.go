@@ -9,6 +9,8 @@ import (
 	"io"
 	"strings"
 
+	"bytes"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 )
@@ -41,8 +43,8 @@ func TestMessageBuffer(t *testing.T) {
 	m.TransactionID = NewTransactionID()
 	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	m.WriteHeader()
-	mDecoded := &Message{}
-	if err := mDecoded.Get(m.buf.B); err != nil {
+	mDecoded := AcquireMessage()
+	if _, err := mDecoded.ReadFrom(bytes.NewReader(m.buf.B)); err != nil {
 		t.Error(err)
 	}
 	if !mDecoded.Equal(*m) {
@@ -123,51 +125,71 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 	}
 }
 
-func TestMessage_PutGet(t *testing.T) {
-	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
-	messageAttributes := Attributes{
-		messageAttribute,
+//func TestMessage_PutGet(t *testing.T) {
+//	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
+//	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
+//	messageAttributes := Attributes{
+//		messageAttribute,
+//	}
+//	m := Message{
+//		Type:          mType,
+//		Length:        6,
+//		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+//		Attributes:    messageAttributes,
+//	}
+//	buf := make([]byte, 128)
+//	m.Put(buf)
+//	mDecoded := Message{}
+//	if err := mDecoded.Get(buf); err != nil {
+//		t.Error(err)
+//	}
+//	if mDecoded.Type != m.Type {
+//		t.Error("incorrect type")
+//	}
+//	if mDecoded.Length != m.Length {
+//		t.Error("incorrect length")
+//	}
+//	if mDecoded.TransactionID != m.TransactionID {
+//		t.Error("incorrect transaction ID")
+//	}
+//	aDecoded := mDecoded.Attributes.Get(messageAttribute.Type)
+//	if !aDecoded.Equal(messageAttribute) {
+//		t.Error(aDecoded, "!=", messageAttribute)
+//	}
+//}
+
+func TestMessage_WriteTo(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.WriteHeader()
+	buf := new(bytes.Buffer)
+	if _, err := m.WriteTo(buf); err != nil {
+		t.Fatal(err)
 	}
-	m := Message{
-		Type:          mType,
-		Length:        6,
-		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-		Attributes:    messageAttributes,
-	}
-	buf := make([]byte, 128)
-	m.Put(buf)
-	mDecoded := Message{}
-	if err := mDecoded.Get(buf); err != nil {
+	mDecoded := AcquireMessage()
+	if _, err := mDecoded.ReadFrom(buf); err != nil {
 		t.Error(err)
 	}
-	if mDecoded.Type != m.Type {
-		t.Error("incorrect type")
-	}
-	if mDecoded.Length != m.Length {
-		t.Error("incorrect length")
-	}
-	if mDecoded.TransactionID != m.TransactionID {
-		t.Error("incorrect transaction ID")
-	}
-	aDecoded := mDecoded.Attributes.Get(messageAttribute.Type)
-	if !aDecoded.Equal(messageAttribute) {
-		t.Error(aDecoded, "!=", messageAttribute)
+	if !mDecoded.Equal(*m) {
+		t.Error(mDecoded, "!", m)
 	}
 }
 
 func TestMessage_Cookie(t *testing.T) {
 	buf := make([]byte, 20)
-	mDecoded := Message{}
-	if err := mDecoded.Get(buf); err == nil {
+	mDecoded := AcquireMessage()
+	if _, err := mDecoded.ReadFrom(bytes.NewReader(buf)); err == nil {
 		t.Error("should error")
 	}
 }
 
 func TestMessage_LengthLessHeaderSize(t *testing.T) {
 	buf := make([]byte, 8)
-	mDecoded := Message{}
-	if err := mDecoded.Get(buf); err == nil {
+	mDecoded := AcquireMessage()
+	if _, err := mDecoded.ReadFrom(bytes.NewReader(buf)); err == nil {
 		t.Error("should error")
 	}
 }
@@ -175,19 +197,17 @@ func TestMessage_LengthLessHeaderSize(t *testing.T) {
 func TestMessage_BadLength(t *testing.T) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
 	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
-	messageAttributes := Attributes{
-		messageAttribute,
-	}
-	m := Message{
+	m := AcquireFields(Message{
 		Type:          mType,
 		Length:        4,
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-		Attributes:    messageAttributes,
-	}
-	buf := make([]byte, 128)
-	m.Put(buf)
-	mDecoded := Message{}
-	if err := mDecoded.Get(buf[:20+3]); err == nil {
+		Attributes:    []Attribute{messageAttribute},
+	})
+	b := new(bytes.Buffer)
+	m.WriteTo(b)
+	b.Truncate(20 + 3)
+	mDecoded := AcquireMessage()
+	if _, err := mDecoded.ReadFrom(b); err == nil {
 		t.Error("should error")
 	}
 }
@@ -198,16 +218,17 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 	messageAttributes := Attributes{
 		messageAttribute,
 	}
-	m := Message{
+	m := AcquireFields(Message{
 		Type:          mType,
 		TransactionID: NewTransactionID(),
 		Attributes:    messageAttributes,
-	}
-	buf := make([]byte, 128)
-	m.Put(buf)
+	})
+	b := new(bytes.Buffer)
+	m.WriteTo(b)
+	buf := b.Bytes()
+	mDecoded := AcquireMessage()
 	binary.BigEndian.PutUint16(buf[2:4], 2) // rewrite to bad length
-	mDecoded := Message{}
-	err := mDecoded.Get(buf[:20+2])
+	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+2]))
 	if errors.Cause(err) != io.ErrUnexpectedEOF {
 		t.Error(err, "should be", io.ErrUnexpectedEOF)
 	}
@@ -215,20 +236,37 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 
 func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
+	messageAttribute := Attribute{Length: 4,
+		Value: []byte{1, 2, 3, 4}, Type: 0x1,
+	}
 	messageAttributes := Attributes{
 		messageAttribute,
 	}
-	m := Message{
+	m := AcquireFields(Message{
 		Type:          mType,
 		TransactionID: NewTransactionID(),
 		Attributes:    messageAttributes,
+	})
+	b := new(bytes.Buffer)
+	m.WriteTo(b)
+	buf := b.Bytes()
+	binary.BigEndian.PutUint16(buf[2:4], 5) // rewrite to bad length
+	mDecoded := AcquireMessage()
+	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+5]))
+	if errors.Cause(err) != io.ErrUnexpectedEOF {
+		t.Error(err, "should be", io.ErrUnexpectedEOF)
 	}
-	buf := make([]byte, 128)
-	m.Put(buf)
-	binary.BigEndian.PutUint16(buf[2:4], 2) // rewrite to bad length
-	mDecoded := Message{}
-	err := mDecoded.Get(buf[:20+5])
+}
+
+type unexpectedEOFReader struct{}
+
+func (_ unexpectedEOFReader) Read(b []byte) (int, error) {
+	return 0, io.ErrUnexpectedEOF
+}
+
+func TestMessage_ReadFromError(t *testing.T) {
+	mDecoded := AcquireMessage()
+	_, err := mDecoded.ReadFrom(unexpectedEOFReader{})
 	if errors.Cause(err) != io.ErrUnexpectedEOF {
 		t.Error(err, "should be", io.ErrUnexpectedEOF)
 	}
@@ -249,10 +287,11 @@ func BenchmarkMessage_Put(b *testing.B) {
 		Length:        0,
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 	}
-	buf := make([]byte, 20)
+	buf := new(bytes.Buffer)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		m.Put(buf)
+		m.WriteTo(buf)
+		buf.Reset()
 	}
 }
 
