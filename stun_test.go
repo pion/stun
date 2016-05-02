@@ -247,20 +247,68 @@ func BenchmarkMessageType_Value(b *testing.B) {
 	}
 }
 
-func BenchmarkMessage_Put(b *testing.B) {
+func BenchmarkMessage_WriteTo(b *testing.B) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	m := Message{
+	m := AcquireFields(Message{
 		Type:   mType,
 		Length: 0,
 		TransactionID: [transactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
-	}
+	})
 	buf := new(bytes.Buffer)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		m.WriteTo(buf)
 		buf.Reset()
+	}
+}
+
+func BenchmarkMessage_ReadFrom(b *testing.B) {
+	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
+	m := AcquireFields(Message{
+		Type:   mType,
+		Length: 0,
+		TransactionID: [transactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+		},
+	})
+	buf := new(bytes.Buffer)
+	m.WriteTo(buf)
+	b.ReportAllocs()
+	tBuf := buf.Bytes()
+	b.SetBytes(int64(len(tBuf)))
+	reader := bytes.NewReader(tBuf)
+	mRec := AcquireMessage()
+	for i := 0; i < b.N; i++ {
+		if _, err := mRec.ReadFrom(reader); err != nil {
+			b.Fatal(err)
+		}
+		reader.Reset(tBuf)
+		mRec.Reset()
+	}
+}
+
+func BenchmarkMessage_ReadBytes(b *testing.B) {
+	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
+	m := AcquireFields(Message{
+		Type:   mType,
+		Length: 0,
+		TransactionID: [transactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+		},
+	})
+	buf := new(bytes.Buffer)
+	m.WriteTo(buf)
+	b.ReportAllocs()
+	tBuf := buf.Bytes()
+	b.SetBytes(int64(len(tBuf)))
+	mRec := AcquireMessage()
+	for i := 0; i < b.N; i++ {
+		if _, err := mRec.ReadBytes(tBuf); err != nil {
+			b.Fatal(err)
+		}
+		mRec.Reset()
 	}
 }
 

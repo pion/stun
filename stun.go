@@ -21,6 +21,7 @@
 package stun
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
@@ -28,8 +29,6 @@ import (
 	"io"
 	"strconv"
 	"sync"
-
-	"bytes"
 
 	"github.com/cydev/buffer"
 	"github.com/pkg/errors"
@@ -302,25 +301,43 @@ func (m *Message) reader() *bytes.Reader {
 // ErrUnexpectedEOF means that there were not enough bytes to read header or
 func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	m.mustWrite()
+	tBuf := buffer.Acquire()
+	if cap(tBuf.B) < MaxPacketSize {
+		tBuf.Grow(MaxPacketSize)
+	}
 	var (
-		read int64
+		n   int
+		err error
+	)
+	if n, err = r.Read(tBuf.B[:MaxPacketSize]); err != nil {
+		buffer.Release(tBuf)
+		return int64(n), err
+	}
+	n, err = m.ReadBytes(tBuf.B[:n])
+	buffer.Release(tBuf)
+	return int64(n), err
+}
+
+// ReadBytes decodes message and return error if any.
+//
+// Can return ErrUnexpectedEOF, ErrInvalidMagicCookie, ErrInvalidMessageLength.
+// Any error is unrecoverable, but message could be partially decoded.
+//
+// ErrUnexpectedEOF means that there were not enough bytes to read header or
+func (m *Message) ReadBytes(tBuf []byte) (int, error) {
+	m.mustWrite()
+	var (
+		read int
 		n    int
 		err  error
 	)
+	n = len(tBuf)
+	m.buf.Reset()
+	_, err = m.buf.Write(tBuf)
+	unexpected(err) // should never return error
 
-	// reading packet into buffer
-	buf := make([]byte, MaxPacketSize)
-	if n, err = r.Read(buf); err != nil {
-		return int64(n), err
-	}
-	// writing to internal buffer
-	m.buf.B = m.buf.B[:0]
-	_, err = m.buf.Write(buf[:n])
-	unexpected(err) // Buffer.Write should never return error
-
-	read += int64(n)
-	// buf is now internal buffer
-	buf = m.buf.B[:n]
+	read += n
+	buf := m.buf.B[:n]
 
 	// decoding message header
 	m.Type.ReadValue(binary.BigEndian.Uint16(buf[0:2])) // first 2 bytes
@@ -341,7 +358,7 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
 			msg := fmt.Sprintln(len(buf), "<", attributeHeaderSize, "header")
-			return int64(offset) + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
+			return offset + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
 		}
 		a := Attribute{}
 
@@ -355,14 +372,14 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
 		if len(b) < aL {            // checking size
 			msg := fmt.Sprintf("attr len(b) == %d < %d", len(b), aL)
-			return int64(offset) + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
+			return offset + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
 		}
 		a.Value = b[:aL]
 
 		m.Attributes = append(m.Attributes, a)
 		offset += aL + attributeHeaderSize
 	}
-	return int64(l + messageHeaderSize), nil
+	return l + messageHeaderSize, nil
 }
 
 const (
