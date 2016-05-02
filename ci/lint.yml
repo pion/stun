@@ -4,7 +4,7 @@ inputs:
 - name: dev
 
 run:
-  path: dev/ci/test.sh
+  path: dev/ci/lint.sh
 
 image_resource:
   type: docker-image
