@@ -9,5 +9,5 @@ cp -R dev src/github.com/cydev/stun
 
 pushd ${GOPATH}/src/github.com/cydev/stun
     go get -v -t .
-    make lint-fast
+    make lint
 popd

@@ -15,7 +15,8 @@ lint:
 		-e "_test.go.+(gocyclo|errcheck|dupl)" \
 		--enable="lll" --line-length=80 \
 		--disable=gotype \
-		--deadline=180s
+		--deadline=300s \
+		-j 1
 lint-fast:
 	@gometalinter -e "AttrType.+gocyclo" \
 		 -e "_test.go.+(gocyclo|errcheck|dupl)" \
