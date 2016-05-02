@@ -277,6 +277,8 @@ func (m Message) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
+// AcquireFields is shorthand for AcquireMessage that sets fields
+// before returning *Message.
 func AcquireFields(message Message) *Message {
 	m := AcquireMessage()
 	copy(m.TransactionID[:], message.TransactionID[:])
@@ -313,7 +315,9 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	}
 	// writing to internal buffer
 	m.buf.B = m.buf.B[:0]
-	m.buf.Write(buf[:n])
+	_, err = m.buf.Write(buf[:n])
+	unexpected(err) // Buffer.Write should never return error
+
 	read += int64(n)
 	// buf is now internal buffer
 	buf = m.buf.B[:n]
@@ -330,7 +334,7 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 		return read, ErrInvalidMagicCookie
 	}
 
-	buf = buf[messageHeaderSize:messageHeaderSize+l]
+	buf = buf[messageHeaderSize : messageHeaderSize+l]
 	offset := 0
 	for offset < l {
 		b := buf[offset:]

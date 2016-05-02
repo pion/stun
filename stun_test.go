@@ -125,39 +125,6 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 	}
 }
 
-//func TestMessage_PutGet(t *testing.T) {
-//	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-//	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
-//	messageAttributes := Attributes{
-//		messageAttribute,
-//	}
-//	m := Message{
-//		Type:          mType,
-//		Length:        6,
-//		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-//		Attributes:    messageAttributes,
-//	}
-//	buf := make([]byte, 128)
-//	m.Put(buf)
-//	mDecoded := Message{}
-//	if err := mDecoded.Get(buf); err != nil {
-//		t.Error(err)
-//	}
-//	if mDecoded.Type != m.Type {
-//		t.Error("incorrect type")
-//	}
-//	if mDecoded.Length != m.Length {
-//		t.Error("incorrect length")
-//	}
-//	if mDecoded.TransactionID != m.TransactionID {
-//		t.Error("incorrect transaction ID")
-//	}
-//	aDecoded := mDecoded.Attributes.Get(messageAttribute.Type)
-//	if !aDecoded.Equal(messageAttribute) {
-//		t.Error(aDecoded, "!=", messageAttribute)
-//	}
-//}
-
 func TestMessage_WriteTo(t *testing.T) {
 	m := AcquireMessage()
 	defer ReleaseMessage(m)
@@ -260,7 +227,7 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 
 type unexpectedEOFReader struct{}
 
-func (_ unexpectedEOFReader) Read(b []byte) (int, error) {
+func (r unexpectedEOFReader) Read(b []byte) (int, error) {
 	return 0, io.ErrUnexpectedEOF
 }
 
@@ -283,9 +250,11 @@ func BenchmarkMessageType_Value(b *testing.B) {
 func BenchmarkMessage_Put(b *testing.B) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
 	m := Message{
-		Type:          mType,
-		Length:        0,
-		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+		Type:   mType,
+		Length: 0,
+		TransactionID: [transactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+		},
 	}
 	buf := new(bytes.Buffer)
 	b.ReportAllocs()
