@@ -38,3 +38,5 @@ install:
 	gometalinter --install --update
 	go get -u github.com/cydev/go-fuzz/go-fuzz-build
 	go get -u github.com/dvyukov/go-fuzz/go-fuzz
+push:
+	git push origin dev
