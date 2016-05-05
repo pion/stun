@@ -318,6 +318,51 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	return int64(n), err
 }
 
+// DecodeErr records an error and place when it is occurred.
+type DecodeErr struct {
+	Place   DecodeErrPlace
+	Message string
+}
+
+func (e DecodeErr) IsPlaceParent(p string) bool {
+	return e.Place.Parent == p
+}
+
+func (e DecodeErr) IsPlaceChildren(c string) bool {
+	return e.Place.Children == c
+}
+
+func (e DecodeErr) IsPlace(p DecodeErrPlace) bool {
+	return e.Place == p
+}
+
+type DecodeErrPlace struct {
+	Parent   string
+	Children string
+}
+
+func (p DecodeErrPlace) String() string {
+	return fmt.Sprintf("%s/%s", p.Parent, p.Children)
+}
+
+func (e DecodeErr) Error() string {
+	return fmt.Sprintf("BadFormat for %s: %s",
+		e.Place,
+		e.Message,
+	)
+}
+
+func newDecodeErr(parent, children, message string) DecodeErr {
+	return DecodeErr{
+		Place:   DecodeErrPlace{Parent: parent, Children: children},
+		Message: message,
+	}
+}
+
+func newAttrDecodeErr(children, message string) DecodeErr {
+	return newDecodeErr("attribute", children, message)
+}
+
 // ReadBytes decodes message and return error if any.
 //
 // Can return ErrUnexpectedEOF, ErrInvalidMagicCookie, ErrInvalidMessageLength.
@@ -325,13 +370,12 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 //
 // ErrUnexpectedEOF means that there were not enough bytes to read header or
 func (m *Message) ReadBytes(tBuf []byte) (int, error) {
-	m.mustWrite()
 	var (
-		read int
-		n    int
-		err  error
+		read int   = 0
+		n    int   = len(tBuf)
+		err  error = nil
 	)
-	n = len(tBuf)
+	m.mustWrite()
 	m.buf.Reset()
 	_, err = m.buf.Write(tBuf)
 	unexpected(err) // should never return error
@@ -348,7 +392,7 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 	copy(m.TransactionID[:], buf[8:messageHeaderSize])
 
 	if cookie != magicCookie {
-		return read, ErrInvalidMagicCookie
+		return read, errors.Wrap(ErrInvalidMagicCookie, "cookie check failed")
 	}
 
 	buf = buf[messageHeaderSize : messageHeaderSize+l]
@@ -357,8 +401,12 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		b := buf[offset:]
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
-			msg := fmt.Sprintln(len(buf), "<", attributeHeaderSize, "header")
-			return offset + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
+			msg := fmt.Sprintf(
+				"buffer length %d is less than %d (expected header size)",
+				len(b), attributeHeaderSize,
+			)
+			err := newAttrDecodeErr("header", msg)
+			return offset + read, errors.Wrap(err, "failed to decode")
 		}
 		a := Attribute{}
 
@@ -371,8 +419,12 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		// reading value
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
 		if len(b) < aL {            // checking size
-			msg := fmt.Sprintf("attr len(b) == %d < %d", len(b), aL)
-			return offset + read, errors.Wrap(io.ErrUnexpectedEOF, msg)
+			msg := fmt.Sprintf(
+				"buffer length %d is less than %d (expected value size)",
+				len(b),	aL,
+			)
+			err := newAttrDecodeErr("value", msg)
+			return offset + read, errors.Wrap(err, "failed to decode")
 		}
 		a.Value = b[:aL]
 
@@ -608,13 +660,17 @@ func (t MessageType) String() string {
 	return fmt.Sprintf("%s %s", t.Method, t.Class)
 }
 
-var (
+// ConstError is error type for constant errors.
+type ConstError string
+
+func (e ConstError) Error() string {
+	return string(e)
+}
+
+const (
 	// ErrInvalidMagicCookie means that magic cookie field has invalid value.
-	ErrInvalidMagicCookie = errors.New("Magic cookie value is invalid")
-	// ErrInvalidMessageLength means that actual message size is smaller that
-	// length from header field.
-	ErrInvalidMessageLength = errors.New("Message size is smaller than length")
-	// ErrMessageIsReadOnly means that one is trying to modify readonly
+	ErrInvalidMagicCookie ConstError = "Magic cookie value is invalid"
+	// ErrMessageIsReadOnly means that you are trying to modify readonly
 	// Message.
-	ErrMessageIsReadOnly = errors.New("Message is readonly")
+	ErrMessageIsReadOnly ConstError = "Message is readonly"
 )

@@ -196,8 +196,13 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 	mDecoded := AcquireMessage()
 	binary.BigEndian.PutUint16(buf[2:4], 2) // rewrite to bad length
 	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+2]))
-	if errors.Cause(err) != io.ErrUnexpectedEOF {
-		t.Error(err, "should be", io.ErrUnexpectedEOF)
+	switch e := errors.Cause(err).(type) {
+	case DecodeErr:
+		if !e.IsPlace(DecodeErrPlace{"attribute", "header"}){
+			t.Error(e, "bad place")
+		}
+	default:
+		t.Error(err, "should be bad format")
 	}
 }
 
@@ -220,8 +225,13 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	binary.BigEndian.PutUint16(buf[2:4], 5) // rewrite to bad length
 	mDecoded := AcquireMessage()
 	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+5]))
-	if errors.Cause(err) != io.ErrUnexpectedEOF {
-		t.Error(err, "should be", io.ErrUnexpectedEOF)
+	switch e := errors.Cause(err).(type) {
+	case DecodeErr:
+		if !e.IsPlace(DecodeErrPlace{"attribute", "value"}){
+			t.Error(e, "bad place")
+		}
+	default:
+		t.Error(err, "should be bad format")
 	}
 }
 
