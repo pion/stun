@@ -324,18 +324,22 @@ type DecodeErr struct {
 	Message string
 }
 
+// IsPlaceParent reports if error place parent is p.
 func (e DecodeErr) IsPlaceParent(p string) bool {
 	return e.Place.Parent == p
 }
 
+// IsPlaceChildren reports if error place children is c.
 func (e DecodeErr) IsPlaceChildren(c string) bool {
 	return e.Place.Children == c
 }
 
+// IsPlace reports if error place is p.
 func (e DecodeErr) IsPlace(p DecodeErrPlace) bool {
 	return e.Place == p
 }
 
+// DecodeErrPlace records a place where error is occurred.
 type DecodeErrPlace struct {
 	Parent   string
 	Children string
@@ -371,9 +375,9 @@ func newAttrDecodeErr(children, message string) DecodeErr {
 // ErrUnexpectedEOF means that there were not enough bytes to read header or
 func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 	var (
-		read int   = 0
-		n    int   = len(tBuf)
-		err  error = nil
+		read int
+		err  error
+		n    = len(tBuf)
 	)
 	m.mustWrite()
 	m.buf.Reset()
