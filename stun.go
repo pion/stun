@@ -421,7 +421,7 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		if len(b) < aL {            // checking size
 			msg := fmt.Sprintf(
 				"buffer length %d is less than %d (expected value size)",
-				len(b),	aL,
+				len(b), aL,
 			)
 			err := newAttrDecodeErr("value", msg)
 			return offset + read, errors.Wrap(err, "failed to decode")

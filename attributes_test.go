@@ -1,13 +1,13 @@
 package stun
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"net"
-	"testing"
-	"bytes"
-	"encoding/binary"
 	"strings"
+	"testing"
 )
 
 func TestMessage_AddSoftware(t *testing.T) {
