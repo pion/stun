@@ -5,7 +5,7 @@ test:
 bench:
 	go test -bench .
 bench-record:
-	$(GO) test -bench . > "benchmarks/stun-go-$(GO_VERSION).txt"	
+	$(GO) test -bench . > "benchmarks/stun-go-$(GO_VERSION).txt"
 fuzz-prepare-msg:
 	go-fuzz-build -func FuzzMessage -o stun-msg-fuzz.zip github.com/cydev/stun
 fuzz-prepare-typ:
