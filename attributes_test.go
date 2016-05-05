@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"net"
 	"testing"
-	//"encoding/binary"
-
 	"bytes"
 	"encoding/binary"
 	"strings"
