@@ -664,17 +664,19 @@ func (t MessageType) String() string {
 	return fmt.Sprintf("%s %s", t.Method, t.Class)
 }
 
-// ConstError is error type for constant errors.
-type ConstError string
+// Error is error type for constant errors in stun package.
+//
+// See http://dave.cheney.net/2016/04/07/constant-errors for more info.
+type Error string
 
-func (e ConstError) Error() string {
+func (e Error) Error() string {
 	return string(e)
 }
 
 const (
 	// ErrInvalidMagicCookie means that magic cookie field has invalid value.
-	ErrInvalidMagicCookie ConstError = "Magic cookie value is invalid"
+	ErrInvalidMagicCookie Error = "Magic cookie value is invalid"
 	// ErrMessageIsReadOnly means that you are trying to modify readonly
 	// Message.
-	ErrMessageIsReadOnly ConstError = "Message is readonly"
+	ErrMessageIsReadOnly Error = "Message is readonly"
 )
