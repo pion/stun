@@ -318,61 +318,13 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	return int64(n), err
 }
 
-// DecodeErr records an error and place when it is occurred.
-type DecodeErr struct {
-	Place   DecodeErrPlace
-	Message string
-}
-
-// IsPlaceParent reports if error place parent is p.
-func (e DecodeErr) IsPlaceParent(p string) bool {
-	return e.Place.Parent == p
-}
-
-// IsPlaceChildren reports if error place children is c.
-func (e DecodeErr) IsPlaceChildren(c string) bool {
-	return e.Place.Children == c
-}
-
-// IsPlace reports if error place is p.
-func (e DecodeErr) IsPlace(p DecodeErrPlace) bool {
-	return e.Place == p
-}
-
-// DecodeErrPlace records a place where error is occurred.
-type DecodeErrPlace struct {
-	Parent   string
-	Children string
-}
-
-func (p DecodeErrPlace) String() string {
-	return fmt.Sprintf("%s/%s", p.Parent, p.Children)
-}
-
-func (e DecodeErr) Error() string {
-	return fmt.Sprintf("BadFormat for %s: %s",
-		e.Place,
-		e.Message,
-	)
-}
-
-func newDecodeErr(parent, children, message string) DecodeErr {
-	return DecodeErr{
-		Place:   DecodeErrPlace{Parent: parent, Children: children},
-		Message: message,
-	}
-}
-
 func newAttrDecodeErr(children, message string) DecodeErr {
 	return newDecodeErr("attribute", children, message)
 }
 
 // ReadBytes decodes message and return error if any.
 //
-// Can return ErrUnexpectedEOF, ErrInvalidMagicCookie, ErrInvalidMessageLength.
 // Any error is unrecoverable, but message could be partially decoded.
-//
-// ErrUnexpectedEOF means that there were not enough bytes to read header or
 func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 	var (
 		read int
@@ -396,7 +348,12 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 	copy(m.TransactionID[:], buf[8:messageHeaderSize])
 
 	if cookie != magicCookie {
-		return read, errors.Wrap(ErrInvalidMagicCookie, "cookie check failed")
+		msg := fmt.Sprintf(
+			"%v is invalid magic cookie (should be %v)",
+			cookie, magicCookie,
+		)
+		err := newDecodeErr("message", "cookie", msg)
+		return read, errors.Wrap(err, "check failed")
 	}
 
 	buf = buf[messageHeaderSize : messageHeaderSize+l]
@@ -662,15 +619,6 @@ func (t *MessageType) ReadValue(v uint16) {
 
 func (t MessageType) String() string {
 	return fmt.Sprintf("%s %s", t.Method, t.Class)
-}
-
-// Error is error type for constant errors in stun package.
-//
-// See http://dave.cheney.net/2016/04/07/constant-errors for more info.
-type Error string
-
-func (e Error) Error() string {
-	return string(e)
 }
 
 const (
