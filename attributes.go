@@ -140,6 +140,13 @@ func (m *Message) AddErrorCode(code int, reason string) {
 	m.Add(AttrErrorCode, value)
 }
 
+// AddErrorCodeDefault is wrapper for AddErrorCode that uses recommended
+// reason string from RFC. If error code is unknown, reason will be "Unknown
+// Error".
+func (m *Message) AddErrorCodeDefault(code int) {
+	m.AddErrorCode(code, ErrorCode(code).Reason())
+}
+
 // GetErrorCode returns ERROR-CODE code, reason and decode error if any.
 func (m *Message) GetErrorCode() (int, []byte, error) {
 	v := m.getAttrValue(AttrErrorCode)
