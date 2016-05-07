@@ -85,11 +85,11 @@ func (m *Message) GetXORMappedAddress() (net.IP, int, error) {
 	// then the converting the result to network byte order.
 	v := m.getAttrValue(AttrXORMappedAddress)
 	if len(v) == 0 {
-		return nil, 0, errors.Wrap(ErrAttributeNotFound, "Length is 0")
+		return nil, 0, errors.Wrap(ErrAttributeNotFound, "not found")
 	}
 	family := byte(binary.BigEndian.Uint16(v[0:2]))
 	if family != FamilyIPv6 && family != FamilyIPv4 {
-		err := errors.Wrapf(ErrAttributeDecodeError, "Bad family %d", family)
+		err := errors.Wrapf(ErrAttributeDecodeError, "bad family %d", family)
 		return nil, 0, err
 	}
 	ipLen := net.IPv4len
@@ -105,10 +105,63 @@ func (m *Message) GetXORMappedAddress() (net.IP, int, error) {
 	return ip, port, nil
 }
 
+// shouldBeLess panics with err if s is not less than n characters.
+func shouldBeLess(s string, n int, err error) {
+	if len(s) >= n {
+		panic(err)
+	}
+}
+
+// constants for ERROR-CODE encoding.
+const (
+	errorCodeReasonStart = 4
+	errorCodeClassByte   = 2
+	errorCodeNumberByte  = 3
+	errorCodeReasonMax   = 128
+	errorCodeReasonMaxB  = 763
+	errorCodeModulo      = 100
+)
+
+// AddErrorCode adds ERROR-CODE attribute to message.
+//
+// The reason phrase MUST be a UTF-8 [RFC 3629] encoded
+// sequence of less than 128 characters (which can be as long as 763
+// bytes).
+func (m *Message) AddErrorCode(code int, reason string) {
+	shouldBeLess(reason, errorCodeReasonMax, ErrErrorTooLong)
+	value := make([]byte,
+		errorCodeReasonStart, errorCodeReasonMaxB+errorCodeReasonStart,
+	)
+	number := byte(code % errorCodeModulo) // error code modulo 100
+	class := byte(code / errorCodeModulo)  // hundred digit
+	value[errorCodeClassByte] = class
+	value[errorCodeNumberByte] = number
+	value = append(value, reason...)
+	m.Add(AttrErrorCode, value)
+}
+
+// GetErrorCode returns ERROR-CODE code, reason and decode error if any.
+func (m *Message) GetErrorCode() (int, []byte, error) {
+	v := m.getAttrValue(AttrErrorCode)
+	if len(v) == 0 {
+		return 0, nil, errors.Wrap(ErrAttributeNotFound, "not found")
+	}
+	var (
+		class  = uint16(v[errorCodeClassByte])
+		number = uint16(v[errorCodeNumberByte])
+		code   = int(class*errorCodeModulo + number)
+		reason = v[errorCodeReasonStart:]
+	)
+	return code, reason, nil
+}
+
 var (
 	// ErrAttributeNotFound means that there is no such attribute.
-	ErrAttributeNotFound = errors.New("Attribute not found")
+	ErrAttributeNotFound Error = "Attribute not found"
 
 	// ErrAttributeDecodeError means that agent is unable to decode value.
-	ErrAttributeDecodeError = errors.New("Attribute decode error")
+	ErrAttributeDecodeError Error = "Attribute decode error"
+
+	// ErrErrorTooLong means that error reason is too long
+	ErrErrorTooLong Error = "Error reason is too long"
 )

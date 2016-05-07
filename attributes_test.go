@@ -182,3 +182,43 @@ func TestMessage_AddXORMappedAddress(t *testing.T) {
 		t.Error("bad port", port, "!=", expectedPort)
 	}
 }
+
+func BenchmarkMessage_AddErrorCode(b *testing.B) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		m.AddErrorCode(404, "Not found")
+		m.Reset()
+	}
+}
+
+func TestMessage_AddErrorCode(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		t.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	expectedCode := 404
+	expectedReason := "Not found"
+	m.AddErrorCode(expectedCode, expectedReason)
+	m.WriteHeader()
+
+	mRes := AcquireMessage()
+	defer ReleaseMessage(mRes)
+	if _, err = mRes.ReadFrom(m.reader()); err != nil {
+		t.Fatal(err)
+	}
+	code, reason, err := mRes.GetErrorCode()
+	if err != nil {
+		t.Error(err)
+	}
+	if code != expectedCode {
+		t.Error("bad code", code)
+	}
+	if string(reason) != expectedReason {
+		t.Error("bad reason", string(reason))
+	}
+}
