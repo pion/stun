@@ -105,19 +105,11 @@ func (m *Message) GetXORMappedAddress() (net.IP, int, error) {
 	return ip, port, nil
 }
 
-// shouldBeLess panics with err if s is not less than n characters.
-func shouldBeLess(s string, n int, err error) {
-	if len(s) >= n {
-		panic(err)
-	}
-}
-
 // constants for ERROR-CODE encoding.
 const (
 	errorCodeReasonStart = 4
 	errorCodeClassByte   = 2
 	errorCodeNumberByte  = 3
-	errorCodeReasonMax   = 128
 	errorCodeReasonMaxB  = 763
 	errorCodeModulo      = 100
 )
@@ -128,7 +120,6 @@ const (
 // sequence of less than 128 characters (which can be as long as 763
 // bytes).
 func (m *Message) AddErrorCode(code int, reason string) {
-	shouldBeLess(reason, errorCodeReasonMax, ErrErrorTooLong)
 	value := make([]byte,
 		errorCodeReasonStart, errorCodeReasonMaxB+errorCodeReasonStart,
 	)
@@ -168,7 +159,4 @@ var (
 
 	// ErrAttributeDecodeError means that agent is unable to decode value.
 	ErrAttributeDecodeError Error = "Attribute decode error"
-
-	// ErrErrorTooLong means that error reason is too long
-	ErrErrorTooLong Error = "Error reason is too long"
 )
