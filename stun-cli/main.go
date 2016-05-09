@@ -31,20 +31,14 @@ func discover(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	m := stun.AcquireMessage()
-	m.Type = stun.MessageType{
-		Method: stun.MethodBinding,
-		Class:  stun.ClassRequest,
-	}
-	m.TransactionID = stun.NewTransactionID()
-	m.AddSoftware("cydev/stun alpha")
-	m = stun.AcquireFields(stun.Message{
+	m := stun.AcquireFields(stun.Message{
 		TransactionID: stun.NewTransactionID(),
 		Type: stun.MessageType{
 			Method: stun.MethodBinding,
 			Class: stun.ClassRequest,
 		},
 	})
+	m.AddSoftware("cydev/stun alpha")
 	m.WriteHeader()
 	timeout := 100 * time.Millisecond
 	for i := 0; i < 9; i++ {
