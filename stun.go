@@ -28,11 +28,26 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/cydev/buffer"
 	"github.com/pkg/errors"
 )
+
+// Normalize returns normalized address.
+func Normalize(address string) string {
+	if len(address) == 0 {
+		address = "0.0.0.0"
+	}
+	if !strings.Contains(address, ":") {
+		address = fmt.Sprintf("%s:%d", address, DefaultPort)
+	}
+	return address
+}
+
+// DefaultPort is IANA assigned port for "stun" protocol.
+const DefaultPort = 3478
 
 const (
 	// magicCookie is fixed value that aids in distinguishing STUN packets

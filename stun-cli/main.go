@@ -5,22 +5,29 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/cydev/stun"
 )
 
-var (
-	serverAddress string
+const (
+	version = "0.1"
 )
 
-func discover(c *cli.Context) error {
-	if !strings.Contains(serverAddress, ":") {
-		serverAddress = fmt.Sprintf("%s:%d", serverAddress, stun.DefaultPort)
+func wrapLogrus(f func(c *cli.Context) error) func(c *cli.Context) error {
+	return func(c *cli.Context) error {
+		err := f(c)
+		if err != nil {
+			logrus.Errorln("discover error:", err)
+		}
+		return err
 	}
-	conn, err := net.Dial("udp", serverAddress)
+}
+
+func discover(c *cli.Context) error {
+	conn, err := net.Dial("udp", stun.Normalize(c.String("server")))
 	if err != nil {
 		return err
 	}
@@ -31,6 +38,13 @@ func discover(c *cli.Context) error {
 	}
 	m.TransactionID = stun.NewTransactionID()
 	m.AddSoftware("cydev/stun alpha")
+	m = stun.AcquireFields(stun.Message{
+		TransactionID: stun.NewTransactionID(),
+		Type: stun.MessageType{
+			Method: stun.MethodBinding,
+			Class: stun.ClassRequest,
+		},
+	})
 	m.WriteHeader()
 	timeout := 100 * time.Millisecond
 	for i := 0; i < 9; i++ {
@@ -81,10 +95,9 @@ func main() {
 			Name:        "server",
 			Value:       "ci.cydev.ru",
 			Usage:       "STUN server address",
-			Destination: &serverAddress,
 		},
 	}
-	app.Action = discover
-
+	app.Action = wrapLogrus(discover)
+	app.Version = version
 	app.Run(os.Args)
 }
