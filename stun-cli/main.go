@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/codegangsta/cli"
@@ -16,12 +17,18 @@ var (
 )
 
 func discover(c *cli.Context) error {
+	if !strings.Contains(serverAddress, ":") {
+		serverAddress = fmt.Sprintf("%s:%d", serverAddress, stun.DefaultPort)
+	}
 	conn, err := net.Dial("udp", serverAddress)
 	if err != nil {
 		return err
 	}
 	m := stun.AcquireMessage()
-	m.Type = stun.MessageType{Method: stun.MethodBinding, Class: stun.ClassRequest}
+	m.Type = stun.MessageType{
+		Method: stun.MethodBinding,
+		Class:  stun.ClassRequest,
+	}
 	m.TransactionID = stun.NewTransactionID()
 	m.AddSoftware("cydev/stun alpha")
 	m.WriteHeader()
@@ -72,8 +79,8 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "server",
-			Value:       "stun.l.google.com:19302",
-			Usage:       "STUN serve address",
+			Value:       "ci.cydev.ru",
+			Usage:       "STUN server address",
 			Destination: &serverAddress,
 		},
 	}

@@ -1,0 +1,14 @@
+[Unit]
+Description=STUN basic server
+ConditionPathExists=/usr/bin/stund
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/stund
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+
