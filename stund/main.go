@@ -19,7 +19,7 @@ func main() {
 	case "udp":
 		normalized := stun.Normalize(*address)
 		fmt.Println("cydev/stun listening on", normalized, "via", *network)
-		log.Fatal(stun.ListenUDPAndServe(*network, *address))
+		log.Fatal(stun.ListenUDPAndServe(normalized, *address))
 	default:
 		log.Fatal("unsupported network:", *network)
 	}
