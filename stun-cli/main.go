@@ -27,7 +27,8 @@ func wrapLogrus(f func(c *cli.Context) error) func(c *cli.Context) error {
 }
 
 func discover(c *cli.Context) error {
-	conn, err := net.Dial("udp", stun.Normalize(c.String("server")))
+	normalized := stun.Normalize(c.String("server"))
+	conn, err := net.Dial("udp", normalized)
 	if err != nil {
 		return err
 	}
@@ -35,12 +36,12 @@ func discover(c *cli.Context) error {
 		TransactionID: stun.NewTransactionID(),
 		Type: stun.MessageType{
 			Method: stun.MethodBinding,
-			Class: stun.ClassRequest,
+			Class:  stun.ClassRequest,
 		},
 	})
 	m.AddSoftware("cydev/stun alpha")
 	m.WriteHeader()
-	timeout := 100 * time.Millisecond
+	timeout := 1000 * time.Millisecond
 	for i := 0; i < 9; i++ {
 		_, err := m.WriteTo(conn)
 		if err != nil {
@@ -86,9 +87,9 @@ func main() {
 	app.Usage = "command line client for STUN"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:        "server",
-			Value:       "ci.cydev.ru",
-			Usage:       "STUN server address",
+			Name:  "server",
+			Value: "ci.cydev.ru",
+			Usage: "STUN server address",
 		},
 	}
 	app.Action = wrapLogrus(discover)

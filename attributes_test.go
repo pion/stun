@@ -222,3 +222,33 @@ func TestMessage_AddErrorCode(t *testing.T) {
 		t.Error("bad reason", string(reason))
 	}
 }
+
+func TestMessage_AddErrorCodeDefault(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		t.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	expectedCode := 500
+	expectedReason := "Server Error"
+	m.AddErrorCodeDefault(expectedCode)
+	m.WriteHeader()
+
+	mRes := AcquireMessage()
+	defer ReleaseMessage(mRes)
+	if _, err = mRes.ReadFrom(m.reader()); err != nil {
+		t.Fatal(err)
+	}
+	code, reason, err := mRes.GetErrorCode()
+	if err != nil {
+		t.Error(err)
+	}
+	if code != expectedCode {
+		t.Error("bad code", code)
+	}
+	if string(reason) != expectedReason {
+		t.Error("bad reason", string(reason))
+	}
+}

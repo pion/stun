@@ -158,3 +158,30 @@ func TestClientSend(t *testing.T) {
 		}
 	}
 }
+
+func TestClient_Do(t *testing.T) {
+	skipIfNotFlagged(t, envExternalBlackbox)
+	client := Client{}
+	m := AcquireMessage()
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.AddSoftware("cydev/stun alpha")
+	m.WriteHeader()
+	request := Request{
+		Target:  "stun.l.google.com:19302",
+		Message: m,
+	}
+	if err := client.Do(request, func(r Response) error {
+		if r.Message.TransactionID != m.TransactionID {
+			t.Error("transaction id messmatch")
+		}
+		ip, port, err := r.Message.GetXORMappedAddress()
+		if err != nil {
+			t.Error(err)
+		}
+		log.Println("got", ip, port)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -72,6 +72,9 @@ func (s *Server) getName() string {
 }
 
 func (s *Server) serveConn(c net.PacketConn) error {
+	if c == nil {
+		return nil
+	}
 	m := AcquireMessage()
 	buf := make([]byte, 2048)
 	n, addr, err := c.ReadFrom(buf)
@@ -127,7 +130,8 @@ func (s *Server) getConcurrency() int {
 func (s *Server) Serve(c net.PacketConn) error {
 	for {
 		if err := s.serveConn(c); err != nil {
-			s.Logger.Printf("serve: %v", err)
+			s.logger().Printf("serve: %v", err)
+			return err
 		}
 	}
 }
