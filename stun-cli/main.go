@@ -1,37 +1,30 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
-	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/cydev/stun"
+	"github.com/pkg/errors"
 )
 
 const (
-	version = "0.1"
+	version = "0.2"
 )
 
-func wrapLogrus(f func(c *cli.Context) error) func(c *cli.Context) error {
+func wrapWithLogger(f func(c *cli.Context) error) func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		err := f(c)
 		if err != nil {
-			logrus.Errorln("discover error:", err)
+			errors.Fprint(os.Stderr, err)
 		}
 		return err
 	}
 }
 
 func discover(c *cli.Context) error {
-	normalized := stun.Normalize(c.String("server"))
-	conn, err := net.Dial("udp", normalized)
-	if err != nil {
-		return err
-	}
 	m := stun.AcquireFields(stun.Message{
 		TransactionID: stun.NewTransactionID(),
 		Type: stun.MessageType{
@@ -39,46 +32,27 @@ func discover(c *cli.Context) error {
 			Class:  stun.ClassRequest,
 		},
 	})
-	m.AddSoftware("cydev/stun alpha")
+	m.AddSoftware(fmt.Sprintf("cydev/stun %s", version))
 	m.WriteHeader()
-	timeout := 1000 * time.Millisecond
-	for i := 0; i < 9; i++ {
-		_, err := m.WriteTo(conn)
-		if err != nil {
-			return err
-		}
-		if err = conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
-			return err
-		}
-		if timeout < 1600*time.Millisecond {
-			timeout *= 2
-		}
+
+	request := stun.Request{
+		Message: m,
+		Target:  stun.Normalize(c.String("server")),
+	}
+
+	return stun.DefaultClient.Do(request, func(r stun.Response) error {
 		var (
 			ip   net.IP
 			port int
+			err  error
 		)
-		if err == nil {
-			mRec := stun.AcquireMessage()
-			if _, err = mRec.ReadFrom(conn); err != nil {
-				return err
-			}
-			if mRec.TransactionID != m.TransactionID {
-				return errors.New("TransactionID missmatch")
-			}
-			ip, port, err = mRec.GetXORMappedAddress()
-			if err != nil {
-				return err
-			}
-			fmt.Println(ip, port)
-			stun.ReleaseMessage(mRec)
-			break
-		} else {
-			if !err.(net.Error).Timeout() {
-				return err
-			}
+		ip, port, err = r.Message.GetXORMappedAddress()
+		if err != nil {
+			return errors.Wrap(err, "failed to get ip")
 		}
-	}
-	return nil
+		fmt.Println(ip, port)
+		return nil
+	})
 }
 
 func main() {
@@ -92,7 +66,7 @@ func main() {
 			Usage: "STUN server address",
 		},
 	}
-	app.Action = wrapLogrus(discover)
+	app.Action = wrapWithLogger(discover)
 	app.Version = version
 	app.Run(os.Args)
 }
