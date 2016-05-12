@@ -2,7 +2,9 @@ package stun
 
 import (
 	"encoding/binary"
+	"fmt"
 	"net"
+	"strconv"
 
 	"github.com/pkg/errors"
 )
@@ -10,6 +12,119 @@ import (
 // blank is just blank string and exists just because it is ugly to keep it
 // in code.
 const blank = ""
+
+// Attributes is list of message attributes.
+type Attributes []Attribute
+
+var (
+	// BlankAttribute is attribute that is returned by
+	// Attributes.Get if nothing found.
+	BlankAttribute = Attribute{}
+)
+
+// Get returns first attribute from list which match AttrType. If nothing
+// found, it returns blank attribute.
+func (a Attributes) Get(t AttrType) Attribute {
+	for _, candidate := range a {
+		if candidate.Type == t {
+			return candidate
+		}
+	}
+	return BlankAttribute
+}
+
+// AttrType is attribute type.
+type AttrType uint16
+
+// Attributes from comprehension-required range (0x0000-0x7FFF).
+const (
+	AttrMappedAddress     AttrType = 0x0001 // MAPPED-ADDRESS
+	AttrUsername          AttrType = 0x0006 // USERNAME
+	AttrMessageIntegrity  AttrType = 0x0008 // MESSAGE-INTEGRITY
+	AttrErrorCode         AttrType = 0x0009 // ERROR-CODE
+	AttrUnknownAttributes AttrType = 0x000A // UNKNOWN-ATTRIBUTES
+	AttrRealm             AttrType = 0x0014 // REALM
+	AttrNonce             AttrType = 0x0015 // NONCE
+	AttrXORMappedAddress  AttrType = 0x0020 // XOR-MAPPED-ADDRESS
+)
+
+// Attributes from comprehension-optional range (0x8000-0xFFFF).
+const (
+	AttrSoftware        AttrType = 0x8022 // SOFTWARE
+	AttrAlternateServer AttrType = 0x8023 // ALTERNATE-SERVER
+	AttrFingerprint     AttrType = 0x8028 // FINGERPRINT
+)
+
+// Value returns uint16 representation of attribute type.
+func (t AttrType) Value() uint16 {
+	return uint16(t)
+}
+
+func (t AttrType) String() string {
+	switch t {
+	case AttrMappedAddress:
+		return "MAPPED-ADDRESS"
+	case AttrUsername:
+		return "USERNAME"
+	case AttrErrorCode:
+		return "ERROR-CODE"
+	case AttrMessageIntegrity:
+		return "MESSAGE-INTEGRITY"
+	case AttrUnknownAttributes:
+		return "UNKNOWN-ATTRIBUTES"
+	case AttrRealm:
+		return "REALM"
+	case AttrNonce:
+		return "NONCE"
+	case AttrXORMappedAddress:
+		return "XOR-MAPPED-ADDRESS"
+	case AttrSoftware:
+		return "SOFTWARE"
+	case AttrAlternateServer:
+		return "ALTERNATE-SERVER"
+	case AttrFingerprint:
+		return "FINGERPRINT"
+	default:
+		// just return hex representation of unknown attribute type
+		return "0x" + strconv.FormatUint(uint64(t), 16)
+	}
+}
+
+// Attribute is a Type-Length-Value (TLV) object that
+// can be added to a STUN message.  Attributes are divided into two
+// types: comprehension-required and comprehension-optional.  STUN
+// agents can safely ignore comprehension-optional attributes they
+// don't understand, but cannot successfully process a message if it
+// contains comprehension-required attributes that are not
+// understood.
+type Attribute struct {
+	Type   AttrType
+	Length uint16
+	Value  []byte
+}
+
+// Equal returns true if a == b.
+func (a Attribute) Equal(b Attribute) bool {
+	if a.Type != b.Type {
+		return false
+	}
+	if a.Length != b.Length {
+		return false
+	}
+	if len(b.Value) != len(a.Value) {
+		return false
+	}
+	for i, v := range a.Value {
+		if b.Value[i] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func (a Attribute) String() string {
+	return fmt.Sprintf("%s: %x", a.Type, a.Value)
+}
 
 func (m *Message) getAttrValue(t AttrType) []byte {
 	return m.Attributes.Get(t).Value
