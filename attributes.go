@@ -126,8 +126,14 @@ func (a Attribute) String() string {
 	return fmt.Sprintf("%s: %x", a.Type, a.Value)
 }
 
-func (m *Message) getAttrValue(t AttrType) []byte {
-	return m.Attributes.Get(t).Value
+// getAttrValue returns byte slice that represents attribute value,
+// and if there is no value found, error returned.
+func (m *Message) getAttrValue(t AttrType) ([]byte, error) {
+	v := m.Attributes.Get(t).Value
+	if len(v) == 0 {
+		return nil, errors.Wrap(ErrAttributeNotFound, "failed to find")
+	}
+	return v, nil
 }
 
 // AddSoftwareBytes adds SOFTWARE attribute with value from byte slice.
@@ -198,9 +204,9 @@ func (m *Message) GetXORMappedAddress() (net.IP, int, error) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
 	// then the converting the result to network byte order.
-	v := m.getAttrValue(AttrXORMappedAddress)
+	v, err := m.getAttrValue(AttrXORMappedAddress)
 	if len(v) == 0 {
-		return nil, 0, errors.Wrap(ErrAttributeNotFound, "not found")
+		return nil, 0, errors.Wrap(err, "address not found")
 	}
 	family := byte(binary.BigEndian.Uint16(v[0:2]))
 	if family != FamilyIPv6 && family != FamilyIPv4 {
@@ -255,9 +261,9 @@ func (m *Message) AddErrorCodeDefault(code int) {
 
 // GetErrorCode returns ERROR-CODE code, reason and decode error if any.
 func (m *Message) GetErrorCode() (int, []byte, error) {
-	v := m.getAttrValue(AttrErrorCode)
-	if len(v) == 0 {
-		return 0, nil, errors.Wrap(ErrAttributeNotFound, "not found")
+	v, err := m.getAttrValue(AttrErrorCode)
+	if err != nil {
+		return 0, nil, errors.Wrap(err, "error not found")
 	}
 	var (
 		class  = uint16(v[errorCodeClassByte])
