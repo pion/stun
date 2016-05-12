@@ -37,7 +37,6 @@ type Server struct {
 	Addr         string
 	Logger       Logger
 	Name         string
-	Concurrency  int
 	LogAllErrors bool
 }
 
@@ -50,10 +49,6 @@ type Logger interface {
 var (
 	defaultLogger = logrus.New()
 )
-
-// DefaultConcurrency is the maximum number of concurrent connections
-// the Server may serve by default (i.e. if Server.Concurrency isn't set).
-const DefaultConcurrency = 256 * 1024
 
 const defaultName = "cydev/stun"
 
@@ -116,14 +111,6 @@ func (s *Server) serveConn(c net.PacketConn) error {
 	ReleaseMessage(m)
 	ReleaseMessage(res)
 	return err
-}
-
-func (s *Server) getConcurrency() int {
-	n := s.Concurrency
-	if n <= 0 {
-		n = DefaultConcurrency
-	}
-	return n
 }
 
 // Serve reads packets from connections and responds to BINDING requests.
