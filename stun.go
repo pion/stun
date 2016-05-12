@@ -428,8 +428,8 @@ type AttrType uint16
 const (
 	AttrMappedAddress     AttrType = 0x0001 // MAPPED-ADDRESS
 	AttrUsername          AttrType = 0x0006 // USERNAME
-	AttrErrorCode         AttrType = 0x0009 // ERROR-CODE
 	AttrMessageIntegrity  AttrType = 0x0008 // MESSAGE-INTEGRITY
+	AttrErrorCode         AttrType = 0x0009 // ERROR-CODE
 	AttrUnknownAttributes AttrType = 0x000A // UNKNOWN-ATTRIBUTES
 	AttrRealm             AttrType = 0x0014 // REALM
 	AttrNonce             AttrType = 0x0015 // NONCE
