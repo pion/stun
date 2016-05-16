@@ -9,6 +9,7 @@ func TestErrorCode_Reason(t *testing.T) {
 		CodeUnauthorised,
 		CodeUnknownAttribute,
 		CodeStaleNonce,
+		CodeRoleConflict,
 		CodeServerError,
 	}
 	for _, code := range codes {

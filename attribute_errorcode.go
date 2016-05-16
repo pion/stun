@@ -10,6 +10,7 @@ const (
 	CodeUnauthorised     ErrorCode = 401
 	CodeUnknownAttribute ErrorCode = 420
 	CodeStaleNonce       ErrorCode = 428
+	CodeRoleConflict     ErrorCode = 478
 	CodeServerError      ErrorCode = 500
 )
 
@@ -28,6 +29,8 @@ func (c ErrorCode) Reason() string {
 		return "Stale Nonce"
 	case CodeServerError:
 		return "Server Error"
+	case CodeRoleConflict:
+		return "Role conflict"
 	default:
 		return "Unknown Error"
 	}

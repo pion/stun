@@ -432,13 +432,31 @@ type Method uint16
 
 // Possible methods for STUN Message.
 const (
-	MethodBinding Method = 0x01 // 0b000000000001
+	MethodBinding          Method = 0x001
+	MethodAllocate         Method = 0x003
+	MethodRefresh          Method = 0x004
+	MethodSend             Method = 0x006
+	MethodData             Method = 0x007
+	MethodCreatePermission Method = 0x008
+	MethodChannelBind      Method = 0x009
 )
 
 func (m Method) String() string {
 	switch m {
 	case MethodBinding:
 		return "binding"
+	case MethodAllocate:
+		return "allocate"
+	case MethodRefresh:
+		return "refresh"
+	case MethodSend:
+		return "send"
+	case MethodData:
+		return "data"
+	case MethodCreatePermission:
+		return "create permission"
+	case MethodChannelBind:
+		return "channel bind"
 	default:
 		return fmt.Sprintf("0x%s", strconv.FormatUint(uint64(m), 16))
 	}

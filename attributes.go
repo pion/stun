@@ -55,6 +55,27 @@ const (
 	AttrFingerprint     AttrType = 0x8028 // FINGERPRINT
 )
 
+// Attributes from RFC 5245 ICE.
+const (
+	AttrPriority       AttrType = 0x0024 // PRIORITY
+	AttrUseCandidate   AttrType = 0x0025 // USE-CANDIDATE
+	AttrICEControlled  AttrType = 0x8029 // ICE-CONTROLLED
+	AttrICEControlling AttrType = 0x802A // ICE-CONTROLLING
+)
+
+// Attributes from RFC 5766 TURN.
+const (
+	AttrChannelNumber      AttrType = 0x000C // CHANNEL-NUMBER
+	AttrLifetime           AttrType = 0x000D // LIFETIME
+	AttrXORPeerAddress     AttrType = 0x0012 // XOR-PEER-ADDRESS
+	AttrData               AttrType = 0x0013 // DATA
+	AttrXORRelayedAddress  AttrType = 0x0016 // XOR-RELAYED-ADDRESS
+	AttrEvenPort           AttrType = 0x0018 // EVEN-PORT
+	AttrRequestedTransport AttrType = 0x0019 // REQUESTED-TRANSPORT
+	AttrDontFragment       AttrType = 0x001A // DONT-FRAGMENT
+	AttrReservationToken   AttrType = 0x0022 // RESERVATION-TOKEN
+)
+
 // Value returns uint16 representation of attribute type.
 func (t AttrType) Value() uint16 {
 	return uint16(t)
@@ -84,6 +105,32 @@ func (t AttrType) String() string {
 		return "ALTERNATE-SERVER"
 	case AttrFingerprint:
 		return "FINGERPRINT"
+	case AttrPriority:
+		return "PRIORITY"
+	case AttrUseCandidate:
+		return "USE-CANDIDATE"
+	case AttrICEControlled:
+		return "ICE-CONTROLLED"
+	case AttrICEControlling:
+		return "ICE-CONTROLLING"
+	case AttrChannelNumber:
+		return "CHANNEL-NUMBER"
+	case AttrLifetime:
+		return "LIFETIME"
+	case AttrXORPeerAddress:
+		return "XOR-PEER-ADDRESS"
+	case AttrData:
+		return "DATA"
+	case AttrXORRelayedAddress:
+		return "XOR-RELAYED-ADDRESS"
+	case AttrEvenPort:
+		return "EVEN-PORT"
+	case AttrRequestedTransport:
+		return "REQUESTED-TRANSPORT"
+	case AttrDontFragment:
+		return "DONT-FRAGMENT"
+	case AttrReservationToken:
+		return "RESERVATION-TOKEN"
 	default:
 		// just return hex representation of unknown attribute type
 		return "0x" + strconv.FormatUint(uint64(t), 16)
