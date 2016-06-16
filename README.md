@@ -15,9 +15,6 @@ definetly break. TURN and ICE implementations are planned too.
 Needs go 1.7 or better.
 
 # Continious integration
-
-CI is temporary disabled until concourse stabilizes.
-
 This project uses [concourse](https://concourse.ci/) continious integration.
 
 
