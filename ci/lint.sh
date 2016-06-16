@@ -4,10 +4,10 @@ set -e -u -x
 
 export GOPATH=$PWD
 export PATH=$GOPATH/bin:$PATH
-mkdir -p src/github.com/cydev
-cp -R dev src/github.com/cydev/stun
+mkdir -p src/github.com/ernado
+cp -R dev src/github.com/ernado/stun
 
-pushd ${GOPATH}/src/github.com/cydev/stun
+pushd ${GOPATH}/src/github.com/ernado/stun
     go get -v -t .
     make lint
 popd
