@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
-	"github.com/cydev/stun"
+	"github.com/ernado/stun"
 	"github.com/pkg/errors"
 )
 
@@ -18,7 +18,7 @@ func wrapWithLogger(f func(c *cli.Context) error) func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		err := f(c)
 		if err != nil {
-			errors.Fprint(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, err)
 		}
 		return err
 	}

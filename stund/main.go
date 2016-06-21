@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/cydev/stun"
+	"github.com/ernado/stun"
 )
 
 var (
