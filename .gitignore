@@ -5,3 +5,4 @@ mem.out
 benchmark.*.write
 *.test
 bench.go-*
+PACKAGES

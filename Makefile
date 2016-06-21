@@ -1,3 +1,5 @@
+VERSION := $(shell git describe --tags | sed -e 's/^v//g' | awk -F "-" '{print $$1}')
+ITERATION := $(shell git describe --tags --long | awk -F "-" '{print $$2}')
 GO_VERSION=$(shell gobuild -v)
 GO := $(or $(GOROOT),/usr/lib/go)/bin/go
 PROCS := $(shell nproc)
@@ -50,3 +52,21 @@ install:
 	go get -u github.com/dvyukov/go-fuzz/go-fuzz
 push:
 	git push origin dev
+
+release:
+	@read -p "Enter new release version: " version; \
+	./extras/scripts/release.sh $$version
+
+prepare:
+	go get github.com/mitchellh/gox
+	go get github.com/tools/godep
+	godep restore
+
+bindata:
+	go-bindata-assetfs -prefix="extras" extras/web/...
+	mv bindata_assetfs.go bindata.go
+	gofmt -w bindata.go
+	godep save -r ./...
+
+package:
+	./extras/scripts/package.sh $(VERSION) $(ITERATION)
