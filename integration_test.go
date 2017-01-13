@@ -3,6 +3,8 @@ package stun
 import (
 	"net"
 	"testing"
+
+	"github.com/Sirupsen/logrus"
 )
 
 func newServer(t *testing.T) (*net.UDPAddr, func()) {
@@ -19,6 +21,9 @@ func newServer(t *testing.T) (*net.UDPAddr, func()) {
 		t.Error("not UDP addr")
 	}
 	s := &Server{}
+	logger := logrus.New()
+	logger.Level = logrus.ErrorLevel
+	s.Logger = logger
 	go s.Serve(con)
 	return addr, func() {
 		if err := con.Close(); err != nil {
