@@ -31,7 +31,7 @@ func fastXORBytes(dst, a, b []byte) int {
 		}
 	}
 
-	for i := (n - n%wordSize); i < n; i++ {
+	for i := n - n%wordSize; i < n; i++ {
 		dst[i] = a[i] ^ b[i]
 	}
 
