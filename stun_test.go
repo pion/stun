@@ -469,3 +469,51 @@ func TestMessage_String(t *testing.T) {
 		t.Error("bad string")
 	}
 }
+
+func TestIsMessage(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	m.AddSoftware("test")
+	m.WriteHeader()
+
+	mBlank := AcquireMessage()
+	defer ReleaseMessage(mBlank)
+	mBlank.WriteHeader()
+	var tt = [...]struct {
+		in  []byte
+		out bool
+	}{
+		{nil, false},                                // 0
+		{[]byte{1, 2, 3}, false},                    // 1
+		{[]byte{1, 2, 4}, false},                    // 2
+		{[]byte{1, 2, 4, 5, 6, 7, 8, 9, 20}, false}, // 3
+		{mBlank.buf.B, true},                        // 4
+		{m.buf.B, true},                             // 5
+		{[]byte{0, 0, 0, 0, 33, 18,
+			164, 66, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0}, true}, // 6
+	}
+	for i, v := range tt {
+		if got := IsMessage(v.in); got != v.out {
+			t.Errorf("tt[%d]: IsMessage(%+v) %v != %v", i, v.in, got, v.out)
+		}
+	}
+}
+
+func BenchmarkIsMessage(b *testing.B) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.AddSoftware("cydev/stun test")
+	m.WriteHeader()
+
+	b.SetBytes(int64(messageHeaderSize))
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		if !IsMessage(m.buf.B) {
+			b.Fatal("Should be message")
+		}
+	}
+}

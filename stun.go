@@ -156,6 +156,12 @@ const (
 )
 
 // AcquireMessage returns new message from pool.
+//
+// New *Message will be allocated if no is in the pool.
+// Call ReleaseMessage after usage.
+//
+// 	m := AcquireMessage()
+//  defer ReleaseMessage(m)
 func AcquireMessage() *Message {
 	m := messagePool.Get().(*Message)
 	m.grow(messageHeaderSize)
@@ -170,7 +176,8 @@ func ReleaseMessage(m *Message) {
 	messagePool.Put(m)
 }
 
-// Reset resets Message length, attributes and underlying buffer.
+// Reset resets Message length, attributes and underlying buffer, as well as
+// setting readOnly flag to false.
 func (m *Message) Reset() {
 	m.buf.Reset()
 	m.Length = 0
@@ -179,17 +186,17 @@ func (m *Message) Reset() {
 }
 
 // mustWrite panics if message is read-only.
-func (m *Message) mustWrite() {
+func (m Message) mustWrite() {
 	if m.readOnly {
 		unexpected(ErrMessageIsReadOnly)
 	}
 }
 
 // grow ensures that internal buffer will fit v more bytes and
-// increases it length.
+// increases it length if necessery.
 func (m *Message) grow(v int) {
-	// growing buffer if attribute value+header won't fit
-	// not performing any optimizations here
+	// growing buffer if attribute value+header won't fit.
+	// Not performing any optimizations here
 	// because initial capacity and maximum theoretical size of buffer
 	// are not far from each other.
 	m.buf.Grow(v)
@@ -315,6 +322,16 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 
 func newAttrDecodeErr(children, message string) DecodeErr {
 	return newDecodeErr("attribute", children, message)
+}
+
+// IsMessage returns true if b looks like STUN message.
+// Useful for multiplexing. IsMessage does not guarantee
+// that decoding will be successful.
+func IsMessage(b []byte) bool {
+	// b should be at least messageHeaderSize bytes and
+	// contain correct magicCookie.
+	return len(b) >= messageHeaderSize &&
+		binary.BigEndian.Uint32(b[4:8]) == magicCookie
 }
 
 // ReadBytes decodes message and return error if any.
