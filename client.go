@@ -1,9 +1,10 @@
 package stun
 
 import (
-	"github.com/pkg/errors"
 	"net"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // SameTransaction returns true of a and b have same Transaction ID.
