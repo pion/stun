@@ -23,9 +23,12 @@ lint:
 	@echo "linting on $(PROCS) cores"
 	@gometalinter -e "AttrType.+gocyclo" \
 		-e "_test.go.+(gocyclo|errcheck|dupl)" \
+		-e "attributes\.go.+credentials,.+,LOW.+\(gas\)" \
 		--enable="lll" --line-length=80 \
 		--enable="gofmt" \
-		--disable=gotype \
+		--enable="goimports" \
+		--enable="misspell" \
+		--enable="unused" \
 		--deadline=300s \
 		-j $(PROCS)
 	@echo "ok"

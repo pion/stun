@@ -9,12 +9,15 @@ import (
 	"unsafe"
 )
 
+// #nosec
 const wordSize = int(unsafe.Sizeof(uintptr(0)))
 
 var supportsUnaligned = runtime.GOARCH == "386" || runtime.GOARCH == "amd64"
 
 // fastXORBytes xors in bulk. It only works on architectures that
 // support unaligned read/writes.
+//
+// #nosec
 func fastXORBytes(dst, a, b []byte) int {
 	n := len(a)
 	if len(b) < n {
@@ -31,7 +34,7 @@ func fastXORBytes(dst, a, b []byte) int {
 		}
 	}
 
-	for i := n - n%wordSize; i < n; i++ {
+	for i := (n - n%wordSize); i < n; i++ {
 		dst[i] = a[i] ^ b[i]
 	}
 
