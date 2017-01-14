@@ -130,6 +130,11 @@ type Attribute struct {
 	Value  []byte
 }
 
+// IsBlank returns true if attribute equals to BlankAttribute.
+func (a Attribute) IsBlank() bool {
+	return a.Equal(BlankAttribute)
+}
+
 // Equal returns true if a == b.
 func (a Attribute) Equal(b Attribute) bool {
 	if a.Type != b.Type {
