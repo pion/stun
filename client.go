@@ -8,6 +8,7 @@ import (
 )
 
 // SameTransaction returns true of a and b have same Transaction ID.
+// DEPRECATED: remove usage.
 func SameTransaction(a *Message, b *Message) bool {
 	return a.TransactionID == b.TransactionID
 }

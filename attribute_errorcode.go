@@ -14,24 +14,21 @@ const (
 	CodeServerError      ErrorCode = 500
 )
 
+var errorReasons = map[ErrorCode]string{
+	CodeTryAlternate:     "Try Alternate",
+	CodeBadRequest:       "Bad Request",
+	CodeUnauthorised:     "Unauthorised",
+	CodeUnknownAttribute: "Unknown Attribute",
+	CodeStaleNonce:       "Stale Nonce",
+	CodeServerError:      "Server Error",
+	CodeRoleConflict:     "Role Conflict",
+}
+
 // Reason returns recommended reason string.
 func (c ErrorCode) Reason() string {
-	switch c {
-	case CodeTryAlternate:
-		return "Try Alternate"
-	case CodeBadRequest:
-		return "Bad Request"
-	case CodeUnauthorised:
-		return "Unauthorised"
-	case CodeUnknownAttribute:
-		return "Unknown attribute"
-	case CodeStaleNonce:
-		return "Stale Nonce"
-	case CodeServerError:
-		return "Server Error"
-	case CodeRoleConflict:
-		return "Role conflict"
-	default:
+	reason, ok := errorReasons[c]
+	if !ok {
 		return "Unknown Error"
 	}
+	return reason
 }
