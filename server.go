@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 )
 
 // Server is RFC 5389 basic server implementation.
@@ -57,6 +58,37 @@ func (s *Server) logger() Logger {
 		return defaultLogger
 	}
 	return s.Logger
+}
+
+const errNotAMessage Error = "Packet is not a message"
+
+func basicProcess(addr net.Addr, b []byte, req, res *Message) error {
+	if !IsMessage(b) {
+		return errNotAMessage
+	}
+	if _, err := req.ReadBytes(b); err != nil {
+		return errors.Wrap(err, "failed to read message")
+	}
+	res.TransactionID = req.TransactionID
+	res.Type = MessageType{
+		Method: MethodBinding,
+		Class:  ClassSuccessResponse,
+	}
+	var (
+		ip   net.IP
+		port int
+	)
+	switch a := addr.(type) {
+	case *net.UDPAddr:
+		ip = a.IP
+		port = a.Port
+	default:
+		panic(fmt.Sprintf("unknown addr: %v", addr))
+	}
+	res.AddXORMappedAddress(ip, port)
+	res.AddSoftware("cydev/stun basic server")
+	res.WriteHeader()
+	return nil
 }
 
 func (s *Server) getName() string {
