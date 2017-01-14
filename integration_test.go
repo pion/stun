@@ -4,7 +4,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func newServer(t *testing.T) (*net.UDPAddr, func()) {
