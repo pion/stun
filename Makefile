@@ -21,7 +21,7 @@ fuzz-typ:
 	go-fuzz -bin=./stun-typ-fuzz.zip -workdir=examples/stun-typ
 lint:
 	@echo "linting on $(PROCS) cores"
-	@gometalinter -e "AttrType.+gocyclo" \
+	@gometalinter \
 		-e "_test.go.+(gocyclo|errcheck|dupl)" \
 		-e "attributes\.go.+credentials,.+,LOW.+\(gas\)" \
 		--enable="lll" --line-length=80 \

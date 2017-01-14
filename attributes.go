@@ -81,60 +81,40 @@ func (t AttrType) Value() uint16 {
 	return uint16(t)
 }
 
+var attrNames = map[AttrType]string{
+	AttrMappedAddress:      "MAPPED-ADDRESS",
+	AttrUsername:           "USERNAME",
+	AttrErrorCode:          "ERROR-CODE",
+	AttrMessageIntegrity:   "MESSAGE-INTEGRITY",
+	AttrUnknownAttributes:  "UNKNOWN-ATTRIBUTES",
+	AttrRealm:              "REALM",
+	AttrNonce:              "NONCE",
+	AttrXORMappedAddress:   "XOR-MAPPED-ADDRESS",
+	AttrSoftware:           "SOFTWARE",
+	AttrAlternateServer:    "ALTERNATE-SERVER",
+	AttrFingerprint:        "FINGERPRINT",
+	AttrPriority:           "PRIORITY",
+	AttrUseCandidate:       "USE-CANDIDATE",
+	AttrICEControlled:      "ICE-CONTROLLED",
+	AttrICEControlling:     "ICE-CONTROLLING",
+	AttrChannelNumber:      "CHANNEL-NUMBER",
+	AttrLifetime:           "LIFETIME",
+	AttrXORPeerAddress:     "XOR-PEER-ADDRESS",
+	AttrData:               "DATA",
+	AttrXORRelayedAddress:  "XOR-RELAYED-ADDRESS",
+	AttrEvenPort:           "EVEN-PORT",
+	AttrRequestedTransport: "REQUESTED-TRANSPORT",
+	AttrDontFragment:       "DONT-FRAGMENT",
+	AttrReservationToken:   "RESERVATION-TOKEN",
+}
+
 func (t AttrType) String() string {
-	switch t {
-	case AttrMappedAddress:
-		return "MAPPED-ADDRESS"
-	case AttrUsername:
-		return "USERNAME"
-	case AttrErrorCode:
-		return "ERROR-CODE"
-	case AttrMessageIntegrity:
-		return "MESSAGE-INTEGRITY"
-	case AttrUnknownAttributes:
-		return "UNKNOWN-ATTRIBUTES"
-	case AttrRealm:
-		return "REALM"
-	case AttrNonce:
-		return "NONCE"
-	case AttrXORMappedAddress:
-		return "XOR-MAPPED-ADDRESS"
-	case AttrSoftware:
-		return "SOFTWARE"
-	case AttrAlternateServer:
-		return "ALTERNATE-SERVER"
-	case AttrFingerprint:
-		return "FINGERPRINT"
-	case AttrPriority:
-		return "PRIORITY"
-	case AttrUseCandidate:
-		return "USE-CANDIDATE"
-	case AttrICEControlled:
-		return "ICE-CONTROLLED"
-	case AttrICEControlling:
-		return "ICE-CONTROLLING"
-	case AttrChannelNumber:
-		return "CHANNEL-NUMBER"
-	case AttrLifetime:
-		return "LIFETIME"
-	case AttrXORPeerAddress:
-		return "XOR-PEER-ADDRESS"
-	case AttrData:
-		return "DATA"
-	case AttrXORRelayedAddress:
-		return "XOR-RELAYED-ADDRESS"
-	case AttrEvenPort:
-		return "EVEN-PORT"
-	case AttrRequestedTransport:
-		return "REQUESTED-TRANSPORT"
-	case AttrDontFragment:
-		return "DONT-FRAGMENT"
-	case AttrReservationToken:
-		return "RESERVATION-TOKEN"
-	default:
+	s, ok := attrNames[t]
+	if !ok {
 		// just return hex representation of unknown attribute type
 		return "0x" + strconv.FormatUint(uint64(t), 16)
 	}
+	return s
 }
 
 // Attribute is a Type-Length-Value (TLV) object that
