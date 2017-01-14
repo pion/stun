@@ -19,11 +19,9 @@ const (
 	DefaultInitialTimeout = 1 * time.Millisecond
 )
 
-var (
-	// DefaultClient is Client with defaults that are close
-	// to RFC recommendations.
-	DefaultClient = Client{}
-)
+// DefaultClient is Client with defaults that are close
+// to RFC recommendations.
+var DefaultClient = Client{}
 
 // Client implements STUN client.
 type Client struct {

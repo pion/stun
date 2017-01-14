@@ -16,11 +16,9 @@ const blank = ""
 // Attributes is list of message attributes.
 type Attributes []Attribute
 
-var (
-	// BlankAttribute is attribute that is returned by
-	// Attributes.Get if nothing found.
-	BlankAttribute = Attribute{}
-)
+// BlankAttribute is attribute that is returned by
+// Attributes.Get if nothing found.
+var BlankAttribute = Attribute{}
 
 // Get returns first attribute from list which match AttrType. If nothing
 // found, it returns blank attribute.

@@ -412,11 +412,9 @@ const (
 	messageHeaderSize   = 20
 )
 
-const (
-	// MaxPacketSize is maximum size of UDP packet that is processable in
-	// this package for STUN message.
-	MaxPacketSize = 2048
-)
+// MaxPacketSize is maximum size of UDP packet that is processable in
+// this package for STUN message.
+const MaxPacketSize = 2048
 
 // MessageClass is 8-bit representation of 2-bit class of STUN Message Class.
 type MessageClass byte
