@@ -35,6 +35,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	// bin is shorthand to binary.BigEndian.
+	bin = binary.BigEndian
+)
+
 // Normalize returns normalized address.
 func Normalize(address string) string {
 	if len(address) == 0 {
@@ -87,9 +92,15 @@ type Message struct {
 	buf *buffer.Buffer
 }
 
-// Clone returns new copy of m.
+// Clone allocates and returns new copy of m.
 func (m Message) Clone() *Message {
 	c := AcquireMessage()
+	m.CopyTo(c)
+	return c
+}
+
+// CopyTo copies all m to c.
+func (m Message) CopyTo(c *Message) {
 	c.Type = m.Type
 	c.Length = m.Length
 	copy(c.TransactionID[:], m.TransactionID[:])
@@ -106,7 +117,6 @@ func (m Message) Clone() *Message {
 		})
 		buf = buf[int(a.Length):]
 	}
-	return c
 }
 
 func (m Message) String() string {
@@ -193,49 +203,49 @@ func (m Message) mustWrite() {
 }
 
 // grow ensures that internal buffer will fit v more bytes and
-// increases it length if necessery.
+// increases it capacity if necessary.
 func (m *Message) grow(v int) {
-	// growing buffer if attribute value+header won't fit.
 	// Not performing any optimizations here
-	// because initial capacity and maximum theoretical size of buffer
-	// are not far from each other.
+	// (e.g. preallocate len(buf) * 2 to reduce allocations)
+	// because they are already done by []byte implementation.
 	m.buf.Grow(v)
 }
 
 // Add appends new attribute to message. Not goroutine-safe.
 //
-// Value of attribute is copied to internal buffer so there are no
-// constraints on validity.
+// Value of attribute is copied to internal buffer so
+// it is safe to reuse v.
 func (m *Message) Add(t AttrType, v []byte) {
 	m.mustWrite()
-	// allocating space for buffer
+	// allocating memory for TLV (type-length-value), where
+	// type-length is attribute header.
 	// m.buf.B[0:20] is reserved by header
-	attrLength := uint32(len(v))
-
-	// [0:20]                               <- header
-	// [20:20+m.Length]                     <- attributes
-	// [20+m.Length:20+m.Length+len(v) + 4] <- allocated
-
-	allocSize := attributeHeaderSize + len(v)  // total attr size
-	first := messageHeaderSize + int(m.Length) // first byte
-	last := first + allocSize                  // last byte
-	m.grow(last)
-	m.buf.B = m.buf.B[:last]      // now len(b) = last
-	m.Length += uint32(allocSize) // rendering changes
-
-	// encoding attribute TLV to internal buffer
-	buf := m.buf.B[first:last]
-	binary.BigEndian.PutUint16(buf[0:2], t.Value())
-	binary.BigEndian.PutUint16(buf[2:4], uint16(attrLength))
-	copy(buf[attributeHeaderSize:], v)
-
-	// appending attribute
-	// note that we are reusing buf (actually a slice of m.buf.B) there
-	m.Attributes = append(m.Attributes, Attribute{
+	// internal buffer will look like:
+	// [0:20]                               <- message header
+	// [20:20+m.Length]                     <- added message attributes
+	// [20+m.Length:20+m.Length+len(v) + 4] <- allocated slice for new TLV
+	// [first:last]                         <- same as previous
+	// [0 1|2 3|4    4 + len(v)]
+	//   T   L        V
+	allocSize := attributeHeaderSize + len(v)  // len(TLV)
+	first := messageHeaderSize + int(m.Length) // first byte number
+	last := first + allocSize                  // last byte number
+	m.grow(last)                               // growing cap(b) to fit TLV
+	m.buf.B = m.buf.B[:last]                   // now len(b) = last
+	m.Length += uint32(allocSize)              // rendering length change
+	// subslicing internal buffer to simplify encoding
+	buf := m.buf.B[first:last]         // slice for TLV
+	value := buf[attributeHeaderSize:] // slice for value
+	attr := Attribute{
 		Type:   t,
-		Value:  buf[attributeHeaderSize:],
-		Length: uint16(attrLength),
-	})
+		Value:  value,
+		Length: uint16(len(v)),
+	}
+	// encoding attribute TLV to internal buffer
+	bin.PutUint16(buf[0:2], attr.Type.Value()) // type
+	bin.PutUint16(buf[2:4], attr.Length)       // length
+	copy(value, v)                             // value
+	m.Attributes = append(m.Attributes, attr)
 }
 
 // Equal returns true if Message b equals to m.
@@ -384,8 +394,8 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		a := Attribute{}
 
 		// decoding header
-		t := binary.BigEndian.Uint16(b[0:2])       // first 2 bytes
-		a.Length = binary.BigEndian.Uint16(b[2:4]) // second 2 bytes
+		t := bin.Uint16(b[0:2])       // first 2 bytes
+		a.Length = bin.Uint16(b[2:4]) // second 2 bytes
 		a.Type = AttrType(t)
 		aL := int(a.Length)
 
