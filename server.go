@@ -37,7 +37,6 @@ import (
 type Server struct {
 	Addr         string
 	Logger       Logger
-	Name         string
 	LogAllErrors bool
 }
 
@@ -86,62 +85,40 @@ func basicProcess(addr net.Addr, b []byte, req, res *Message) error {
 		panic(fmt.Sprintf("unknown addr: %v", addr))
 	}
 	res.AddXORMappedAddress(ip, port)
-	res.AddSoftware("cydev/stun basic server")
+	res.AddSoftware(defaultName)
 	res.WriteHeader()
 	return nil
-}
-
-func (s *Server) getName() string {
-	if len(s.Name) == 0 {
-		return defaultName
-	}
-	return s.Name
 }
 
 func (s *Server) serveConn(c net.PacketConn) error {
 	if c == nil {
 		return nil
 	}
-	m := AcquireMessage()
+	var (
+		res = AcquireMessage()
+		req = AcquireMessage()
+	)
+	defer ReleaseMessage(res)
+	defer ReleaseMessage(req)
+
 	buf := make([]byte, 2048)
 	n, addr, err := c.ReadFrom(buf)
 	if err != nil {
 		s.logger().Printf("ReadFrom: %v", err)
 		return err
 	}
-	if _, err = m.ReadBytes(buf[:n]); err != nil {
+	if _, err = req.ReadBytes(buf[:n]); err != nil {
 		s.logger().Printf("ReadFrom: %v", err)
-		// TODO: return error
+		return err
 	}
-	// TODO: check request MessageType
-	t := MessageType{
-		Method: MethodBinding,
-		Class:  ClassSuccessResponse,
+	if err = basicProcess(addr, buf[:n], req, res); err != nil {
+		s.logger().Printf("basicProcess: %v", err)
+		return err
 	}
-	res := AcquireFields(Message{
-		TransactionID: m.TransactionID,
-		Type:          t,
-	})
-	var (
-		ip   net.IP
-		port int
-	)
-	switch a := addr.(type) {
-	case *net.UDPAddr:
-		ip = a.IP
-		port = a.Port
-	default:
-		panic(fmt.Sprintf("unknown addr: %v", addr))
-	}
-	res.AddXORMappedAddress(ip, port)
-	res.AddSoftware(s.getName())
-	res.WriteHeader()
 	_, err = c.WriteTo(res.buf.B, addr)
 	if err != nil {
 		s.logger().Printf("WriteTo: %v", err)
 	}
-	ReleaseMessage(m)
-	ReleaseMessage(res)
 	return err
 }
 

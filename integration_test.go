@@ -49,13 +49,13 @@ func TestClientServer(t *testing.T) {
 			Class:  ClassRequest,
 		},
 	})
-	m.AddSoftware("cydev/stun alpha")
+	m.AddSoftware("cydev/stun client")
 	m.WriteHeader()
 	r := newTestRequest(serverAddr, m)
 	defer ReleaseMessage(m)
 	if err := DefaultClient.Do(r, func(res Response) error {
 		if res.Message.GetSoftware() != "cydev/stun" {
-			t.Error("bad software attribute")
+			t.Errorf("bad software attribute: %s", res.Message.GetSoftware())
 		}
 		ip, _, err := res.Message.GetXORMappedAddress()
 		if err != nil {
