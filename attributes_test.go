@@ -183,6 +183,36 @@ func TestMessage_AddXORMappedAddress(t *testing.T) {
 	}
 }
 
+func TestMessage_AddXORMappedAddressV6(t *testing.T) {
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		t.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	expectedIP := net.ParseIP("fe80::dc2b:44ff:fe20:6009")
+	expectedPort := 21254
+	m.AddXORMappedAddress(expectedIP, expectedPort)
+	m.WriteHeader()
+
+	mRes := AcquireMessage()
+	defer ReleaseMessage(mRes)
+	if _, err = mRes.ReadFrom(m.reader()); err != nil {
+		t.Fatal(err)
+	}
+	ip, port, err := m.GetXORMappedAddress()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ip.Equal(expectedIP) {
+		t.Error("bad ip", ip, "!=", expectedIP)
+	}
+	if port != expectedPort {
+		t.Error("bad port", port, "!=", expectedPort)
+	}
+}
+
 func BenchmarkMessage_AddErrorCode(b *testing.B) {
 	m := AcquireMessage()
 	defer ReleaseMessage(m)

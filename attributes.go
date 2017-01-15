@@ -203,20 +203,20 @@ func (m *Message) AddXORMappedAddress(ip net.IP, port int) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
 	// then the converting the result to network byte order.
+	family := FamilyIPv6
+	if ipV4 := ip.To4(); ipV4 != nil {
+		ip = ipV4
+		family = FamilyIPv4
+	}
 	value := make([]byte, 32+128)
 	value[0] = 0 // first 8 bits are zeroes
-	family := FamilyIPv4
-	if len(ip) == net.IPv6len {
-		family = FamilyIPv6
-	}
-	binary.BigEndian.PutUint16(value[0:2], uint16(family))
-	port ^= magicCookie >> 16
-	binary.BigEndian.PutUint16(value[2:4], uint16(port))
-	xorValue := make([]byte, 128)
-	binary.BigEndian.PutUint32(xorValue[0:4], magicCookie)
+	xorValue := make([]byte, net.IPv6len)
 	copy(xorValue[4:], m.TransactionID[:])
+	binary.BigEndian.PutUint32(xorValue[0:4], magicCookie)
+	port ^= magicCookie >> 16
+	binary.BigEndian.PutUint16(value[0:2], uint16(family))
+	binary.BigEndian.PutUint16(value[2:4], uint16(port))
 	xorBytes(value[4:4+len(ip)], ip, xorValue)
-
 	m.Add(AttrXORMappedAddress, value[:4+len(ip)])
 }
 
