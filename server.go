@@ -105,15 +105,17 @@ func (s *Server) serveConn(c net.PacketConn) error {
 	n, addr, err := c.ReadFrom(buf)
 	if err != nil {
 		s.logger().Printf("ReadFrom: %v", err)
-		return err
+		return nil
 	}
+	s.logger().Printf("read %d bytes from %s", n, addr)
 	if _, err = req.ReadBytes(buf[:n]); err != nil {
-		s.logger().Printf("ReadFrom: %v", err)
-		return err
+		s.logger().Printf("ReadBytes: %v", err)
+		unexpected(err)
+		return nil
 	}
 	if err = basicProcess(addr, buf[:n], req, res); err != nil {
 		s.logger().Printf("basicProcess: %v", err)
-		return err
+		return nil
 	}
 	_, err = c.WriteTo(res.buf.B, addr)
 	if err != nil {
