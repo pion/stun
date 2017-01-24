@@ -1,21 +1,19 @@
 package stun
 
 import (
-	"fmt"
-	"strconv"
-	"testing"
-
-	"encoding/binary"
-	"io"
-	"strings"
-
 	"bytes"
+	"encoding/binary"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
-	"path/filepath"
-	"os"
-	"io/ioutil"
 )
 
 func bUint16(v uint16) string {
