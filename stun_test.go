@@ -13,6 +13,9 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"path/filepath"
+	"os"
+	"io/ioutil"
 )
 
 func bUint16(v uint16) string {
@@ -515,5 +518,33 @@ func BenchmarkIsMessage(b *testing.B) {
 		if !IsMessage(m.buf.B) {
 			b.Fatal("Should be message")
 		}
+	}
+}
+
+func loadData(tb testing.TB, name string) []byte {
+	name = filepath.Join("testdata", name)
+	f, err := os.Open(name)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	defer func() {
+		if errClose := f.Close(); errClose != nil {
+			tb.Fatal(errClose)
+		}
+	}()
+	v, err := ioutil.ReadAll(f)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return v
+}
+
+func TestExampleChrome(t *testing.T) {
+	buf := loadData(t, "ex1_chrome.stun")
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
+	_, err := m.ReadBytes(buf)
+	if err != nil {
+		t.Errorf("Failed to parse ex1_chrome: %s", err)
 	}
 }

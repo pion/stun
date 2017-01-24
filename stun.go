@@ -348,6 +348,7 @@ func IsMessage(b []byte) bool {
 //
 // Any error is unrecoverable, but message could be partially decoded.
 func (m *Message) ReadBytes(tBuf []byte) (int, error) {
+	// TODO(ar): handle padding
 	var (
 		read int
 		err  error
@@ -384,6 +385,17 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		b := buf[offset:]
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
+			// HACK: hotfix for chrome padding
+			allZero := true
+			for _, c := range b {
+				if c != 0 {
+					allZero = false
+				}
+			}
+			if allZero {
+				break
+			}
+
 			msg := fmt.Sprintf(
 				"buffer length %d is less than %d (expected header size)",
 				len(b), attributeHeaderSize,
