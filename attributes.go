@@ -74,6 +74,11 @@ const (
 	AttrReservationToken   AttrType = 0x0022 // RESERVATION-TOKEN
 )
 
+// Attributes from An Origin Attribute for the STUN Protocol.
+const (
+	AttrOrigin AttrType = 0x802F
+)
+
 // Value returns uint16 representation of attribute type.
 func (t AttrType) Value() uint16 {
 	return uint16(t)
@@ -104,6 +109,7 @@ var attrNames = map[AttrType]string{
 	AttrRequestedTransport: "REQUESTED-TRANSPORT",
 	AttrDontFragment:       "DONT-FRAGMENT",
 	AttrReservationToken:   "RESERVATION-TOKEN",
+	AttrOrigin:             "ORIGIN",
 }
 
 func (t AttrType) String() string {
