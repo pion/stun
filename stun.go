@@ -31,7 +31,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cydev/buffer"
+	"github.com/ernado/buffer"
 	"github.com/pkg/errors"
 )
 
@@ -251,10 +251,12 @@ func (m *Message) Add(t AttrType, v []byte) {
 		last += bytesToAdd
 		m.grow(last)
 		// setting all padding bytes to zero
-		//buf = m.buf.B[len:last]
-		//for i := range buf {
-		//	buf[i] = 0
-		//}
+		// to prevent data leak from previous
+		// data in next bytesToAdd bytes
+		buf = m.buf.B[last-bytesToAdd : last]
+		for i := range buf {
+			buf[i] = 0
+		}
 		m.buf.B = m.buf.B[:last]       // increasing buffer length
 		m.Length += uint32(bytesToAdd) // rendering length change
 	}
