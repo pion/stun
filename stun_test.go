@@ -171,11 +171,12 @@ func TestMessage_BadLength(t *testing.T) {
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 		Attributes:    []Attribute{messageAttribute},
 	})
-	b := new(bytes.Buffer)
-	m.WriteTo(b)
-	b.Truncate(20 + 3)
+	buf := make([]byte, 0, 100)
+	m.WriteHeader()
+	buf = m.Append(buf)
+	buf[20+3] = 10 // set attr length = 10
 	mDecoded := AcquireMessage()
-	if _, err := mDecoded.ReadFrom(b); err == nil {
+	if _, err := mDecoded.ReadBytes(buf); err == nil {
 		t.Error("should error")
 	}
 }
@@ -544,5 +545,30 @@ func TestExampleChrome(t *testing.T) {
 	_, err := m.ReadBytes(buf)
 	if err != nil {
 		t.Errorf("Failed to parse ex1_chrome: %s", err)
+	}
+}
+
+func TestNearestLen(t *testing.T) {
+	tt := []struct {
+		in, out int
+	}{
+		{4, 4},   // 0
+		{2, 4},   // 1
+		{5, 8},   // 2
+		{8, 8},   // 3
+		{11, 12}, // 4
+		{1, 4},   // 5
+		{3, 4},   // 6
+		{6, 8},   // 7
+		{7, 8},   // 8
+		{0, 0},   // 9
+		{40, 40}, // 10
+	}
+	for i, c := range tt {
+		if got := nearestLength(c.in); got != c.out {
+			t.Errorf("[%d]: padd(%d) %d (got) != %d (expected)",
+				i, c.in, got, c.out,
+			)
+		}
 	}
 }

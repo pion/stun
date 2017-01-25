@@ -245,7 +245,32 @@ func (m *Message) Add(t AttrType, v []byte) {
 	bin.PutUint16(buf[0:2], attr.Type.Value()) // type
 	bin.PutUint16(buf[2:4], attr.Length)       // length
 	copy(value, v)                             // value
+	if attr.Length%padding != 0 {
+		// performing padding
+		bytesToAdd := nearestLength(len(v)) - len(v)
+		last += bytesToAdd
+		m.grow(last)
+		// setting all padding bytes to zero
+		//buf = m.buf.B[len:last]
+		//for i := range buf {
+		//	buf[i] = 0
+		//}
+		m.buf.B = m.buf.B[:last]       // increasing buffer length
+		m.Length += uint32(bytesToAdd) // rendering length change
+	}
 	m.Attributes = append(m.Attributes, attr)
+}
+
+const (
+	padding = 4
+)
+
+func nearestLength(l int) int {
+	n := padding * (l / padding)
+	if n < l {
+		n += padding
+	}
+	return n
 }
 
 // Equal returns true if Message b equals to m.
@@ -286,6 +311,14 @@ func (m *Message) WriteHeader() {
 func (m Message) WriteTo(w io.Writer) (int64, error) {
 	n, err := w.Write(m.buf.B)
 	return int64(n), err
+}
+
+func (m Message) Append(v []byte) []byte {
+	return append(v, m.buf.B...)
+}
+
+func (m Message) Bytes() []byte {
+	return m.buf.B
 }
 
 // AcquireFields is shorthand for AcquireMessage that sets fields
@@ -348,7 +381,6 @@ func IsMessage(b []byte) bool {
 //
 // Any error is unrecoverable, but message could be partially decoded.
 func (m *Message) ReadBytes(tBuf []byte) (int, error) {
-	// TODO(ar): handle padding
 	var (
 		read int
 		err  error
@@ -379,23 +411,20 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		return read, errors.Wrap(err, "check failed")
 	}
 
+	if len(buf) < (messageHeaderSize + l) {
+		msg := fmt.Sprintf(
+			"buffer length %d is less than %d (expected message size)",
+			len(buf), messageHeaderSize+l,
+		)
+		err := newAttrDecodeErr("message", msg)
+		return read, errors.Wrap(err, "failed to decode")
+	}
 	buf = buf[messageHeaderSize : messageHeaderSize+l]
 	offset := 0
 	for offset < l {
 		b := buf[offset:]
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
-			// HACK: hotfix for chrome padding
-			allZero := true
-			for _, c := range b {
-				if c != 0 {
-					allZero = false
-				}
-			}
-			if allZero {
-				break
-			}
-
 			msg := fmt.Sprintf(
 				"buffer length %d is less than %d (expected header size)",
 				len(b), attributeHeaderSize,
@@ -409,14 +438,15 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		t := bin.Uint16(b[0:2])       // first 2 bytes
 		a.Length = bin.Uint16(b[2:4]) // second 2 bytes
 		a.Type = AttrType(t)
-		aL := int(a.Length)
+		aL := int(a.Length)     // attribute length
+		bL := nearestLength(aL) // expected buffer length (with padding)
 
 		// reading value
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
-		if len(b) < aL {            // checking size
+		if len(b) < bL {            // checking size
 			msg := fmt.Sprintf(
 				"buffer length %d is less than %d (expected value size)",
-				len(b), aL,
+				len(b), bL,
 			)
 			err := newAttrDecodeErr("value", msg)
 			return offset + read, errors.Wrap(err, "failed to decode")
@@ -424,7 +454,7 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		a.Value = b[:aL]
 
 		m.Attributes = append(m.Attributes, a)
-		offset += aL + attributeHeaderSize
+		offset += bL + attributeHeaderSize
 	}
 	return l + messageHeaderSize, nil
 }
