@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func bUint16(v uint16) string {
