@@ -24,6 +24,10 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
+func (m *Message) reader() *bytes.Reader {
+	return bytes.NewReader(m.buf.B)
+}
+
 func TestMessageCopy(t *testing.T) {
 	m := AcquireMessage()
 	defer ReleaseMessage(m)

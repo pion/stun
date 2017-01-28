@@ -21,7 +21,6 @@
 package stun
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
@@ -198,7 +197,7 @@ func (m *Message) Reset() {
 // mustWrite panics if message is read-only.
 func (m Message) mustWrite() {
 	if m.readOnly {
-		unexpected(ErrMessageIsReadOnly)
+		panic(ErrMessageIsReadOnly)
 	}
 }
 
@@ -315,10 +314,12 @@ func (m Message) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
+// Append appends message as byte slice to v.
 func (m Message) Append(v []byte) []byte {
 	return append(v, m.buf.B...)
 }
 
+// Bytes returns message as byte slice.
 func (m Message) Bytes() []byte {
 	return m.buf.B
 }
@@ -334,10 +335,6 @@ func AcquireFields(message Message) *Message {
 	}
 	m.WriteHeader()
 	return m
-}
-
-func (m *Message) reader() *bytes.Reader {
-	return bytes.NewReader(m.buf.B)
 }
 
 // ReadFrom implements ReaderFrom. Decodes message and return error if any.
@@ -384,26 +381,22 @@ func IsMessage(b []byte) bool {
 // Any error is unrecoverable, but message could be partially decoded.
 func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 	var (
-		read int
+		read = len(tBuf)
+		buf  = m.buf.B[:read]
 		err  error
-		n    = len(tBuf)
 	)
 	m.mustWrite()
 	m.buf.Reset()
 	_, err = m.buf.Write(tBuf)
 	unexpected(err) // should never return error
 
-	read += n
-	buf := m.buf.B[:n]
-
 	// decoding message header
-	m.Type.ReadValue(binary.BigEndian.Uint16(buf[0:2])) // first 2 bytes
-	tLength := binary.BigEndian.Uint16(buf[2:4])        // second 2 bytes
-	m.Length = uint32(tLength)
-	l := int(tLength)
-	cookie := binary.BigEndian.Uint32(buf[4:8])
-	copy(m.TransactionID[:], buf[8:messageHeaderSize])
-
+	var (
+		t        = binary.BigEndian.Uint16(buf[0:2])      // first 2 bytes
+		size     = int(binary.BigEndian.Uint16(buf[2:4])) // second 2 bytes
+		cookie   = binary.BigEndian.Uint32(buf[4:8])
+		fullSize = messageHeaderSize + size
+	)
 	if cookie != magicCookie {
 		msg := fmt.Sprintf(
 			"%v is invalid magic cookie (should be %v)",
@@ -412,19 +405,24 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 		err := newDecodeErr("message", "cookie", msg)
 		return read, errors.Wrap(err, "check failed")
 	}
-
-	if len(buf) < (messageHeaderSize + l) {
+	if len(buf) < fullSize {
 		msg := fmt.Sprintf(
 			"buffer length %d is less than %d (expected message size)",
-			len(buf), messageHeaderSize+l,
+			len(buf), fullSize,
 		)
 		err := newAttrDecodeErr("message", msg)
 		return read, errors.Wrap(err, "failed to decode")
 	}
-	buf = buf[messageHeaderSize : messageHeaderSize+l]
-	offset := 0
-	for offset < l {
-		b := buf[offset:]
+	// saving header data
+	m.Type.ReadValue(t)
+	m.Length = uint32(size)
+	copy(m.TransactionID[:], buf[8:messageHeaderSize])
+
+	var (
+		offset = 0
+		b      = buf[messageHeaderSize:fullSize]
+	)
+	for offset < size {
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
 			msg := fmt.Sprintf(
@@ -434,31 +432,31 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 			err := newAttrDecodeErr("header", msg)
 			return offset + read, errors.Wrap(err, "failed to decode")
 		}
-		a := Attribute{}
-
-		// decoding header
-		t := bin.Uint16(b[0:2])       // first 2 bytes
-		a.Length = bin.Uint16(b[2:4]) // second 2 bytes
-		a.Type = AttrType(t)
-		aL := int(a.Length)     // attribute length
-		bL := nearestLength(aL) // expected buffer length (with padding)
-
-		// reading value
+		var (
+			a = Attribute{
+				Type:   AttrType(bin.Uint16(b[0:2])), // first 2 bytes
+				Length: bin.Uint16(b[2:4]),           // second 2 bytes
+			}
+			aL     = int(a.Length)     // attribute length
+			aBuffL = nearestLength(aL) // expected buffer length (with padding)
+		)
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
-		if len(b) < bL {            // checking size
+		offset += attributeHeaderSize
+		if len(b) < aBuffL { // checking size
 			msg := fmt.Sprintf(
 				"buffer length %d is less than %d (expected value size)",
-				len(b), bL,
+				len(b), aBuffL,
 			)
 			err := newAttrDecodeErr("value", msg)
 			return offset + read, errors.Wrap(err, "failed to decode")
 		}
 		a.Value = b[:aL]
+		offset += aBuffL
+		b = b[aBuffL:]
 
 		m.Attributes = append(m.Attributes, a)
-		offset += bL + attributeHeaderSize
 	}
-	return l + messageHeaderSize, nil
+	return fullSize, nil
 }
 
 const (
