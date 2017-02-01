@@ -404,7 +404,7 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 	)
 	if cookie != magicCookie {
 		msg := fmt.Sprintf(
-			"%v is invalid magic cookie (should be %v)",
+			"%x is invalid magic cookie (should be %x)",
 			cookie, magicCookie,
 		)
 		return read, newDecodeErr("message", "cookie", msg)
