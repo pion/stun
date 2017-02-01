@@ -68,15 +68,14 @@ const transactionIDSize = 12 // 96 bit
 // it instead of allocating one, but it is used for encoding, so
 // one Message instance cannot be used to encode and decode.
 type Message struct {
-	Type     MessageType
-	readOnly bool // RO flag. Moved here to minimize padding overhead.
-	Length   uint32
+	Type   MessageType
+	Length uint32
 	// TransactionID is used to uniquely identify STUN transactions.
 	TransactionID [transactionIDSize]byte
 	Attributes    Attributes
-
 	// buf is underlying raw data buffer.
-	buf *buffer.Buffer
+	buf      *buffer.Buffer
+	readOnly bool // RO flag
 }
 
 // Clone allocates and returns new copy of m.
