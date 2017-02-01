@@ -8,7 +8,10 @@ branches:
 
 skip_tags: true
 
+clone_folder: c:\gopath\src\github.com\ernado\stun
+
 environment:
+  GOPATH: c:\gopath
   GOVERSION: 1.7.4
   TEST_EXTERNAL: 1
 
