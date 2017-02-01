@@ -12,9 +12,9 @@ bench:
 bench-record:
 	$(GO) test -bench . > "benchmarks/stun-go-$(GO_VERSION).txt"
 fuzz-prepare-msg:
-	go-fuzz-build -func FuzzMessage -o stun-msg-fuzz.zip github.com/cydev/stun
+	go-fuzz-build -func FuzzMessage -o stun-msg-fuzz.zip github.com/ernado/stun
 fuzz-prepare-typ:
-	go-fuzz-build -func FuzzType -o stun-typ-fuzz.zip github.com/cydev/stun
+	go-fuzz-build -func FuzzType -o stun-typ-fuzz.zip github.com/ernado/stun
 fuzz-msg:
 	go-fuzz -bin=./stun-msg-fuzz.zip -workdir=examples/stun-msg
 fuzz-typ:

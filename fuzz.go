@@ -1,5 +1,3 @@
-// +build gofuzz
-
 package stun
 
 import (
@@ -8,15 +6,18 @@ import (
 
 // FuzzMessage is go-fuzz endpoint for message.
 func FuzzMessage(data []byte) int {
-	m := Message{}
+	m := AcquireMessage()
+	defer ReleaseMessage(m)
 	// fuzzer dont know about cookies
 	binary.BigEndian.PutUint32(data[4:8], magicCookie)
-	if err := m.Get(data); err != nil {
+	// trying to read data as message
+	if _, err := m.ReadBytes(data); err != nil {
 		return 0
 	}
-	m.Put(data)
-	m2 := Message{}
-	if err := m2.Get(data); err != nil {
+	m.WriteHeader()
+	m2 := AcquireMessage()
+	defer ReleaseMessage(m2)
+	if _, err := m2.ReadBytes(m2.Bytes()); err != nil {
 		panic(err)
 	}
 	if m2.TransactionID != m.TransactionID {
