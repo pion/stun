@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/ernado/stun"
 	"net"
 	"testing"
+
+	"github.com/ernado/stun"
 )
 
 func BenchmarkBasicProcess(b *testing.B) {

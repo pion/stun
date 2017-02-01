@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/ernado/stun"
 	"github.com/pkg/errors"
@@ -156,11 +157,21 @@ func ListenUDPAndServe(serverNet, laddr string) error {
 	return s.Serve(c)
 }
 
+func normalize(address string) string {
+	if len(address) == 0 {
+		address = "0.0.0.0"
+	}
+	if !strings.Contains(address, ":") {
+		address = fmt.Sprintf("%s:%d", address, stun.DefaultPort)
+	}
+	return address
+}
+
 func main() {
 	flag.Parse()
 	switch *network {
 	case "udp":
-		normalized := stun.Normalize(*address)
+		normalized := normalize(*address)
 		fmt.Println("cydev/stun listening on", normalized, "via", *network)
 		log.Fatal(ListenUDPAndServe(*network, normalized))
 	default:

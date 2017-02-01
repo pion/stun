@@ -7,26 +7,20 @@ import (
 	"strconv"
 )
 
-// blank is just blank string and exists just because it is ugly to keep it
-// in code.
-const blank = ""
-
 // Attributes is list of message attributes.
 type Attributes []Attribute
 
-// BlankAttribute is attribute that is returned by
-// Attributes.Get if nothing found.
-var BlankAttribute = Attribute{}
-
-// Get returns first attribute from list which match AttrType. If nothing
-// found, it returns blank attribute.
-func (a Attributes) Get(t AttrType) Attribute {
+// Get returns first attribute from list by the type.
+// If attribute is present the Attribute is returned and the
+// boolean is true. Otherwise the returned Attribute will be
+// empty and boolean will be false.
+func (a Attributes) Get(t AttrType) (Attribute, bool) {
 	for _, candidate := range a {
 		if candidate.Type == t {
-			return candidate
+			return candidate, true
 		}
 	}
-	return BlankAttribute
+	return Attribute{}, false
 }
 
 // AttrType is attribute type.
@@ -132,11 +126,6 @@ type Attribute struct {
 	Value  []byte
 }
 
-// IsBlank returns true if attribute equals to BlankAttribute.
-func (a Attribute) IsBlank() bool {
-	return a.Equal(BlankAttribute)
-}
-
 // Equal returns true if a == b.
 func (a Attribute) Equal(b Attribute) bool {
 	if a.Type != b.Type {
@@ -164,11 +153,11 @@ func (a Attribute) String() string {
 // if there is no value attribute with shuck type,
 // ErrAttributeNotFound is returned.
 func (m *Message) getAttrValue(t AttrType) ([]byte, error) {
-	v := m.Attributes.Get(t).Value
-	if len(v) == 0 {
+	v, ok := m.Attributes.Get(t)
+	if !ok {
 		return nil, ErrAttributeNotFound
 	}
-	return v, nil
+	return v.Value, nil
 }
 
 // AddSoftwareBytes adds SOFTWARE attribute with value from byte slice.
@@ -184,18 +173,16 @@ func (m *Message) AddSoftware(software string) {
 // GetSoftwareBytes returns SOFTWARE attribute value in byte slice.
 // If not found, returns nil.
 func (m *Message) GetSoftwareBytes() []byte {
-	return m.Attributes.Get(AttrSoftware).Value
+	v, ok := m.Attributes.Get(AttrSoftware)
+	if !ok {
+		return nil
+	}
+	return v.Value
 }
 
 // GetSoftware returns SOFTWARE attribute value in string.
 // If not found, returns blank string.
-func (m *Message) GetSoftware() string {
-	v := m.GetSoftwareBytes()
-	if len(v) == 0 {
-		return blank
-	}
-	return string(v)
-}
+func (m *Message) GetSoftware() string { return string(m.GetSoftwareBytes()) }
 
 // Address family values.
 const (

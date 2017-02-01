@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/codegangsta/cli"
@@ -14,6 +15,16 @@ import (
 const (
 	version = "0.2"
 )
+
+func normalize(address string) string {
+	if len(address) == 0 {
+		address = "0.0.0.0"
+	}
+	if !strings.Contains(address, ":") {
+		address = fmt.Sprintf("%s:%d", address, stun.DefaultPort)
+	}
+	return address
+}
 
 // Defaults for Client fields.
 const (
@@ -179,7 +190,7 @@ func discover(c *cli.Context) error {
 
 	request := Request{
 		Message: m,
-		Target:  stun.Normalize(c.String("server")),
+		Target:  normalize(c.String("server")),
 	}
 
 	return DefaultClient.Do(request, func(r Response) error {

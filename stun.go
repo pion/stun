@@ -28,7 +28,6 @@ import (
 	"io"
 	"net"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/ernado/buffer"
@@ -38,17 +37,6 @@ var (
 	// bin is shorthand to binary.BigEndian.
 	bin = binary.BigEndian
 )
-
-// Normalize returns normalized address.
-func Normalize(address string) string {
-	if len(address) == 0 {
-		address = "0.0.0.0"
-	}
-	if !strings.Contains(address, ":") {
-		address = fmt.Sprintf("%s:%d", address, DefaultPort)
-	}
-	return address
-}
 
 // DefaultPort is IANA assigned port for "stun" protocol.
 const DefaultPort = 3478
@@ -287,7 +275,10 @@ func (m Message) Equal(b Message) bool {
 		return false
 	}
 	for _, a := range m.Attributes {
-		aB := b.Attributes.Get(a.Type)
+		aB, ok := b.Attributes.Get(a.Type)
+		if !ok {
+			return false
+		}
 		if !aB.Equal(a) {
 			return false
 		}

@@ -27,7 +27,10 @@ func TestMessage_AddSoftware(t *testing.T) {
 		t.Errorf("Expected %s, got %s.", v, vRead)
 	}
 
-	sAttr := m.Attributes.Get(AttrSoftware)
+	sAttr, ok := m.Attributes.Get(AttrSoftware)
+	if !ok {
+		t.Error("sowfware attribute should be found")
+	}
 	s := sAttr.String()
 	if !strings.HasPrefix(s, "SOFTWARE:") {
 		t.Error("bad string representation", s)
@@ -280,22 +283,5 @@ func TestMessage_AddErrorCodeDefault(t *testing.T) {
 	}
 	if string(reason) != expectedReason {
 		t.Error("bad reason", string(reason))
-	}
-}
-
-func TestAttribute_IsBlank(t *testing.T) {
-	var tt = [...]struct {
-		in  Attribute
-		out bool
-	}{
-		{BlankAttribute, true},                     // 0
-		{Attribute{Type: AttrUseCandidate}, false}, // 1
-		{Attribute{Value: []byte{1, 2, 3}}, false}, // 2
-		{Attribute{}, true},                        // 3
-	}
-	for i, v := range tt {
-		if got := v.in.IsBlank(); got != v.out {
-			t.Errorf("tt[%d]: (%+v).IsMessage %v != %v", i, v.in, got, v.out)
-		}
 	}
 }
