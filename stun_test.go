@@ -12,8 +12,11 @@ import (
 	"strings"
 	"testing"
 
+	"encoding/base64"
+	"encoding/csv"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"hash/crc64"
 )
 
 func bUint16(v uint16) string {
@@ -575,4 +578,41 @@ func TestNearestLen(t *testing.T) {
 			)
 		}
 	}
+}
+
+func TestMessageFromBrowsers(t *testing.T) {
+	// file contains udp-packets captured from browsers (WebRTC)
+	reader := csv.NewReader(bytes.NewReader(loadData(t, "frombrowsers.csv")))
+	reader.Comma = ','
+	_, err := reader.Read() // skipping header
+	if err != nil {
+		t.Fatal("failed to skip header of csv: ", err)
+	}
+	m := AcquireMessage()
+	crcTable := crc64.MakeTable(crc64.ISO)
+	for {
+		line, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal("failed to read csv line: ", err)
+		}
+		data, err := base64.StdEncoding.DecodeString(line[1])
+		if err != nil {
+			t.Fatal("failed to decode ", line[1], " as base64: ", err)
+		}
+		b, err := strconv.ParseUint(line[2], 10, 64)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if b != crc64.Checksum(data, crcTable) {
+			t.Error("crc64 check failed for ", line[1])
+		}
+		if _, err = m.ReadBytes(data); err != nil {
+			t.Error("failed to decode ", line[1], " as message: ", err)
+		}
+		m.Reset()
+	}
+	ReleaseMessage(m)
 }
