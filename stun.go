@@ -26,12 +26,12 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/ernado/buffer"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -131,6 +131,7 @@ func (m Message) String() string {
 
 // unexpected panics if err is not nil.
 func unexpected(err error) {
+	// TODO(ar): investigate what is idiomatic way
 	if err != nil {
 		panic(err)
 	}
@@ -314,14 +315,19 @@ func (m Message) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-// Append appends message as byte slice to v.
+// Append appends message to byte slice.
 func (m Message) Append(v []byte) []byte {
 	return append(v, m.buf.B...)
 }
 
-// Bytes returns message as byte slice.
+// Bytes returns message raw value.
 func (m Message) Bytes() []byte {
 	return m.buf.B
+}
+
+// WriteToConn writes a packet with message to addr, using c.
+func (m Message) WriteToConn(c net.PacketConn, addr net.Addr) (n int, err error) {
+	return c.WriteTo(m.buf.B, addr)
 }
 
 // AcquireFields is shorthand for AcquireMessage that sets fields
@@ -362,7 +368,7 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	return int64(n), err
 }
 
-func newAttrDecodeErr(children, message string) DecodeErr {
+func newAttrDecodeErr(children, message string) *DecodeErr {
 	return newDecodeErr("attribute", children, message)
 }
 
@@ -402,16 +408,14 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 			"%v is invalid magic cookie (should be %v)",
 			cookie, magicCookie,
 		)
-		err := newDecodeErr("message", "cookie", msg)
-		return read, errors.Wrap(err, "check failed")
+		return read, newDecodeErr("message", "cookie", msg)
 	}
 	if len(buf) < fullSize {
 		msg := fmt.Sprintf(
 			"buffer length %d is less than %d (expected message size)",
 			len(buf), fullSize,
 		)
-		err := newAttrDecodeErr("message", msg)
-		return read, errors.Wrap(err, "failed to decode")
+		return read, newAttrDecodeErr("message", msg)
 	}
 	// saving header data
 	m.Type.ReadValue(t)
@@ -429,8 +433,7 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 				"buffer length %d is less than %d (expected header size)",
 				len(b), attributeHeaderSize,
 			)
-			err := newAttrDecodeErr("header", msg)
-			return offset + read, errors.Wrap(err, "failed to decode")
+			return offset + read, newAttrDecodeErr("header", msg)
 		}
 		var (
 			a = Attribute{
@@ -447,8 +450,7 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 				"buffer length %d is less than %d (expected value size)",
 				len(b), aBuffL,
 			)
-			err := newAttrDecodeErr("value", msg)
-			return offset + read, errors.Wrap(err, "failed to decode")
+			return offset + read, newAttrDecodeErr("value", msg)
 		}
 		a.Value = b[:aL]
 		offset += aBuffL
@@ -609,8 +611,6 @@ func (t MessageType) String() string {
 }
 
 const (
-	// ErrInvalidMagicCookie means that magic cookie field has invalid value.
-	ErrInvalidMagicCookie Error = "Magic cookie value is invalid"
 	// ErrMessageIsReadOnly means that you are trying to modify readonly
 	// Message.
 	ErrMessageIsReadOnly Error = "Message is readonly"

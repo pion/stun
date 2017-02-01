@@ -203,7 +203,7 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 	binary.BigEndian.PutUint16(buf[2:4], 2) // rewrite to bad length
 	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+2]))
 	switch e := errors.Cause(err).(type) {
-	case DecodeErr:
+	case *DecodeErr:
 		if !e.IsPlace(DecodeErrPlace{"attribute", "header"}) {
 			t.Error(e, "bad place")
 		}
@@ -232,7 +232,7 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	mDecoded := AcquireMessage()
 	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+5]))
 	switch e := errors.Cause(err).(type) {
-	case DecodeErr:
+	case *DecodeErr:
 		if !e.IsPlace(DecodeErrPlace{"attribute", "value"}) {
 			t.Error(e, "bad place")
 		}

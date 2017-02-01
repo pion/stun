@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 // blank is just blank string and exists just because it is ugly to keep it
@@ -163,11 +161,12 @@ func (a Attribute) String() string {
 }
 
 // getAttrValue returns byte slice that represents attribute value,
-// and if there is no value found, error returned.
+// if there is no value attribute with shuck type,
+// ErrAttributeNotFound is returned.
 func (m *Message) getAttrValue(t AttrType) ([]byte, error) {
 	v := m.Attributes.Get(t).Value
 	if len(v) == 0 {
-		return nil, errors.Wrap(ErrAttributeNotFound, "failed to find")
+		return nil, ErrAttributeNotFound
 	}
 	return v, nil
 }
@@ -235,19 +234,20 @@ func (m *Message) allocBuffer(size int) []byte {
 
 // GetXORMappedAddress returns ip, port from attribute and error if any.
 // Value for ip is valid until Message is released or underlying buffer is
-// corrupted.
+// corrupted. Returns *DecodeError or ErrAttributeNotFound.
 func (m *Message) GetXORMappedAddress() (net.IP, int, error) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
 	// then the converting the result to network byte order.
 	v, err := m.getAttrValue(AttrXORMappedAddress)
-	if len(v) == 0 {
-		return nil, 0, errors.Wrap(err, "address not found")
+	if err != nil {
+		return nil, 0, err
 	}
 	family := byte(binary.BigEndian.Uint16(v[0:2]))
 	if family != FamilyIPv6 && family != FamilyIPv4 {
-		err := errors.Wrapf(ErrAttributeDecodeError, "bad family %d", family)
-		return nil, 0, err
+		return nil, 0, newDecodeErr("xor-mapped address", "family",
+			fmt.Sprintf("bad value %d", family),
+		)
 	}
 	ipLen := net.IPv4len
 	if family == FamilyIPv6 {
@@ -299,7 +299,7 @@ func (m *Message) AddErrorCodeDefault(code int) {
 func (m *Message) GetErrorCode() (int, []byte, error) {
 	v, err := m.getAttrValue(AttrErrorCode)
 	if err != nil {
-		return 0, nil, errors.Wrap(err, "error not found")
+		return 0, nil, err
 	}
 	var (
 		class  = uint16(v[errorCodeClassByte])
@@ -313,7 +313,4 @@ func (m *Message) GetErrorCode() (int, []byte, error) {
 var (
 	// ErrAttributeNotFound means that there is no such attribute.
 	ErrAttributeNotFound Error = "Attribute not found"
-
-	// ErrAttributeDecodeError means that agent is unable to decode value.
-	ErrAttributeDecodeError Error = "Attribute decode error"
 )

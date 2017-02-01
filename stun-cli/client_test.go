@@ -1,10 +1,12 @@
-package stun
+package main
 
 import (
 	"log"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/ernado/stun"
 )
 
 const (
@@ -28,9 +30,9 @@ func skipIfNotFlagged(t *testing.T, env string) {
 func TestClient_Do(t *testing.T) {
 	skipIfNotFlagged(t, envExternalBlackbox)
 	client := Client{}
-	m := AcquireMessage()
-	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
-	m.TransactionID = NewTransactionID()
+	m := stun.AcquireMessage()
+	m.Type = stun.MessageType{Method: stun.MethodBinding, Class: stun.ClassRequest}
+	m.TransactionID = stun.NewTransactionID()
 	m.AddSoftware("cydev/stun alpha")
 	m.WriteHeader()
 	request := Request{
