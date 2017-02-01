@@ -386,15 +386,14 @@ func IsMessage(b []byte) bool {
 //
 // Any error is unrecoverable, but message could be partially decoded.
 func (m *Message) ReadBytes(tBuf []byte) (int, error) {
+	m.grow(len(tBuf))
 	var (
 		read = len(tBuf)
 		buf  = m.buf.B[:read]
-		err  error
 	)
 	m.mustWrite()
 	m.buf.Reset()
-	_, err = m.buf.Write(tBuf)
-	unexpected(err) // should never return error
+	m.buf.Append(tBuf)
 
 	// decoding message header
 	var (
