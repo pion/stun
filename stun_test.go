@@ -2,8 +2,11 @@ package stun
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
+	"encoding/csv"
 	"fmt"
+	"hash/crc64"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,11 +15,8 @@ import (
 	"strings"
 	"testing"
 
-	"encoding/base64"
-	"encoding/csv"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"hash/crc64"
 )
 
 func bUint16(v uint16) string {
