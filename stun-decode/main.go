@@ -22,7 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("Unable to decode bas64 value:", err)
 	}
-	m := stun.AcquireMessage()
+	m := stun.New()
 	if _, err = m.ReadBytes(data); err != nil {
 		log.Fatalln("Unable to decode message:", err)
 	}

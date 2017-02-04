@@ -28,9 +28,6 @@ import (
 	"io"
 	"net"
 	"strconv"
-	"sync"
-
-	"github.com/ernado/buffer"
 )
 
 var (
@@ -74,15 +71,7 @@ type Message struct {
 	TransactionID [transactionIDSize]byte
 	Attributes    Attributes
 	// buf is underlying raw data buffer.
-	buf      *buffer.Buffer
-	readOnly bool // RO flag
-}
-
-// Clone allocates and returns new copy of m.
-func (m Message) Clone() *Message {
-	c := AcquireMessage()
-	m.CopyTo(c)
-	return c
+	Raw []byte
 }
 
 // CopyTo copies all m to c.
@@ -90,13 +79,13 @@ func (m Message) CopyTo(c *Message) {
 	c.Type = m.Type
 	c.Length = m.Length
 	copy(c.TransactionID[:], m.TransactionID[:])
-	buf := m.buf.B[:int(m.Length)+messageHeaderSize]
-	c.buf.B = c.buf.B[:0]
-	c.buf.Append(buf)
-	buf = c.buf.B[messageHeaderSize:]
+	buf := m.Raw[:int(m.Length)+messageHeaderSize]
+	c.Raw = c.Raw[:0]
+	c.Raw = append(c.Raw, buf...)
+	buf = c.Raw[messageHeaderSize:]
 	for _, a := range m.Attributes {
 		buf = buf[attributeHeaderSize:]
-		c.Attributes = append(c.Attributes, Attribute{
+		c.Attributes = append(c.Attributes, RawAttribute{
 			Length: a.Length,
 			Type:   a.Type,
 			Value:  buf[:int(a.Length)],
@@ -109,41 +98,21 @@ func (m Message) String() string {
 	return fmt.Sprintf("%s (l=%d,%d/%d) attr[%d] id[%s]",
 		m.Type,
 		m.Length,
-		len(m.buf.B),
-		cap(m.buf.B),
+		len(m.Raw),
+		cap(m.Raw),
 		len(m.Attributes),
 		base64.StdEncoding.EncodeToString(m.TransactionID[:]),
 	)
-}
-
-// unexpected panics if err is not nil.
-func unexpected(err error) {
-	// TODO(ar): investigate what is idiomatic way
-	if err != nil {
-		panic(err)
-	}
 }
 
 // NewTransactionID returns new random transaction ID using crypto/rand
 // as source.
 func NewTransactionID() (b [transactionIDSize]byte) {
 	_, err := rand.Read(b[:])
-	unexpected(err)
+	if err != nil {
+		panic(err)
+	}
 	return b
-}
-
-// messagePool minimizes memory allocation by pooling Message,
-// attribute slices and underlying buffers.
-var messagePool = sync.Pool{
-	New: func() interface{} {
-		b := &buffer.Buffer{
-			B: make([]byte, 0, defaultMessageBufferCapacity),
-		}
-		return &Message{
-			Attributes: make(Attributes, 0, defaultAttributesCapacity),
-			buf:        b,
-		}
-	},
 }
 
 // defaults for pool.
@@ -152,41 +121,19 @@ const (
 	defaultMessageBufferCapacity = 416
 )
 
-// AcquireMessage returns new message from pool.
-//
-// New *Message will be allocated if no is in the pool.
-// Call ReleaseMessage after usage.
-//
-// 	m := AcquireMessage()
-//  defer ReleaseMessage(m)
-func AcquireMessage() *Message {
-	m := messagePool.Get().(*Message)
-	m.grow(messageHeaderSize)
-	return m
-}
-
-// ReleaseMessage returns message to pool rendering it to unusable state.
-// After release, any usage of message and its attributes, also any
-// value obtained via attribute decoding methods is invalid.
-func ReleaseMessage(m *Message) {
-	m.Reset()
-	messagePool.Put(m)
+// New returns *Message with allocated Raw.
+func New() *Message {
+	return &Message{
+		Raw: make([]byte, messageHeaderSize, defaultMessageBufferCapacity),
+	}
 }
 
 // Reset resets Message length, attributes and underlying buffer, as well as
 // setting readOnly flag to false.
 func (m *Message) Reset() {
-	m.buf.Reset()
+	m.Raw = m.Raw[:0]
 	m.Length = 0
-	m.readOnly = false
 	m.Attributes = m.Attributes[:0]
-}
-
-// mustWrite panics if message is read-only.
-func (m Message) mustWrite() {
-	if m.readOnly {
-		panic(ErrMessageIsReadOnly)
-	}
 }
 
 // grow ensures that internal buffer will fit v more bytes and
@@ -195,15 +142,22 @@ func (m *Message) grow(v int) {
 	// Not performing any optimizations here
 	// (e.g. preallocate len(buf) * 2 to reduce allocations)
 	// because they are already done by []byte implementation.
-	m.buf.Grow(v)
+	n := len(m.Raw) + v
+	for cap(m.Raw) < n {
+		m.Raw = append(m.Raw, 0)
+	}
+	m.Raw = m.Raw[:n]
 }
 
-// Add appends new attribute to message. Not goroutine-safe.
+func (m *Message) Add(a AttrEncoder) error {
+	return a.Encode(m, m)
+}
+
+// AddRaw appends new attribute to message. Not goroutine-safe.
 //
 // Value of attribute is copied to internal buffer so
 // it is safe to reuse v.
-func (m *Message) Add(t AttrType, v []byte) {
-	m.mustWrite()
+func (m *Message) AddRaw(t AttrType, v []byte) {
 	// allocating memory for TLV (type-length-value), where
 	// type-length is attribute header.
 	// m.buf.B[0:20] is reserved by header
@@ -218,12 +172,12 @@ func (m *Message) Add(t AttrType, v []byte) {
 	first := messageHeaderSize + int(m.Length) // first byte number
 	last := first + allocSize                  // last byte number
 	m.grow(last)                               // growing cap(b) to fit TLV
-	m.buf.B = m.buf.B[:last]                   // now len(b) = last
+	m.Raw = m.Raw[:last]                       // now len(b) = last
 	m.Length += uint32(allocSize)              // rendering length change
 	// subslicing internal buffer to simplify encoding
-	buf := m.buf.B[first:last]         // slice for TLV
+	buf := m.Raw[first:last]           // slice for TLV
 	value := buf[attributeHeaderSize:] // slice for value
-	attr := Attribute{
+	attr := RawAttribute{
 		Type:   t,
 		Value:  value,
 		Length: uint16(len(v)),
@@ -240,11 +194,11 @@ func (m *Message) Add(t AttrType, v []byte) {
 		// setting all padding bytes to zero
 		// to prevent data leak from previous
 		// data in next bytesToAdd bytes
-		buf = m.buf.B[last-bytesToAdd : last]
+		buf = m.Raw[last-bytesToAdd : last]
 		for i := range buf {
 			buf[i] = 0
 		}
-		m.buf.B = m.buf.B[:last]       // increasing buffer length
+		m.Raw = m.Raw[:last]           // increasing buffer length
 		m.Length += uint32(bytesToAdd) // rendering length change
 	}
 	m.Attributes = append(m.Attributes, attr)
@@ -263,7 +217,7 @@ func nearestLength(l int) int {
 }
 
 // Equal returns true if Message b equals to m.
-func (m Message) Equal(b Message) bool {
+func (m *Message) Equal(b *Message) bool {
 	if m.Type != b.Type {
 		return false
 	}
@@ -287,50 +241,52 @@ func (m Message) Equal(b Message) bool {
 
 // WriteHeader writes header to underlying buffer. Not goroutine-safe.
 func (m *Message) WriteHeader() {
-	m.mustWrite()
-
-	buf := m.buf.B
 	// encoding header
-	binary.BigEndian.PutUint16(buf[0:2], m.Type.Value())
-	binary.BigEndian.PutUint32(buf[4:8], magicCookie)
-	copy(buf[8:messageHeaderSize], m.TransactionID[:])
+	if len(m.Raw) < messageHeaderSize {
+		m.grow(messageHeaderSize)
+	}
+	bin.PutUint16(m.Raw[0:2], m.Type.Value())
+	bin.PutUint32(m.Raw[4:8], magicCookie)
+	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:])
 	// attributes are already encoded
 	// writing length as size, in bytes, not including the 20-byte STUN header.
-	binary.BigEndian.PutUint16(buf[2:4], uint16(len(buf)-20))
+	bin.PutUint16(m.Raw[2:4], uint16(len(m.Raw)-20))
+}
+
+func (m *Message) WriteAttributes() {
+	for _, a := range m.Attributes {
+		m.AddRaw(a.Type, a.Value)
+	}
+}
+
+// Encode writes m into Raw.
+func (m *Message) Encode() {
+	m.Raw = m.Raw[:0]
+	m.WriteHeader()
+	m.WriteAttributes()
 }
 
 // WriteTo implements WriterTo.
-func (m Message) WriteTo(w io.Writer) (int64, error) {
-	n, err := w.Write(m.buf.B)
+func (m *Message) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(m.Raw)
 	return int64(n), err
 }
 
 // Append appends message to byte slice.
-func (m Message) Append(v []byte) []byte {
-	return append(v, m.buf.B...)
+func (m *Message) Append(v []byte) []byte {
+	return append(v, m.Raw...)
 }
 
 // Bytes returns message raw value.
-func (m Message) Bytes() []byte {
-	return m.buf.B
+// Deprecated: use m.Raw.
+func (m *Message) Bytes() []byte {
+	return m.Raw
 }
 
 // WriteToConn writes a packet with message to addr, using c.
-func (m Message) WriteToConn(c net.PacketConn, addr net.Addr) (n int, err error) {
-	return c.WriteTo(m.buf.B, addr)
-}
-
-// AcquireFields is shorthand for AcquireMessage that sets fields
-// before returning *Message.
-func AcquireFields(message Message) *Message {
-	m := AcquireMessage()
-	copy(m.TransactionID[:], message.TransactionID[:])
-	m.Type = message.Type
-	for _, a := range message.Attributes {
-		m.Add(a.Type, a.Value)
-	}
-	m.WriteHeader()
-	return m
+// Deprecated; non-idiomatic.
+func (m *Message) WriteToConn(c net.PacketConn, addr net.Addr) (n int, err error) {
+	return c.WriteTo(m.Raw, addr)
 }
 
 // ReadFrom implements ReaderFrom. Decodes message and return error if any.
@@ -339,22 +295,17 @@ func AcquireFields(message Message) *Message {
 // Any error is unrecoverable, but message could be partially decoded.
 //
 // ErrUnexpectedEOF means that there were not enough bytes to read header or
+// Deprecated: use Decode.
 func (m *Message) ReadFrom(r io.Reader) (int64, error) {
-	m.mustWrite()
-	tBuf := buffer.Acquire()
-	if cap(tBuf.B) < MaxPacketSize {
-		tBuf.Grow(MaxPacketSize)
-	}
+	tBuf := make([]byte, 0, MaxPacketSize)
 	var (
 		n   int
 		err error
 	)
-	if n, err = r.Read(tBuf.B[:MaxPacketSize]); err != nil {
-		buffer.Release(tBuf)
+	if n, err = r.Read(tBuf[:MaxPacketSize]); err != nil {
 		return int64(n), err
 	}
-	n, err = m.ReadBytes(tBuf.B[:n])
-	buffer.Release(tBuf)
+	n, err = m.ReadBytes(tBuf[:n])
 	return int64(n), err
 }
 
@@ -372,20 +323,9 @@ func IsMessage(b []byte) bool {
 		binary.BigEndian.Uint32(b[4:8]) == magicCookie
 }
 
-// ReadBytes decodes message and return error if any.
-//
-// Any error is unrecoverable, but message could be partially decoded.
-func (m *Message) ReadBytes(tBuf []byte) (int, error) {
-	m.grow(len(tBuf))
-	var (
-		read = len(tBuf)
-		buf  = m.buf.B[:read]
-	)
-	m.mustWrite()
-	m.buf.Reset()
-	m.buf.Append(tBuf)
-
+func (m *Message) Decode() error {
 	// decoding message header
+	buf := m.Raw
 	var (
 		t        = binary.BigEndian.Uint16(buf[0:2])      // first 2 bytes
 		size     = int(binary.BigEndian.Uint16(buf[2:4])) // second 2 bytes
@@ -397,14 +337,14 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 			"%x is invalid magic cookie (should be %x)",
 			cookie, magicCookie,
 		)
-		return read, newDecodeErr("message", "cookie", msg)
+		return newDecodeErr("message", "cookie", msg)
 	}
 	if len(buf) < fullSize {
 		msg := fmt.Sprintf(
 			"buffer length %d is less than %d (expected message size)",
 			len(buf), fullSize,
 		)
-		return read, newAttrDecodeErr("message", msg)
+		return newAttrDecodeErr("message", msg)
 	}
 	// saving header data
 	m.Type.ReadValue(t)
@@ -422,10 +362,10 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 				"buffer length %d is less than %d (expected header size)",
 				len(b), attributeHeaderSize,
 			)
-			return offset + read, newAttrDecodeErr("header", msg)
+			return newAttrDecodeErr("header", msg)
 		}
 		var (
-			a = Attribute{
+			a = RawAttribute{
 				Type:   AttrType(bin.Uint16(b[0:2])), // first 2 bytes
 				Length: bin.Uint16(b[2:4]),           // second 2 bytes
 			}
@@ -439,7 +379,7 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 				"buffer length %d is less than %d (expected value size)",
 				len(b), aBuffL,
 			)
-			return offset + read, newAttrDecodeErr("value", msg)
+			return newAttrDecodeErr("value", msg)
 		}
 		a.Value = b[:aL]
 		offset += aBuffL
@@ -447,7 +387,16 @@ func (m *Message) ReadBytes(tBuf []byte) (int, error) {
 
 		m.Attributes = append(m.Attributes, a)
 	}
-	return fullSize, nil
+	return nil
+}
+
+// ReadBytes decodes message and return error if any.
+//
+// Any error is unrecoverable, but message could be partially decoded.
+// Deprecated: use m.Decode.
+func (m *Message) ReadBytes(tBuf []byte) (int, error) {
+	m.Raw = append(m.Raw[:0], tBuf...)
+	return len(tBuf), m.Decode()
 }
 
 const (
@@ -598,9 +547,3 @@ func (t *MessageType) ReadValue(v uint16) {
 func (t MessageType) String() string {
 	return fmt.Sprintf("%s %s", t.Method, t.Class)
 }
-
-const (
-	// ErrMessageIsReadOnly means that you are trying to modify readonly
-	// Message.
-	ErrMessageIsReadOnly Error = "Message is readonly"
-)

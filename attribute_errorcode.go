@@ -1,20 +1,25 @@
 package stun
 
+type ErrorCodeAttribute struct {
+	Code   int
+	Reason []byte
+}
+
 // ErrorCode is code for ERROR-CODE attribute.
 type ErrorCode int
 
 // Possible error codes.
 const (
-	CodeTryAlternate     ErrorCode = 300
-	CodeBadRequest       ErrorCode = 400
-	CodeUnauthorised     ErrorCode = 401
-	CodeUnknownAttribute ErrorCode = 420
-	CodeStaleNonce       ErrorCode = 428
-	CodeRoleConflict     ErrorCode = 478
-	CodeServerError      ErrorCode = 500
+	CodeTryAlternate     = 300
+	CodeBadRequest       = 400
+	CodeUnauthorised     = 401
+	CodeUnknownAttribute = 420
+	CodeStaleNonce       = 428
+	CodeRoleConflict     = 478
+	CodeServerError      = 500
 )
 
-var errorReasons = map[ErrorCode]string{
+var errorReasons = map[int]string{
 	CodeTryAlternate:     "Try Alternate",
 	CodeBadRequest:       "Bad Request",
 	CodeUnauthorised:     "Unauthorised",
@@ -26,7 +31,7 @@ var errorReasons = map[ErrorCode]string{
 
 // Reason returns recommended reason string.
 func (c ErrorCode) Reason() string {
-	reason, ok := errorReasons[c]
+	reason, ok := errorReasons[int(c)]
 	if !ok {
 		return "Unknown Error"
 	}

@@ -30,10 +30,10 @@ func skipIfNotFlagged(t *testing.T, env string) {
 func TestClient_Do(t *testing.T) {
 	skipIfNotFlagged(t, envExternalBlackbox)
 	client := Client{}
-	m := stun.AcquireMessage()
+	m := stun.New()
 	m.Type = stun.MessageType{Method: stun.MethodBinding, Class: stun.ClassRequest}
 	m.TransactionID = stun.NewTransactionID()
-	m.AddSoftware("cydev/stun alpha")
+	m.Add(stun.NewSoftware("cydev/stun alpha"))
 	m.WriteHeader()
 	request := Request{
 		Target:  "stun.l.google.com:19302",

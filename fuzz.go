@@ -8,8 +8,7 @@ import (
 
 // FuzzMessage is go-fuzz endpoint for message.
 func FuzzMessage(data []byte) int {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	// fuzzer dont know about cookies
 	binary.BigEndian.PutUint32(data[4:8], magicCookie)
 	// trying to read data as message
@@ -17,9 +16,8 @@ func FuzzMessage(data []byte) int {
 		return 0
 	}
 	m.WriteHeader()
-	m2 := AcquireMessage()
-	defer ReleaseMessage(m2)
-	if _, err := m2.ReadBytes(m2.Bytes()); err != nil {
+	m2 := New()
+	if _, err := m2.ReadBytes(m2.Raw); err != nil {
 		panic(err)
 	}
 	if m2.TransactionID != m.TransactionID {

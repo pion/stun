@@ -28,34 +28,33 @@ func init() {
 }
 
 func (m *Message) reader() *bytes.Reader {
-	return bytes.NewReader(m.buf.B)
+	return bytes.NewReader(m.Raw)
 }
 
 func TestMessageCopy(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
-	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.AddRaw(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	m.WriteHeader()
-	mCopy := m.Clone()
-	if !mCopy.Equal(*m) {
+	mCopy := New()
+	m.CopyTo(mCopy)
+	if !mCopy.Equal(m) {
 		t.Error(mCopy, "!=", m)
 	}
 }
 
 func TestMessageBuffer(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
-	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.AddRaw(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	m.WriteHeader()
-	mDecoded := AcquireMessage()
-	if _, err := mDecoded.ReadFrom(bytes.NewReader(m.buf.B)); err != nil {
+	mDecoded := New()
+	if _, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw)); err != nil {
 		t.Error(err)
 	}
-	if !mDecoded.Equal(*m) {
+	if !mDecoded.Equal(m) {
 		t.Error(mDecoded, "!", m)
 	}
 }
@@ -66,14 +65,13 @@ func BenchmarkMessage_Write(b *testing.B) {
 	b.SetBytes(int64(len(attributeValue) + messageHeaderSize +
 		attributeHeaderSize))
 	transactionID := NewTransactionID()
-
+	m := New()
 	for i := 0; i < b.N; i++ {
-		m := AcquireMessage()
-		m.Add(AttrErrorCode, attributeValue)
+		m.AddRaw(AttrErrorCode, attributeValue)
 		m.TransactionID = transactionID
 		m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 		m.WriteHeader()
-		ReleaseMessage(m)
+		m.Reset()
 	}
 }
 
@@ -134,28 +132,27 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 }
 
 func TestMessage_WriteTo(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
-	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.AddRaw(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	m.WriteHeader()
 	buf := new(bytes.Buffer)
 	if _, err := m.WriteTo(buf); err != nil {
 		t.Fatal(err)
 	}
-	mDecoded := AcquireMessage()
+	mDecoded := New()
 	if _, err := mDecoded.ReadFrom(buf); err != nil {
 		t.Error(err)
 	}
-	if !mDecoded.Equal(*m) {
+	if !mDecoded.Equal(m) {
 		t.Error(mDecoded, "!", m)
 	}
 }
 
 func TestMessage_Cookie(t *testing.T) {
 	buf := make([]byte, 20)
-	mDecoded := AcquireMessage()
+	mDecoded := New()
 	if _, err := mDecoded.ReadFrom(bytes.NewReader(buf)); err == nil {
 		t.Error("should error")
 	}
@@ -163,7 +160,7 @@ func TestMessage_Cookie(t *testing.T) {
 
 func TestMessage_LengthLessHeaderSize(t *testing.T) {
 	buf := make([]byte, 8)
-	mDecoded := AcquireMessage()
+	mDecoded := New()
 	if _, err := mDecoded.ReadFrom(bytes.NewReader(buf)); err == nil {
 		t.Error("should error")
 	}
@@ -171,40 +168,35 @@ func TestMessage_LengthLessHeaderSize(t *testing.T) {
 
 func TestMessage_BadLength(t *testing.T) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
-	m := AcquireFields(Message{
+	m := &Message{
 		Type:          mType,
 		Length:        4,
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-		Attributes:    []Attribute{messageAttribute},
-	})
-	buf := make([]byte, 0, 100)
+	}
+	m.AddRaw(0x1, []byte{1, 2})
 	m.WriteHeader()
-	buf = m.Append(buf)
-	buf[20+3] = 10 // set attr length = 10
-	mDecoded := AcquireMessage()
-	if _, err := mDecoded.ReadBytes(buf); err == nil {
+	m.Raw[20+3] = 10 // set attr length = 10
+	mDecoded := New()
+	if _, err := mDecoded.ReadBytes(m.Raw); err == nil {
 		t.Error("should error")
 	}
 }
 
 func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	messageAttribute := Attribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
+	messageAttribute := RawAttribute{Length: 2, Value: []byte{1, 2}, Type: 0x1}
 	messageAttributes := Attributes{
 		messageAttribute,
 	}
-	m := AcquireFields(Message{
+	m := &Message{
 		Type:          mType,
 		TransactionID: NewTransactionID(),
 		Attributes:    messageAttributes,
-	})
-	b := new(bytes.Buffer)
-	m.WriteTo(b)
-	buf := b.Bytes()
-	mDecoded := AcquireMessage()
-	binary.BigEndian.PutUint16(buf[2:4], 2) // rewrite to bad length
-	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+2]))
+	}
+	m.Encode()
+	mDecoded := New()
+	binary.BigEndian.PutUint16(m.Raw[2:4], 2) // rewrite to bad length
+	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+2]))
 	switch e := errors.Cause(err).(type) {
 	case *DecodeErr:
 		if !e.IsPlace(DecodeErrPlace{"attribute", "header"}) {
@@ -217,22 +209,24 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 
 func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	messageAttribute := Attribute{Length: 4,
+	messageAttribute := RawAttribute{Length: 4,
 		Value: []byte{1, 2, 3, 4}, Type: 0x1,
 	}
 	messageAttributes := Attributes{
 		messageAttribute,
 	}
-	m := AcquireFields(Message{
+	m := &Message{
 		Type:          mType,
 		TransactionID: NewTransactionID(),
 		Attributes:    messageAttributes,
-	})
+	}
+	m.WriteAttributes()
+	m.WriteHeader()
 	b := new(bytes.Buffer)
 	m.WriteTo(b)
 	buf := b.Bytes()
 	binary.BigEndian.PutUint16(buf[2:4], 5) // rewrite to bad length
-	mDecoded := AcquireMessage()
+	mDecoded := New()
 	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+5]))
 	switch e := errors.Cause(err).(type) {
 	case *DecodeErr:
@@ -251,7 +245,7 @@ func (r unexpectedEOFReader) Read(b []byte) (int, error) {
 }
 
 func TestMessage_ReadFromError(t *testing.T) {
-	mDecoded := AcquireMessage()
+	mDecoded := New()
 	_, err := mDecoded.ReadFrom(unexpectedEOFReader{})
 	if errors.Cause(err) != io.ErrUnexpectedEOF {
 		t.Error(err, "should be", io.ErrUnexpectedEOF)
@@ -268,13 +262,14 @@ func BenchmarkMessageType_Value(b *testing.B) {
 
 func BenchmarkMessage_WriteTo(b *testing.B) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	m := AcquireFields(Message{
+	m := &Message{
 		Type:   mType,
 		Length: 0,
 		TransactionID: [transactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
-	})
+	}
+	m.WriteHeader()
 	buf := new(bytes.Buffer)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -285,46 +280,42 @@ func BenchmarkMessage_WriteTo(b *testing.B) {
 
 func BenchmarkMessage_ReadFrom(b *testing.B) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	m := AcquireFields(Message{
+	m := &Message{
 		Type:   mType,
 		Length: 0,
 		TransactionID: [transactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
-	})
-	buf := new(bytes.Buffer)
-	m.WriteTo(buf)
+	}
+	m.WriteHeader()
 	b.ReportAllocs()
-	tBuf := buf.Bytes()
-	b.SetBytes(int64(len(tBuf)))
-	reader := bytes.NewReader(tBuf)
-	mRec := AcquireMessage()
+	b.SetBytes(int64(len(m.Raw)))
+	reader := m.reader()
+	mRec := New()
 	for i := 0; i < b.N; i++ {
 		if _, err := mRec.ReadFrom(reader); err != nil {
 			b.Fatal(err)
 		}
-		reader.Reset(tBuf)
+		reader.Reset(m.Raw)
 		mRec.Reset()
 	}
 }
 
 func BenchmarkMessage_ReadBytes(b *testing.B) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	m := AcquireFields(Message{
+	m := &Message{
 		Type:   mType,
 		Length: 0,
 		TransactionID: [transactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
-	})
-	buf := new(bytes.Buffer)
-	m.WriteTo(buf)
+	}
+	m.WriteHeader()
 	b.ReportAllocs()
-	tBuf := buf.Bytes()
-	b.SetBytes(int64(len(tBuf)))
-	mRec := AcquireMessage()
+	b.SetBytes(int64(len(m.Raw)))
+	mRec := New()
 	for i := 0; i < b.N; i++ {
-		if _, err := mRec.ReadBytes(tBuf); err != nil {
+		if _, err := mRec.ReadBytes(m.Raw); err != nil {
 			b.Fatal(err)
 		}
 		mRec.Reset()
@@ -392,102 +383,87 @@ func TestMethod_String(t *testing.T) {
 	}
 }
 
-func TestMessageReadOnly(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.Error(err, "should be not nil")
-		}
-	}()
-	m := Message{readOnly: true}
-	m.mustWrite()
-}
-
 func TestAttribute_Equal(t *testing.T) {
-	a := Attribute{Length: 2, Value: []byte{0x1, 0x2}}
-	b := Attribute{Length: 2, Value: []byte{0x1, 0x2}}
+	a := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
+	b := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
 	if !a.Equal(b) {
 		t.Error("should equal")
 	}
-	if a.Equal(Attribute{Type: 0x2}) {
+	if a.Equal(RawAttribute{Type: 0x2}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(Attribute{Length: 0x2}) {
+	if a.Equal(RawAttribute{Length: 0x2}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(Attribute{Length: 0x3}) {
+	if a.Equal(RawAttribute{Length: 0x3}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(Attribute{Length: 2, Value: []byte{0x1, 0x3}}) {
+	if a.Equal(RawAttribute{Length: 2, Value: []byte{0x1, 0x3}}) {
 		t.Error("should not equal")
 	}
 }
 
 func TestMessage_Equal(t *testing.T) {
-	attr := Attribute{Length: 2, Value: []byte{0x1, 0x2}}
+	attr := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
 	attrs := Attributes{attr}
-	a := Message{Attributes: attrs, Length: 4 + 2}
-	b := Message{Attributes: attrs, Length: 4 + 2}
+	a := &Message{Attributes: attrs, Length: 4 + 2}
+	b := &Message{Attributes: attrs, Length: 4 + 2}
 	if !a.Equal(b) {
 		t.Error("should equal")
 	}
-	if a.Equal(Message{Type: MessageType{Class: 128}}) {
+	if a.Equal(&Message{Type: MessageType{Class: 128}}) {
 		t.Error("should not equal")
 	}
 	tID := [transactionIDSize]byte{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 	}
-	if a.Equal(Message{TransactionID: tID}) {
+	if a.Equal(&Message{TransactionID: tID}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(Message{Length: 3}) {
+	if a.Equal(&Message{Length: 3}) {
 		t.Error("should not equal")
 	}
 	tAttrs := Attributes{
 		{Length: 1, Value: []byte{0x1}},
 	}
-	if a.Equal(Message{Attributes: tAttrs, Length: 4 + 2}) {
+	if a.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
 		t.Error("should not equal")
 	}
 }
 
 func TestMessageGrow(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	m.grow(512)
-	if len(m.buf.B) < 532 {
-		t.Error("Bad length", len(m.buf.B))
+	if len(m.Raw) < 532 {
+		t.Error("Bad length", len(m.Raw))
 	}
 }
 
 func TestMessageGrowSmaller(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	m.grow(2)
-	if cap(m.buf.B) < 22 {
-		t.Error("Bad capacity", cap(m.buf.B))
+	if cap(m.Raw) < 22 {
+		t.Error("Bad capacity", cap(m.Raw))
 	}
-	if len(m.buf.B) < 22 {
-		t.Error("Bad length", len(m.buf.B))
+	if len(m.Raw) < 22 {
+		t.Error("Bad length", len(m.Raw))
 	}
 }
 
 func TestMessage_String(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	if len(m.String()) == 0 {
 		t.Error("bad string")
 	}
 }
 
 func TestIsMessage(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
-	m.AddSoftware("test")
+	m := New()
+	m.Add(&Software{
+		Raw: []byte("test"),
+	})
 	m.WriteHeader()
 
-	mBlank := AcquireMessage()
-	defer ReleaseMessage(mBlank)
-	mBlank.WriteHeader()
 	var tt = [...]struct {
 		in  []byte
 		out bool
@@ -496,8 +472,7 @@ func TestIsMessage(t *testing.T) {
 		{[]byte{1, 2, 3}, false},                    // 1
 		{[]byte{1, 2, 4}, false},                    // 2
 		{[]byte{1, 2, 4, 5, 6, 7, 8, 9, 20}, false}, // 3
-		{mBlank.buf.B, true},                        // 4
-		{m.buf.B, true},                             // 5
+		{m.Raw, true},                               // 5
 		{[]byte{0, 0, 0, 0, 33, 18,
 			164, 66, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0}, true}, // 6
@@ -510,8 +485,7 @@ func TestIsMessage(t *testing.T) {
 }
 
 func BenchmarkIsMessage(b *testing.B) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
 	m.AddSoftware("cydev/stun test")
@@ -521,7 +495,7 @@ func BenchmarkIsMessage(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		if !IsMessage(m.buf.B) {
+		if !IsMessage(m.Raw) {
 			b.Fatal("Should be message")
 		}
 	}
@@ -547,8 +521,7 @@ func loadData(tb testing.TB, name string) []byte {
 
 func TestExampleChrome(t *testing.T) {
 	buf := loadData(t, "ex1_chrome.stun")
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	_, err := m.ReadBytes(buf)
 	if err != nil {
 		t.Errorf("Failed to parse ex1_chrome: %s", err)
@@ -588,8 +561,8 @@ func TestMessageFromBrowsers(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to skip header of csv: ", err)
 	}
-	m := AcquireMessage()
 	crcTable := crc64.MakeTable(crc64.ISO)
+	m := New()
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
@@ -614,5 +587,18 @@ func TestMessageFromBrowsers(t *testing.T) {
 		}
 		m.Reset()
 	}
-	ReleaseMessage(m)
+}
+
+func TestRFC5769(t *testing.T) {
+	// Test Vectors for Session Traversal Utilities for NAT (STUN)
+	// see https://tools.ietf.org/html/rfc5769
+
+}
+
+func BenchmarkNewTransactionID(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	for i := 0; i < b.N; i++ {
+		m.TransactionID = NewTransactionID()
+	}
 }

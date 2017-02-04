@@ -16,6 +16,12 @@ const (
 	version = "0.2"
 )
 
+var (
+	software = &stun.Software{
+		Raw: []byte(fmt.Sprintf("cydev/stun %s", version)),
+	}
+)
+
 func normalize(address string) string {
 	if len(address) == 0 {
 		address = "0.0.0.0"
@@ -104,12 +110,11 @@ func (c Client) loop(conn *net.UDPConn, r Request, h ResponseHandler) error {
 		timeout    = c.getInitialTimeout()
 		maxTimeout = c.getMaxTimeout()
 		maxRetries = c.getRetries()
-		message    = stun.AcquireMessage()
+		message    = stun.New()
 
 		err      error
 		deadline time.Time
 	)
-	defer stun.ReleaseMessage(message)
 	for i := 0; i < maxRetries; i++ {
 		if _, err = r.Message.WriteTo(conn); err != nil {
 			return errors.Wrap(err, "failed to write")
@@ -178,14 +183,14 @@ func wrapWithLogger(f func(c *cli.Context) error) func(c *cli.Context) error {
 }
 
 func discover(c *cli.Context) error {
-	m := stun.AcquireFields(stun.Message{
+	m := &stun.Message{
 		TransactionID: stun.NewTransactionID(),
 		Type: stun.MessageType{
 			Method: stun.MethodBinding,
 			Class:  stun.ClassRequest,
 		},
-	})
-	m.AddSoftware(fmt.Sprintf("cydev/stun %s", version))
+	}
+	m.AddRaw(stun.AttrSoftware, software.Raw)
 	m.WriteHeader()
 
 	request := Request{

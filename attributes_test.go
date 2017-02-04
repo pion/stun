@@ -11,14 +11,12 @@ import (
 )
 
 func TestMessage_AddSoftware(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	v := "Client v0.0.1"
-	m.AddSoftware(v)
+	m.AddRaw(AttrSoftware, []byte(v))
 	m.WriteHeader()
 
-	m2 := AcquireMessage()
-	defer ReleaseMessage(m2)
+	m2 := New()
 	if _, err := m2.ReadFrom(m.reader()); err != nil {
 		t.Error(err)
 	}
@@ -37,28 +35,8 @@ func TestMessage_AddSoftware(t *testing.T) {
 	}
 }
 
-func TestMessage_AddSoftwareBytes(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
-	v := "Client v0.0.1"
-	m.AddSoftwareBytes([]byte(v))
-	m.WriteHeader()
-
-	m2 := AcquireMessage()
-	defer ReleaseMessage(m2)
-	if _, err := m2.ReadFrom(m.reader()); err != nil {
-		t.Error(err)
-	}
-	vRead := m.GetSoftware()
-	if vRead != v {
-		t.Errorf("Expected %s, got %s.", v, vRead)
-	}
-}
-
 func TestMessage_GetSoftware(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
-
+	m := New()
 	v := m.GetSoftware()
 	if v != "" {
 		t.Errorf("%s should be blank.", v)
@@ -70,8 +48,7 @@ func TestMessage_GetSoftware(t *testing.T) {
 }
 
 func BenchmarkMessage_AddXORMappedAddress(b *testing.B) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	b.ReportAllocs()
 	ip := net.ParseIP("192.168.1.32")
 	for i := 0; i < b.N; i++ {
@@ -81,9 +58,7 @@ func BenchmarkMessage_AddXORMappedAddress(b *testing.B) {
 }
 
 func BenchmarkMessage_GetXORMappedAddress(b *testing.B) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
-	b.ReportAllocs()
+	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		b.Error(err)
@@ -94,15 +69,14 @@ func BenchmarkMessage_GetXORMappedAddress(b *testing.B) {
 		b.Error(err)
 	}
 	for i := 0; i < b.N; i++ {
-		m.Add(AttrXORMappedAddress, addrValue)
+		m.AddRaw(AttrXORMappedAddress, addrValue)
 		m.GetXORMappedAddress()
 		m.Reset()
 	}
 }
 
 func TestMessage_GetXORMappedAddress(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
@@ -112,7 +86,7 @@ func TestMessage_GetXORMappedAddress(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	m.Add(AttrXORMappedAddress, addrValue)
+	m.AddRaw(AttrXORMappedAddress, addrValue)
 	ip, port, err := m.GetXORMappedAddress()
 	if err != nil {
 		t.Error(err)
@@ -126,8 +100,7 @@ func TestMessage_GetXORMappedAddress(t *testing.T) {
 }
 
 func TestMessage_GetXORMappedAddressBad(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
@@ -144,10 +117,9 @@ func TestMessage_GetXORMappedAddressBad(t *testing.T) {
 	m.AddXORMappedAddress(expectedIP, expectedPort)
 	m.WriteHeader()
 
-	mRes := AcquireMessage()
-	defer ReleaseMessage(mRes)
-	binary.BigEndian.PutUint16(m.buf.B[20+4:20+4+2], 0x21)
-	if _, err = mRes.ReadFrom(bytes.NewReader(m.buf.B)); err != nil {
+	mRes := New()
+	binary.BigEndian.PutUint16(m.Raw[20+4:20+4+2], 0x21)
+	if _, err = mRes.ReadFrom(bytes.NewReader(m.Raw)); err != nil {
 		t.Fatal(err)
 	}
 	_, _, err = m.GetXORMappedAddress()
@@ -157,8 +129,7 @@ func TestMessage_GetXORMappedAddressBad(t *testing.T) {
 }
 
 func TestMessage_AddXORMappedAddress(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
@@ -169,8 +140,7 @@ func TestMessage_AddXORMappedAddress(t *testing.T) {
 	m.AddXORMappedAddress(expectedIP, expectedPort)
 	m.WriteHeader()
 
-	mRes := AcquireMessage()
-	defer ReleaseMessage(mRes)
+	mRes := New()
 	if _, err = mRes.ReadFrom(m.reader()); err != nil {
 		t.Fatal(err)
 	}
@@ -187,8 +157,7 @@ func TestMessage_AddXORMappedAddress(t *testing.T) {
 }
 
 func TestMessage_AddXORMappedAddressV6(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
@@ -199,8 +168,7 @@ func TestMessage_AddXORMappedAddressV6(t *testing.T) {
 	m.AddXORMappedAddress(expectedIP, expectedPort)
 	m.WriteHeader()
 
-	mRes := AcquireMessage()
-	defer ReleaseMessage(mRes)
+	mRes := New()
 	if _, err = mRes.ReadFrom(m.reader()); err != nil {
 		t.Fatal(err)
 	}
@@ -217,8 +185,7 @@ func TestMessage_AddXORMappedAddressV6(t *testing.T) {
 }
 
 func BenchmarkMessage_AddErrorCode(b *testing.B) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		m.AddErrorCode(404, "Not found")
@@ -227,8 +194,7 @@ func BenchmarkMessage_AddErrorCode(b *testing.B) {
 }
 
 func TestMessage_AddErrorCode(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
@@ -239,8 +205,7 @@ func TestMessage_AddErrorCode(t *testing.T) {
 	m.AddErrorCode(expectedCode, expectedReason)
 	m.WriteHeader()
 
-	mRes := AcquireMessage()
-	defer ReleaseMessage(mRes)
+	mRes := New()
 	if _, err = mRes.ReadFrom(m.reader()); err != nil {
 		t.Fatal(err)
 	}
@@ -257,8 +222,7 @@ func TestMessage_AddErrorCode(t *testing.T) {
 }
 
 func TestMessage_AddErrorCodeDefault(t *testing.T) {
-	m := AcquireMessage()
-	defer ReleaseMessage(m)
+	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
@@ -269,8 +233,7 @@ func TestMessage_AddErrorCodeDefault(t *testing.T) {
 	m.AddErrorCodeDefault(expectedCode)
 	m.WriteHeader()
 
-	mRes := AcquireMessage()
-	defer ReleaseMessage(mRes)
+	mRes := New()
 	if _, err = mRes.ReadFrom(m.reader()); err != nil {
 		t.Fatal(err)
 	}

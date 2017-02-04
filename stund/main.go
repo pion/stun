@@ -57,6 +57,9 @@ type Logger interface {
 
 var (
 	defaultLogger = logrus.New()
+	software      = &stun.Software{
+		[]byte(defaultName),
+	}
 )
 
 const defaultName = "cydev/stun"
@@ -96,22 +99,15 @@ func basicProcess(addr net.Addr, b []byte, req, res *stun.Message) error {
 		panic(fmt.Sprintf("unknown addr: %v", addr))
 	}
 	res.AddXORMappedAddress(ip, port)
-	res.AddSoftware(defaultName)
+	res.AddRaw(stun.AttrSoftware, software.Raw)
 	res.WriteHeader()
 	return nil
 }
 
-func (s *Server) serveConn(c net.PacketConn) error {
+func (s *Server) serveConn(c net.PacketConn, res, req *stun.Message) error {
 	if c == nil {
 		return nil
 	}
-	var (
-		res = stun.AcquireMessage()
-		req = stun.AcquireMessage()
-	)
-	defer stun.ReleaseMessage(res)
-	defer stun.ReleaseMessage(req)
-
 	buf := make([]byte, stun.MaxPacketSize)
 	n, addr, err := c.ReadFrom(buf)
 	if err != nil {
@@ -130,7 +126,7 @@ func (s *Server) serveConn(c net.PacketConn) error {
 		s.logger().Printf("basicProcess: %v", err)
 		return nil
 	}
-	_, err = res.WriteToConn(c, addr)
+	_, err = c.WriteTo(res.Raw, addr)
 	if err != nil {
 		s.logger().Printf("WriteTo: %v", err)
 	}
@@ -139,11 +135,14 @@ func (s *Server) serveConn(c net.PacketConn) error {
 
 // Serve reads packets from connections and responds to BINDING requests.
 func (s *Server) Serve(c net.PacketConn) error {
+	var res, req *stun.Message
 	for {
-		if err := s.serveConn(c); err != nil {
+		if err := s.serveConn(c, res, req); err != nil {
 			s.logger().Printf("serve: %v", err)
 			return err
 		}
+		res.Reset()
+		req.Reset()
 	}
 }
 

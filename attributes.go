@@ -7,20 +7,28 @@ import (
 	"strconv"
 )
 
+type AttrWriter interface {
+	AddRaw(t AttrType, v []byte)
+}
+
+type AttrEncoder interface {
+	Encode(w AttrWriter, m *Message) error
+}
+
 // Attributes is list of message attributes.
-type Attributes []Attribute
+type Attributes []RawAttribute
 
 // Get returns first attribute from list by the type.
-// If attribute is present the Attribute is returned and the
-// boolean is true. Otherwise the returned Attribute will be
+// If attribute is present the RawAttribute is returned and the
+// boolean is true. Otherwise the returned RawAttribute will be
 // empty and boolean will be false.
-func (a Attributes) Get(t AttrType) (Attribute, bool) {
+func (a Attributes) Get(t AttrType) (RawAttribute, bool) {
 	for _, candidate := range a {
 		if candidate.Type == t {
 			return candidate, true
 		}
 	}
-	return Attribute{}, false
+	return RawAttribute{}, false
 }
 
 // AttrType is attribute type.
@@ -66,7 +74,7 @@ const (
 	AttrReservationToken   AttrType = 0x0022 // RESERVATION-TOKEN
 )
 
-// Attributes from An Origin Attribute for the STUN Protocol.
+// Attributes from An Origin RawAttribute for the STUN Protocol.
 const (
 	AttrOrigin AttrType = 0x802F
 )
@@ -113,21 +121,31 @@ func (t AttrType) String() string {
 	return s
 }
 
-// Attribute is a Type-Length-Value (TLV) object that
+// RawAttribute is a Type-Length-Value (TLV) object that
 // can be added to a STUN message.  Attributes are divided into two
 // types: comprehension-required and comprehension-optional.  STUN
 // agents can safely ignore comprehension-optional attributes they
 // don't understand, but cannot successfully process a message if it
 // contains comprehension-required attributes that are not
 // understood.
-type Attribute struct {
+type RawAttribute struct {
 	Type   AttrType
-	Length uint16
+	Length uint16 // ignored while encoding
 	Value  []byte
 }
 
+func (a *RawAttribute) Encode(m *Message) ([]byte, error) {
+	return m.Raw, nil
+}
+
+func (a *RawAttribute) Decode(v []byte, m *Message) error {
+	a.Value = v
+	a.Length = uint16(len(v))
+	return nil
+}
+
 // Equal returns true if a == b.
-func (a Attribute) Equal(b Attribute) bool {
+func (a RawAttribute) Equal(b RawAttribute) bool {
 	if a.Type != b.Type {
 		return false
 	}
@@ -145,7 +163,7 @@ func (a Attribute) Equal(b Attribute) bool {
 	return true
 }
 
-func (a Attribute) String() string {
+func (a RawAttribute) String() string {
 	return fmt.Sprintf("%s: %x", a.Type, a.Value)
 }
 
@@ -160,14 +178,41 @@ func (m *Message) getAttrValue(t AttrType) ([]byte, error) {
 	return v.Value, nil
 }
 
-// AddSoftwareBytes adds SOFTWARE attribute with value from byte slice.
-func (m *Message) AddSoftwareBytes(software []byte) {
-	m.Add(AttrSoftware, software)
+// AddSoftware adds SOFTWARE attribute with value from string.
+// Deprecated: use AddRaw.
+func (m *Message) AddSoftware(software string) {
+	m.AddRaw(AttrSoftware, []byte(software))
 }
 
-// AddSoftware adds SOFTWARE attribute with value from string.
-func (m *Message) AddSoftware(software string) {
-	m.Add(AttrSoftware, []byte(software))
+type bufEncoder struct {
+	Value []byte
+	Type  AttrType
+}
+
+func (b *bufEncoder) AddRaw(t AttrType, v []byte) {
+	b.Type = t
+	b.Value = append(b.Value, v...)
+}
+
+// Set sets the value of attribute if it presents.
+func (m *Message) Set(t AttrType, v AttrEncoder) error {
+	var (
+		a bufEncoder
+	)
+	if err := v.Encode(&a, m); err != nil {
+		return err
+	}
+	buf, err := m.getAttrValue(a.Type)
+	if err != nil {
+		return err
+	}
+	if len(a.Value) != len(buf) {
+		return ErrBadSetLength
+	}
+	for i, v := range a.Value {
+		buf[i] = v
+	}
+	return nil
 }
 
 // GetSoftwareBytes returns SOFTWARE attribute value in byte slice.
@@ -182,6 +227,7 @@ func (m *Message) GetSoftwareBytes() []byte {
 
 // GetSoftware returns SOFTWARE attribute value in string.
 // If not found, returns blank string.
+// Deprecated.
 func (m *Message) GetSoftware() string { return string(m.GetSoftwareBytes()) }
 
 // Address family values.
@@ -190,7 +236,64 @@ const (
 	FamilyIPv6 byte = 0x02
 )
 
+type XORMappedAddress struct {
+	ip   net.IP
+	port int
+}
+
+func (a *XORMappedAddress) Encode(m *Message) ([]byte, error) {
+	// X-Port is computed by taking the mapped port in host byte order,
+	// XOR’ing it with the most significant 16 bits of the magic cookie, and
+	// then the converting the result to network byte order.
+	family := FamilyIPv6
+	ip := a.ip
+	port := a.port
+	if ipV4 := ip.To4(); ipV4 != nil {
+		ip = ipV4
+		family = FamilyIPv4
+	}
+	value := make([]byte, 32+128)
+	value[0] = 0 // first 8 bits are zeroes
+	xorValue := make([]byte, net.IPv6len)
+	copy(xorValue[4:], m.TransactionID[:])
+	binary.BigEndian.PutUint32(xorValue[0:4], magicCookie)
+	port ^= magicCookie >> 16
+	binary.BigEndian.PutUint16(value[0:2], uint16(family))
+	binary.BigEndian.PutUint16(value[2:4], uint16(port))
+	xorBytes(value[4:4+len(ip)], ip, xorValue)
+	return value, nil
+}
+
+func (a *XORMappedAddress) Decode(v []byte, m *Message) error {
+	// X-Port is computed by taking the mapped port in host byte order,
+	// XOR’ing it with the most significant 16 bits of the magic cookie, and
+	// then the converting the result to network byte order.
+	v, err := m.getAttrValue(AttrXORMappedAddress)
+	if err != nil {
+		return err
+	}
+	family := byte(binary.BigEndian.Uint16(v[0:2]))
+	if family != FamilyIPv6 && family != FamilyIPv4 {
+		return newDecodeErr("xor-mapped address", "family",
+			fmt.Sprintf("bad value %d", family),
+		)
+	}
+	ipLen := net.IPv4len
+	if family == FamilyIPv6 {
+		ipLen = net.IPv6len
+	}
+	ip := net.IP(m.allocBuffer(ipLen))
+	a.port = int(binary.BigEndian.Uint16(v[2:4])) ^ (magicCookie >> 16)
+	xorValue := make([]byte, 128)
+	binary.BigEndian.PutUint32(xorValue[0:4], magicCookie)
+	copy(xorValue[4:], m.TransactionID[:])
+	xorBytes(ip, v[4:], xorValue)
+	a.ip = a.ip
+	return nil
+}
+
 // AddXORMappedAddress adds XOR MAPPED ADDRESS attribute to message.
+// Deprecated: use AddRaw.
 func (m *Message) AddXORMappedAddress(ip net.IP, port int) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
@@ -209,19 +312,20 @@ func (m *Message) AddXORMappedAddress(ip net.IP, port int) {
 	binary.BigEndian.PutUint16(value[0:2], uint16(family))
 	binary.BigEndian.PutUint16(value[2:4], uint16(port))
 	xorBytes(value[4:4+len(ip)], ip, xorValue)
-	m.Add(AttrXORMappedAddress, value[:4+len(ip)])
+	m.AddRaw(AttrXORMappedAddress, value[:4+len(ip)])
 }
 
 func (m *Message) allocBuffer(size int) []byte {
-	capacity := len(m.buf.B) + size
+	capacity := len(m.Raw) + size
 	m.grow(capacity)
-	m.buf.B = m.buf.B[:capacity]
-	return m.buf.B[len(m.buf.B)-size:]
+	m.Raw = m.Raw[:capacity]
+	return m.Raw[len(m.Raw)-size:]
 }
 
 // GetXORMappedAddress returns ip, port from attribute and error if any.
 // Value for ip is valid until Message is released or underlying buffer is
 // corrupted. Returns *DecodeError or ErrAttributeNotFound.
+// Deprecated: use GetRaw.
 func (m *Message) GetXORMappedAddress() (net.IP, int, error) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
@@ -263,6 +367,7 @@ const (
 // The reason phrase MUST be a UTF-8 [RFC 3629] encoded
 // sequence of less than 128 characters (which can be as long as 763
 // bytes).
+// Deprecated: use AddRaw.
 func (m *Message) AddErrorCode(code int, reason string) {
 	value := make([]byte,
 		errorCodeReasonStart, errorCodeReasonMaxB+errorCodeReasonStart,
@@ -272,17 +377,19 @@ func (m *Message) AddErrorCode(code int, reason string) {
 	value[errorCodeClassByte] = class
 	value[errorCodeNumberByte] = number
 	value = append(value, reason...)
-	m.Add(AttrErrorCode, value)
+	m.AddRaw(AttrErrorCode, value)
 }
 
 // AddErrorCodeDefault is wrapper for AddErrorCode that uses recommended
 // reason string from RFC. If error code is unknown, reason will be "Unknown
 // Error".
+// Deprecated: use AddRaw.
 func (m *Message) AddErrorCodeDefault(code int) {
 	m.AddErrorCode(code, ErrorCode(code).Reason())
 }
 
 // GetErrorCode returns ERROR-CODE code, reason and decode error if any.
+// Deprecated: use GetRaw.
 func (m *Message) GetErrorCode() (int, []byte, error) {
 	v, err := m.getAttrValue(AttrErrorCode)
 	if err != nil {
@@ -300,4 +407,37 @@ func (m *Message) GetErrorCode() (int, []byte, error) {
 var (
 	// ErrAttributeNotFound means that there is no such attribute.
 	ErrAttributeNotFound Error = "Attribute not found"
+
+	// ErrBadSetLength means that previous attribute value length differs from
+	// new value.
+	ErrBadSetLength Error = "Previous attribute length is different"
 )
+
+// Software is SOFTWARE attribute.
+type Software struct {
+	Raw []byte
+}
+
+func (s Software) String() string {
+	return string(s.Raw)
+}
+
+func NewSoftwareRaw(v []byte) *Software {
+	return &Software{
+		Raw: v,
+	}
+}
+
+func NewSoftware(software string) *Software {
+	return NewSoftwareRaw([]byte(software))
+}
+
+func (s *Software) Encode(w AttrWriter, m *Message) error {
+	w.AddRaw(AttrSoftware, s.Raw)
+	return nil
+}
+
+func (s *Software) Decode(v []byte, m *Message) error {
+	s.Raw = v
+	return nil
+}
