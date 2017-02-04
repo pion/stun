@@ -1,8 +1,10 @@
-stun-msg-fuzz.zip
-stun-typ-fuzz.zip
+*-fuzz.zip
 .idea
-mem.out
 benchmark.*.write
 *.test
+*.out
 bench.go-*
 PACKAGES
+stund/stund
+stun-cli/stun-cli
+stun-decode/stun-decode
