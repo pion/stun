@@ -1,5 +1,6 @@
 package stun
 
+// ErrorCodeAttribute represents ERROR-CODE attribute.
 type ErrorCodeAttribute struct {
 	Code   int
 	Reason []byte

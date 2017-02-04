@@ -7,10 +7,12 @@ import (
 	"strconv"
 )
 
+// AttrWriter wraps AddRaw method.
 type AttrWriter interface {
 	AddRaw(t AttrType, v []byte)
 }
 
+// AttrEncoder wraps Encode method.
 type AttrEncoder interface {
 	Encode(w AttrWriter, m *Message) error
 }
@@ -134,10 +136,12 @@ type RawAttribute struct {
 	Value  []byte
 }
 
+// Encode implements AttrEncoder.
 func (a *RawAttribute) Encode(m *Message) ([]byte, error) {
 	return m.Raw, nil
 }
 
+// Decode implements AttrDecoder.
 func (a *RawAttribute) Decode(v []byte, m *Message) error {
 	a.Value = v
 	a.Length = uint16(len(v))
@@ -189,6 +193,7 @@ type bufEncoder struct {
 	Type  AttrType
 }
 
+// AddRaw implements AttrWriter.
 func (b *bufEncoder) AddRaw(t AttrType, v []byte) {
 	b.Type = t
 	b.Value = append(b.Value, v...)
@@ -209,9 +214,7 @@ func (m *Message) Set(t AttrType, v AttrEncoder) error {
 	if len(a.Value) != len(buf) {
 		return ErrBadSetLength
 	}
-	for i, v := range a.Value {
-		buf[i] = v
-	}
+	copy(buf, a.Value)
 	return nil
 }
 
@@ -236,11 +239,14 @@ const (
 	FamilyIPv6 byte = 0x02
 )
 
+// XORMappedAddress implements XOR-MAPPED-ADDRESS attribute.
 type XORMappedAddress struct {
 	ip   net.IP
 	port int
 }
 
+// Encode implements AttrEncoder.
+// TODO(ar): fix signature.
 func (a *XORMappedAddress) Encode(m *Message) ([]byte, error) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
@@ -264,6 +270,8 @@ func (a *XORMappedAddress) Encode(m *Message) ([]byte, error) {
 	return value, nil
 }
 
+// Decode implements AttrDecoder.
+// TODO(ar): fix signature.
 func (a *XORMappedAddress) Decode(v []byte, m *Message) error {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
@@ -288,7 +296,7 @@ func (a *XORMappedAddress) Decode(v []byte, m *Message) error {
 	binary.BigEndian.PutUint32(xorValue[0:4], magicCookie)
 	copy(xorValue[4:], m.TransactionID[:])
 	xorBytes(ip, v[4:], xorValue)
-	a.ip = a.ip
+	a.ip = ip
 	return nil
 }
 
@@ -422,21 +430,18 @@ func (s Software) String() string {
 	return string(s.Raw)
 }
 
-func NewSoftwareRaw(v []byte) *Software {
-	return &Software{
-		Raw: v,
-	}
-}
-
+// NewSoftware returns *Software from string.
 func NewSoftware(software string) *Software {
-	return NewSoftwareRaw([]byte(software))
+	return &Software{Raw: []byte(software)}
 }
 
+// Encode implements AttrEncoder.
 func (s *Software) Encode(w AttrWriter, m *Message) error {
 	w.AddRaw(AttrSoftware, s.Raw)
 	return nil
 }
 
+// Decode implements AttrDecoder.
 func (s *Software) Decode(v []byte, m *Message) error {
 	s.Raw = v
 	return nil

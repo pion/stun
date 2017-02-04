@@ -117,7 +117,6 @@ func NewTransactionID() (b [transactionIDSize]byte) {
 
 // defaults for pool.
 const (
-	defaultAttributesCapacity    = 12
 	defaultMessageBufferCapacity = 416
 )
 
@@ -149,6 +148,7 @@ func (m *Message) grow(v int) {
 	m.Raw = m.Raw[:n]
 }
 
+// Add adds AttrEncoder to message, calling Encode method.
 func (m *Message) Add(a AttrEncoder) error {
 	return a.Encode(m, m)
 }
@@ -253,6 +253,7 @@ func (m *Message) WriteHeader() {
 	bin.PutUint16(m.Raw[2:4], uint16(len(m.Raw)-20))
 }
 
+// WriteAttributes encodes all m.Attributes to m.
 func (m *Message) WriteAttributes() {
 	for _, a := range m.Attributes {
 		m.AddRaw(a.Type, a.Value)
@@ -323,6 +324,7 @@ func IsMessage(b []byte) bool {
 		binary.BigEndian.Uint32(b[4:8]) == magicCookie
 }
 
+// Decode decodes m.Raw into m.
 func (m *Message) Decode() error {
 	// decoding message header
 	buf := m.Raw
