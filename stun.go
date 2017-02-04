@@ -117,7 +117,7 @@ func NewTransactionID() (b [transactionIDSize]byte) {
 
 // defaults for pool.
 const (
-	defaultMessageBufferCapacity = 416
+	defaultMessageBufferCapacity = 120
 )
 
 // New returns *Message with allocated Raw.
@@ -150,7 +150,22 @@ func (m *Message) grow(v int) {
 
 // Add adds AttrEncoder to message, calling Encode method.
 func (m *Message) Add(a AttrEncoder) error {
-	return a.Encode(m, m)
+	var (
+		err error
+		t   AttrType
+	)
+	initial := len(m.Raw)
+	for i := 0; i < attributeHeaderSize; i++ {
+		m.Raw = append(m.Raw, 0)
+	}
+	start := len(m.Raw)
+	t, m.Raw, err = a.Encode(m.Raw, m)
+	if err != nil {
+		m.Raw = m.Raw[:initial]
+		return err
+	}
+	m.AddRaw(t, m.Raw[start:])
+	return nil
 }
 
 // AddRaw appends new attribute to message. Not goroutine-safe.
@@ -158,6 +173,7 @@ func (m *Message) Add(a AttrEncoder) error {
 // Value of attribute is copied to internal buffer so
 // it is safe to reuse v.
 func (m *Message) AddRaw(t AttrType, v []byte) {
+	// CPU: suboptimal;
 	// allocating memory for TLV (type-length-value), where
 	// type-length is attribute header.
 	// m.buf.B[0:20] is reserved by header
@@ -278,36 +294,28 @@ func (m *Message) Append(v []byte) []byte {
 	return append(v, m.Raw...)
 }
 
-// Bytes returns message raw value.
-// Deprecated: use m.Raw.
-func (m *Message) Bytes() []byte {
-	return m.Raw
-}
-
 // WriteToConn writes a packet with message to addr, using c.
 // Deprecated; non-idiomatic.
 func (m *Message) WriteToConn(c net.PacketConn, addr net.Addr) (n int, err error) {
 	return c.WriteTo(m.Raw, addr)
 }
 
-// ReadFrom implements ReaderFrom. Decodes message and return error if any.
+// ReadFrom implements ReaderFrom. Reads message from r into m.Raw,
+// Decodes it and return error if any. If m.Raw is too small, will return
+// ErrUnexpectedEOF, ErrUnexpectedHeaderEOF or *DecodeErr.
 //
-// Can return ErrUnexpectedEOF, ErrInvalidMagicCookie, ErrInvalidMessageLength.
-// Any error is unrecoverable, but message could be partially decoded.
-//
-// ErrUnexpectedEOF means that there were not enough bytes to read header or
-// Deprecated: use Decode.
+// Can return *DecodeErr while decoding.
 func (m *Message) ReadFrom(r io.Reader) (int64, error) {
-	tBuf := make([]byte, 0, MaxPacketSize)
+	tBuf := m.Raw[:cap(m.Raw)]
 	var (
 		n   int
 		err error
 	)
-	if n, err = r.Read(tBuf[:MaxPacketSize]); err != nil {
+	if n, err = r.Read(tBuf); err != nil {
 		return int64(n), err
 	}
-	n, err = m.ReadBytes(tBuf[:n])
-	return int64(n), err
+	m.Raw = tBuf[:n]
+	return int64(n), m.Decode()
 }
 
 func newAttrDecodeErr(children, message string) *DecodeErr {
@@ -324,10 +332,18 @@ func IsMessage(b []byte) bool {
 		binary.BigEndian.Uint32(b[4:8]) == magicCookie
 }
 
+var (
+	// ErrUnexpectedHeaderEOF
+	ErrUnexpectedHeaderEOF Error = "unexpected EOF: not enough bytes to read header"
+)
+
 // Decode decodes m.Raw into m.
 func (m *Message) Decode() error {
 	// decoding message header
 	buf := m.Raw
+	if len(buf) < messageHeaderSize {
+		return ErrUnexpectedHeaderEOF
+	}
 	var (
 		t        = binary.BigEndian.Uint16(buf[0:2])      // first 2 bytes
 		size     = int(binary.BigEndian.Uint16(buf[2:4])) // second 2 bytes

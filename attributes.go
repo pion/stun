@@ -14,7 +14,7 @@ type AttrWriter interface {
 
 // AttrEncoder wraps Encode method.
 type AttrEncoder interface {
-	Encode(w AttrWriter, m *Message) error
+	Encode(b []byte, m *Message) (AttrType, []byte, error)
 }
 
 // Attributes is list of message attributes.
@@ -200,21 +200,24 @@ func (b *bufEncoder) AddRaw(t AttrType, v []byte) {
 }
 
 // Set sets the value of attribute if it presents.
-func (m *Message) Set(t AttrType, v AttrEncoder) error {
+func (m *Message) Set(a AttrEncoder) error {
 	var (
-		a bufEncoder
+		v   []byte
+		err error
+		t   AttrType
 	)
-	if err := v.Encode(&a, m); err != nil {
-		return err
-	}
-	buf, err := m.getAttrValue(a.Type)
+	t, v, err = a.Encode(v, m)
 	if err != nil {
 		return err
 	}
-	if len(a.Value) != len(buf) {
+	buf, err := m.getAttrValue(t)
+	if err != nil {
+		return err
+	}
+	if len(v) != len(buf) {
 		return ErrBadSetLength
 	}
-	copy(buf, a.Value)
+	copy(buf, v)
 	return nil
 }
 
@@ -246,8 +249,7 @@ type XORMappedAddress struct {
 }
 
 // Encode implements AttrEncoder.
-// TODO(ar): fix signature.
-func (a *XORMappedAddress) Encode(m *Message) ([]byte, error) {
+func (a *XORMappedAddress) Encode(buf []byte, m *Message) (AttrType, []byte, error) {
 	// X-Port is computed by taking the mapped port in host byte order,
 	// XOR’ing it with the most significant 16 bits of the magic cookie, and
 	// then the converting the result to network byte order.
@@ -267,7 +269,8 @@ func (a *XORMappedAddress) Encode(m *Message) ([]byte, error) {
 	binary.BigEndian.PutUint16(value[0:2], uint16(family))
 	binary.BigEndian.PutUint16(value[2:4], uint16(port))
 	xorBytes(value[4:4+len(ip)], ip, xorValue)
-	return value, nil
+	buf = append(buf, value...)
+	return AttrXORMappedAddress, buf, nil
 }
 
 // Decode implements AttrDecoder.
@@ -436,9 +439,8 @@ func NewSoftware(software string) *Software {
 }
 
 // Encode implements AttrEncoder.
-func (s *Software) Encode(w AttrWriter, m *Message) error {
-	w.AddRaw(AttrSoftware, s.Raw)
-	return nil
+func (s *Software) Encode(b []byte, m *Message) (AttrType, []byte, error) {
+	return AttrSoftware, append(b, s.Raw...), nil
 }
 
 // Decode implements AttrDecoder.

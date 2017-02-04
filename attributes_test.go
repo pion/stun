@@ -16,7 +16,9 @@ func TestMessage_AddSoftware(t *testing.T) {
 	m.AddRaw(AttrSoftware, []byte(v))
 	m.WriteHeader()
 
-	m2 := New()
+	m2 := &Message{
+		Raw: make([]byte, 0, 256),
+	}
 	if _, err := m2.ReadFrom(m.reader()); err != nil {
 		t.Error(err)
 	}

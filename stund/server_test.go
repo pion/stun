@@ -23,7 +23,7 @@ func BenchmarkBasicProcess(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		res.Reset()
 		req.Reset()
-		if err := basicProcess(addr, m.Bytes(), req, res); err != nil {
+		if err := basicProcess(addr, m.Raw, req, res); err != nil {
 			b.Fatal(err)
 		}
 	}

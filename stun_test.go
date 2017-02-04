@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 
+	"net"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -600,5 +602,36 @@ func BenchmarkNewTransactionID(b *testing.B) {
 	m := new(Message)
 	for i := 0; i < b.N; i++ {
 		m.TransactionID = NewTransactionID()
+	}
+}
+
+func BenchmarkMessageFull(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	s := NewSoftware("software")
+	addr := &XORMappedAddress{
+		ip: net.IPv4(213, 1, 223, 5),
+	}
+	for i := 0; i < b.N; i++ {
+		m.Add(addr)
+		m.Add(s)
+		m.WriteAttributes()
+		m.Reset()
+	}
+}
+
+func BenchmarkMessageFullHardcore(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	s := NewSoftware("software")
+	addr := &XORMappedAddress{
+		ip: net.IPv4(213, 1, 223, 5),
+	}
+	t, v, _ := addr.Encode(nil, m)
+	for i := 0; i < b.N; i++ {
+		m.AddRaw(AttrSoftware, s.Raw)
+		m.AddRaw(t, v)
+		m.WriteAttributes()
+		m.Reset()
 	}
 }
