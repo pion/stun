@@ -321,7 +321,7 @@ func IsMessage(b []byte) bool {
 		binary.BigEndian.Uint32(b[4:8]) == magicCookie
 }
 
-var (
+const (
 	// ErrUnexpectedHeaderEOF means that there were not enough bytes in
 	// m.Raw to read header.
 	ErrUnexpectedHeaderEOF Error = "unexpected EOF: not enough bytes to read header"

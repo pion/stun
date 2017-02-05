@@ -405,7 +405,7 @@ func (m *Message) GetErrorCode() (int, []byte, error) {
 	return code, reason, nil
 }
 
-var (
+const (
 	// ErrAttributeNotFound means that there is no such attribute.
 	ErrAttributeNotFound Error = "Attribute not found"
 
