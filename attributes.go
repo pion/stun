@@ -189,17 +189,6 @@ func (m *Message) AddSoftware(software string) {
 	m.AddRaw(AttrSoftware, []byte(software))
 }
 
-type bufEncoder struct {
-	Value []byte
-	Type  AttrType
-}
-
-// AddRaw implements AttrWriter.
-func (b *bufEncoder) AddRaw(t AttrType, v []byte) {
-	b.Type = t
-	b.Value = append(b.Value, v...)
-}
-
 // Set sets the value of attribute if it presents.
 func (m *Message) Set(a AttrEncoder) error {
 	var (
@@ -477,6 +466,8 @@ func (f *Fingerprint) AddTo(m *Message) error {
 	return nil
 }
 
+// Check reads fingerprint value from m and checks it, returning error if any.
+// Can return *DecodeErr, ErrAttributeNotFound, ErrCRCMissmatch.
 func (f *Fingerprint) Check(m *Message) error {
 	v, err := m.getAttrValue(AttrFingerprint)
 	if err != nil {

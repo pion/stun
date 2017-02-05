@@ -246,6 +246,7 @@ func (m *Message) Equal(b *Message) bool {
 	return true
 }
 
+// WriteLength writes m.Length to m.Raw.
 func (m *Message) WriteLength() { bin.PutUint16(m.Raw[2:4], uint16(m.Length)) }
 
 // WriteHeader writes header to underlying buffer. Not goroutine-safe.
@@ -321,7 +322,8 @@ func IsMessage(b []byte) bool {
 }
 
 var (
-	// ErrUnexpectedHeaderEOF
+	// ErrUnexpectedHeaderEOF means that there were not enough bytes in
+	// m.Raw to read header.
 	ErrUnexpectedHeaderEOF Error = "unexpected EOF: not enough bytes to read header"
 )
 
