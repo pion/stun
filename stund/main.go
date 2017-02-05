@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"runtime"
 
 	"github.com/ernado/stun"
 	"github.com/pkg/errors"
@@ -114,7 +115,7 @@ func (s *Server) serveConn(c net.PacketConn, res, req *stun.Message) error {
 		s.logger().Printf("ReadFrom: %v", err)
 		return nil
 	}
-	s.logger().Printf("read %d bytes from %s", n, addr)
+	// s.logger().Printf("read %d bytes from %s", n, addr)
 	if _, err = req.ReadBytes(buf[:n]); err != nil {
 		s.logger().Printf("ReadBytes: %v", err)
 		return err
@@ -135,7 +136,10 @@ func (s *Server) serveConn(c net.PacketConn, res, req *stun.Message) error {
 
 // Serve reads packets from connections and responds to BINDING requests.
 func (s *Server) Serve(c net.PacketConn) error {
-	var res, req *stun.Message
+	var (
+		res = new(stun.Message)
+		req = new(stun.Message)
+	)
 	for {
 		if err := s.serveConn(c, res, req); err != nil {
 			s.logger().Printf("serve: %v", err)
@@ -168,6 +172,7 @@ func normalize(address string) string {
 
 func main() {
 	flag.Parse()
+	runtime.GOMAXPROCS(1)
 	switch *network {
 	case "udp":
 		normalized := normalize(*address)
