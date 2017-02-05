@@ -3,6 +3,7 @@ package stun
 import (
 	"encoding/binary"
 	"fmt"
+	"hash/crc32"
 	"net"
 	"strconv"
 )
@@ -448,3 +449,51 @@ func (s *Software) Decode(v []byte, m *Message) error {
 	s.Raw = v
 	return nil
 }
+
+const (
+	fingerprintXORValue uint32 = 0x5354554e
+)
+
+// Fingerprint represents FINGERPRINT attribute.
+type Fingerprint struct {
+	Value uint32 // CRC-32 of message XOR-ed with 0x5354554e
+}
+
+const (
+	fingerprintSize = 4 // 32 bit
+)
+
+// AddTo adds fingerprint to message.
+func (f *Fingerprint) AddTo(m *Message) error {
+	l := m.Length
+	// length in header should include size of fingerprint attribute
+	m.Length += fingerprintSize + attributeHeaderSize // increasing length
+	m.WriteLength()                                   // writing Length to Raw
+	b := make([]byte, fingerprintSize)
+	f.Value = crc32.ChecksumIEEE(m.Raw) ^ fingerprintXORValue // XOR
+	bin.PutUint32(b, f.Value)
+	m.Length = l
+	m.AddRaw(AttrFingerprint, b)
+	return nil
+}
+
+func (f *Fingerprint) Check(m *Message) error {
+	v, err := m.getAttrValue(AttrFingerprint)
+	if err != nil {
+		return err
+	}
+	if len(v) != fingerprintSize {
+		return newDecodeErr("message", "fingerprint", "bad length")
+	}
+	f.Value = bin.Uint32(v)
+	attrStart := len(m.Raw) - (fingerprintSize + attributeHeaderSize)
+	expected := crc32.ChecksumIEEE(m.Raw[:attrStart]) ^ fingerprintXORValue
+	if expected != f.Value {
+		return ErrCRCMissmatch
+	}
+	return nil
+}
+
+// ErrCRCMissmatch means that calculated fingerprint attribute differs from
+// expected one.
+const ErrCRCMissmatch Error = "CRC32 missmatch: bad fingerprint value"

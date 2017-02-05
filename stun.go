@@ -57,21 +57,12 @@ const transactionIDSize = 12 // 96 bit
 // so there are some usage constraints:
 //
 // 		* Message and its fields is valid only until AcquireMessage call.
-// 		* Decoded message is read-only and any changes will cause panic.
-//
-// To change read-only message one must allocate new Message and copy
-// contents. The main reason of making Message read-only are
-// decode methods for attributes. They grow internal buffer and sub-slice
-// it instead of allocating one, but it is used for encoding, so
-// one Message instance cannot be used to encode and decode.
 type Message struct {
-	Type   MessageType
-	Length uint32
-	// TransactionID is used to uniquely identify STUN transactions.
+	Type          MessageType
+	Length        uint32 // len(Raw) not including header
 	TransactionID [transactionIDSize]byte
 	Attributes    Attributes
-	// buf is underlying raw data buffer.
-	Raw []byte
+	Raw           []byte
 }
 
 // CopyTo copies all m to c.
@@ -255,6 +246,8 @@ func (m *Message) Equal(b *Message) bool {
 	return true
 }
 
+func (m *Message) WriteLength() { bin.PutUint16(m.Raw[2:4], uint16(m.Length)) }
+
 // WriteHeader writes header to underlying buffer. Not goroutine-safe.
 func (m *Message) WriteHeader() {
 	// encoding header
@@ -266,7 +259,7 @@ func (m *Message) WriteHeader() {
 	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:])
 	// attributes are already encoded
 	// writing length as size, in bytes, not including the 20-byte STUN header.
-	bin.PutUint16(m.Raw[2:4], uint16(len(m.Raw)-20))
+	bin.PutUint16(m.Raw[2:4], uint16(len(m.Raw)-messageHeaderSize))
 }
 
 // WriteAttributes encodes all m.Attributes to m.
@@ -287,11 +280,6 @@ func (m *Message) Encode() {
 func (m *Message) WriteTo(w io.Writer) (int64, error) {
 	n, err := w.Write(m.Raw)
 	return int64(n), err
-}
-
-// Append appends message to byte slice.
-func (m *Message) Append(v []byte) []byte {
-	return append(v, m.Raw...)
 }
 
 // WriteToConn writes a packet with message to addr, using c.

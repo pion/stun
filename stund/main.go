@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 	"runtime"
+	"strings"
 
 	"github.com/ernado/stun"
 	"github.com/pkg/errors"

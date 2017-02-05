@@ -133,25 +133,6 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 	}
 }
 
-func TestMessage_WriteTo(t *testing.T) {
-	m := New()
-	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
-	m.TransactionID = NewTransactionID()
-	m.AddRaw(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
-	m.WriteHeader()
-	buf := new(bytes.Buffer)
-	if _, err := m.WriteTo(buf); err != nil {
-		t.Fatal(err)
-	}
-	mDecoded := New()
-	if _, err := mDecoded.ReadFrom(buf); err != nil {
-		t.Error(err)
-	}
-	if !mDecoded.Equal(m) {
-		t.Error(mDecoded, "!", m)
-	}
-}
-
 func TestMessage_Cookie(t *testing.T) {
 	buf := make([]byte, 20)
 	mDecoded := New()
@@ -224,12 +205,9 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	}
 	m.WriteAttributes()
 	m.WriteHeader()
-	b := new(bytes.Buffer)
-	m.WriteTo(b)
-	buf := b.Bytes()
-	binary.BigEndian.PutUint16(buf[2:4], 5) // rewrite to bad length
+	bin.PutUint16(m.Raw[2:4], 5) // rewrite to bad length
 	mDecoded := New()
-	_, err := mDecoded.ReadFrom(bytes.NewReader(buf[:20+5]))
+	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+5]))
 	switch e := errors.Cause(err).(type) {
 	case *DecodeErr:
 		if !e.IsPlace(DecodeErrPlace{"attribute", "value"}) {
@@ -612,10 +590,14 @@ func BenchmarkMessageFull(b *testing.B) {
 	addr := &XORMappedAddress{
 		ip: net.IPv4(213, 1, 223, 5),
 	}
+	fingerprint := new(Fingerprint)
 	for i := 0; i < b.N; i++ {
 		m.Add(addr)
 		m.Add(s)
 		m.WriteAttributes()
+		m.WriteHeader()
+		fingerprint.AddTo(m)
+		m.WriteHeader()
 		m.Reset()
 	}
 }
@@ -633,5 +615,79 @@ func BenchmarkMessageFullHardcore(b *testing.B) {
 		m.AddRaw(t, v)
 		m.WriteAttributes()
 		m.Reset()
+	}
+}
+
+func addAttr(t testing.TB, m *Message, a AttrEncoder) {
+	if err := m.Add(a); err != nil {
+		t.Error(err)
+	}
+}
+
+func BenchmarkFingerprint_AddTo(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	s := NewSoftware("software")
+	addr := &XORMappedAddress{
+		ip: net.IPv4(213, 1, 223, 5),
+	}
+	addAttr(b, m, addr)
+	addAttr(b, m, s)
+	fingerprint := new(Fingerprint)
+	b.SetBytes(int64(len(m.Raw)))
+	for i := 0; i < b.N; i++ {
+		fingerprint.AddTo(m)
+		m.WriteLength()
+		m.Length -= attributeHeaderSize + fingerprintSize
+		m.Raw = m.Raw[:m.Length+messageHeaderSize]
+		m.Attributes = m.Attributes[:len(m.Attributes)-1]
+	}
+}
+
+func TestFingerprint_Check(t *testing.T) {
+	m := new(Message)
+	addAttr(t, m, NewSoftware("software"))
+	m.WriteHeader()
+	fInit := new(Fingerprint)
+	fInit.AddTo(m)
+	m.WriteHeader()
+	f := new(Fingerprint)
+	if err := f.Check(m); err != nil {
+		t.Errorf("decoded: %d, encoded: %d, err: %s", f.Value, fInit.Value, err)
+	}
+}
+
+func BenchmarkFingerprint_Check(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	s := NewSoftware("software")
+	addr := &XORMappedAddress{
+		ip: net.IPv4(213, 1, 223, 5),
+	}
+	addAttr(b, m, addr)
+	addAttr(b, m, s)
+	fingerprint := new(Fingerprint)
+	m.WriteHeader()
+	fingerprint.AddTo(m)
+	m.WriteHeader()
+	b.SetBytes(int64(len(m.Raw)))
+	for i := 0; i < b.N; i++ {
+		if err := fingerprint.Check(m); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkMessage_WriteHeader(b *testing.B) {
+	m := &Message{
+		TransactionID: NewTransactionID(),
+		Raw:           make([]byte, 120),
+		Type: MessageType{
+			Class:  ClassRequest,
+			Method: MethodBinding,
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		m.WriteHeader()
 	}
 }

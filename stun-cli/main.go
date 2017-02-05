@@ -116,7 +116,7 @@ func (c Client) loop(conn *net.UDPConn, r Request, h ResponseHandler) error {
 		deadline time.Time
 	)
 	for i := 0; i < maxRetries; i++ {
-		if _, err = r.Message.WriteTo(conn); err != nil {
+		if _, err = conn.Write(r.Message.Raw); err != nil {
 			return errors.Wrap(err, "failed to write")
 		}
 
