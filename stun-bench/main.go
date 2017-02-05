@@ -7,9 +7,9 @@ import (
 	"net"
 	"net/http"
 	"runtime"
+	"time"
 
 	"github.com/ernado/stun"
-	"time"
 )
 
 var (
