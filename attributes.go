@@ -125,12 +125,6 @@ type RawAttribute struct {
 	Value  []byte
 }
 
-// AddTo adds RawAttribute to m.
-func (a *RawAttribute) AddTo(m *Message) error {
-	m.Add(a.Type, m.Raw)
-	return nil
-}
-
 // Equal returns true if a == b.
 func (a RawAttribute) Equal(b RawAttribute) bool {
 	if a.Type != b.Type {

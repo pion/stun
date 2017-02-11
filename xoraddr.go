@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 )
 
 const (
@@ -18,7 +19,13 @@ type XORMappedAddress struct {
 }
 
 func (a XORMappedAddress) String() string {
-	return fmt.Sprintf("%s:%d", a.IP, a.Port)
+	return net.JoinHostPort(a.IP.String(), strconv.Itoa(a.Port))
+}
+
+// isIPv4 returns true if ip with len of net.IPv6Len seems to be ipv4.
+func isIPv4(ip net.IP) bool {
+	// Optimized for performance. Copied from net.IP.To4.
+	return isZeros(ip[0:10]) && ip[10] == 0xff && ip[11] == 0xff
 }
 
 // Is p all zeros?
@@ -42,8 +49,7 @@ func (a *XORMappedAddress) AddTo(m *Message) error {
 		ip     = a.IP
 	)
 	if len(a.IP) == net.IPv6len {
-		// Optimized for performance. See net.IP.To4 method.
-		if isZeros(ip[0:10]) && ip[10] == 0xff && ip[11] == 0xff {
+		if isIPv4(ip) {
 			ip = ip[12:16] // like in ip.To4()
 		} else {
 			family = familyIPv6

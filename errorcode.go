@@ -1,11 +1,18 @@
 package stun
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // ErrorCodeAttribute represents ERROR-CODE attribute.
 type ErrorCodeAttribute struct {
 	Code   ErrorCode
 	Reason []byte
+}
+
+func (c ErrorCodeAttribute) String() string {
+	return fmt.Sprintf("%d: %s", c.Code, c.Reason)
 }
 
 // constants for ERROR-CODE encoding.

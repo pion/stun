@@ -1,0 +1,73 @@
+package stun
+
+import (
+	"encoding/base64"
+	"testing"
+)
+
+func BenchmarkErrorCode_AddTo(b *testing.B) {
+	m := New()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		CodeStaleNonce.AddTo(m)
+		m.Reset()
+	}
+}
+
+func BenchmarkErrorCodeAttribute_AddTo(b *testing.B) {
+	m := New()
+	b.ReportAllocs()
+	a := &ErrorCodeAttribute{
+		Code:   404,
+		Reason: []byte("not found!"),
+	}
+	for i := 0; i < b.N; i++ {
+		a.AddTo(m)
+		m.Reset()
+	}
+}
+
+func BenchmarkErrorCodeAttribute_GetFrom(b *testing.B) {
+	m := New()
+	b.ReportAllocs()
+	a := &ErrorCodeAttribute{
+		Code:   404,
+		Reason: []byte("not found!"),
+	}
+	a.AddTo(m)
+	for i := 0; i < b.N; i++ {
+		a.GetFrom(m)
+	}
+}
+
+func TestMessage_AddErrorCode(t *testing.T) {
+	m := New()
+	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
+	if err != nil {
+		t.Error(err)
+	}
+	copy(m.TransactionID[:], transactionID)
+	expectedCode := ErrorCode(428)
+	expectedReason := "Stale Nonce"
+	CodeStaleNonce.AddTo(m)
+	m.WriteHeader()
+
+	mRes := New()
+	if _, err = mRes.ReadFrom(m.reader()); err != nil {
+		t.Fatal(err)
+	}
+	errCodeAttr := new(ErrorCodeAttribute)
+	if err = errCodeAttr.GetFrom(mRes); err != nil {
+		t.Error(err)
+	}
+	code := errCodeAttr.Code
+	if err != nil {
+		t.Error(err)
+	}
+	if code != expectedCode {
+		t.Error("bad code", code)
+	}
+	if string(errCodeAttr.Reason) != expectedReason {
+		t.Error("bad reason", string(errCodeAttr.Reason))
+	}
+}

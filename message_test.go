@@ -17,6 +17,16 @@ import (
 	"testing"
 )
 
+type attributeEncoder interface {
+	AddTo(m *Message) error
+}
+
+func addAttr(t testing.TB, m *Message, a attributeEncoder) {
+	if err := a.AddTo(m); err != nil {
+		t.Error(err)
+	}
+}
+
 func bUint16(v uint16) string {
 	return fmt.Sprintf("0b%016s", strconv.FormatUint(uint64(v), 2))
 }
@@ -504,31 +514,6 @@ func TestExampleChrome(t *testing.T) {
 	}
 }
 
-func TestPadding(t *testing.T) {
-	tt := []struct {
-		in, out int
-	}{
-		{4, 4},   // 0
-		{2, 4},   // 1
-		{5, 8},   // 2
-		{8, 8},   // 3
-		{11, 12}, // 4
-		{1, 4},   // 5
-		{3, 4},   // 6
-		{6, 8},   // 7
-		{7, 8},   // 8
-		{0, 0},   // 9
-		{40, 40}, // 10
-	}
-	for i, c := range tt {
-		if got := nearestPaddedValueLength(c.in); got != c.out {
-			t.Errorf("[%d]: padd(%d) %d (got) != %d (expected)",
-				i, c.in, got, c.out,
-			)
-		}
-	}
-}
-
 func TestMessageFromBrowsers(t *testing.T) {
 	// file contains udp-packets captured from browsers (WebRTC)
 	reader := csv.NewReader(bytes.NewReader(loadData(t, "frombrowsers.csv")))
@@ -568,15 +553,7 @@ func TestMessageFromBrowsers(t *testing.T) {
 func TestRFC5769(t *testing.T) {
 	// Test Vectors for Session Traversal Utilities for NAT (STUN)
 	// see https://tools.ietf.org/html/rfc5769
-
-}
-
-func BenchmarkNewTransactionID(b *testing.B) {
-	b.ReportAllocs()
-	m := new(Message)
-	for i := 0; i < b.N; i++ {
-		m.TransactionID = NewTransactionID()
-	}
+	t.Skip("RFC5769 test is not implemented")
 }
 
 func BenchmarkMessage_NewTransactionID(b *testing.B) {
@@ -623,66 +600,6 @@ func BenchmarkMessageFullHardcore(b *testing.B) {
 		}
 		m.WriteHeader()
 		m.Reset()
-	}
-}
-
-type attributeEncoder interface {
-	AddTo(m *Message) error
-}
-
-func addAttr(t testing.TB, m *Message, a attributeEncoder) {
-	if err := a.AddTo(m); err != nil {
-		t.Error(err)
-	}
-}
-
-func BenchmarkFingerprint_AddTo(b *testing.B) {
-	b.ReportAllocs()
-	m := new(Message)
-	s := NewSoftware("software")
-	addr := &XORMappedAddress{
-		IP: net.IPv4(213, 1, 223, 5),
-	}
-	addAttr(b, m, addr)
-	addAttr(b, m, s)
-	b.SetBytes(int64(len(m.Raw)))
-	for i := 0; i < b.N; i++ {
-		Fingerprint.AddTo(m)
-		m.WriteLength()
-		m.Length -= attributeHeaderSize + fingerprintSize
-		m.Raw = m.Raw[:m.Length+messageHeaderSize]
-		m.Attributes = m.Attributes[:len(m.Attributes)-1]
-	}
-}
-
-func TestFingerprint_Check(t *testing.T) {
-	m := new(Message)
-	addAttr(t, m, NewSoftware("software"))
-	m.WriteHeader()
-	Fingerprint.AddTo(m)
-	m.WriteHeader()
-	if err := Fingerprint.Check(m); err != nil {
-		t.Error(err)
-	}
-}
-
-func BenchmarkFingerprint_Check(b *testing.B) {
-	b.ReportAllocs()
-	m := new(Message)
-	s := NewSoftware("software")
-	addr := &XORMappedAddress{
-		IP: net.IPv4(213, 1, 223, 5),
-	}
-	addAttr(b, m, addr)
-	addAttr(b, m, s)
-	m.WriteHeader()
-	Fingerprint.AddTo(m)
-	m.WriteHeader()
-	b.SetBytes(int64(len(m.Raw)))
-	for i := 0; i < b.N; i++ {
-		if err := Fingerprint.Check(m); err != nil {
-			b.Fatal(err)
-		}
 	}
 }
 
