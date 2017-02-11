@@ -240,11 +240,6 @@ func (m *Message) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-// Append appends m.Raw to v. Useful to call after encoding message.
-func (m *Message) Append(v []byte) []byte {
-	return append(v, m.Raw...)
-}
-
 // ReadFrom implements ReaderFrom. Reads message from r into m.Raw,
 // Decodes it and return error if any. If m.Raw is too small, will return
 // ErrUnexpectedEOF, ErrUnexpectedHeaderEOF or *DecodeErr.
