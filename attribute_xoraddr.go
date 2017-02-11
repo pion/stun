@@ -32,7 +32,7 @@ func isZeros(p net.IP) bool {
 }
 
 // ErrBadIPLength means that len(IP) is not net.{IPv6len,IPv4len}.
-var ErrBadIPLength = errors.New("invalid length if IP value")
+var ErrBadIPLength = errors.New("invalid length of IP value")
 
 // AddTo adds XOR-MAPPED-ADDRESS to m. Can return ErrBadIPLength
 // if len(a.IP) is invalid.
