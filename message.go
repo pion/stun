@@ -74,7 +74,8 @@ func New() *Message {
 // buffering to enable zero-allocation encoding and decoding,
 // so there are some usage constraints:
 //
-// 		* Message and its fields is valid only until AcquireMessage call.
+// 	Message, its fields, results of m.Get or any attribute a.GetFrom
+//	are valid only until Message.Raw is not modified.
 type Message struct {
 	Type          MessageType
 	Length        uint32 // len(Raw) not including header
