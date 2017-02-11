@@ -5,8 +5,8 @@ import (
 	"hash/crc32"
 )
 
-// FingerprintAttr represent FINGERPRINT attribute.
-type FingerprintAttr struct{}
+// FingerprintAttr represents FINGERPRINT attribute.
+type FingerprintAttr byte
 
 // CRCMismatch represents CRC check error.
 type CRCMismatch struct {
@@ -22,7 +22,12 @@ func (m CRCMismatch) Error() string {
 }
 
 // Fingerprint is shorthand for FingerprintAttr.
-var Fingerprint = &FingerprintAttr{}
+//
+// Example:
+//
+//  m := New()
+//  Fingerprint.AddTo(m)
+var Fingerprint FingerprintAttr
 
 const (
 	fingerprintXORValue uint32 = 0x5354554e
@@ -41,8 +46,8 @@ func (FingerprintAttr) AddTo(m *Message) error {
 	m.Length += fingerprintSize + attributeHeaderSize // increasing length
 	m.WriteLength()                                   // writing Length to Raw
 	b := make([]byte, fingerprintSize)
-	v := FingerprintValue(m.Raw)
-	bin.PutUint32(b, v)
+	val := FingerprintValue(m.Raw)
+	bin.PutUint32(b, val)
 	m.Length = l
 	m.Add(AttrFingerprint, b)
 	return nil
@@ -51,14 +56,14 @@ func (FingerprintAttr) AddTo(m *Message) error {
 // Check reads fingerprint value from m and checks it, returning error if any.
 // Can return *DecodeErr, ErrAttributeNotFound and *CRCMismatch.
 func (FingerprintAttr) Check(m *Message) error {
-	v, err := m.Get(AttrFingerprint)
+	b, err := m.Get(AttrFingerprint)
 	if err != nil {
 		return err
 	}
-	if len(v) != fingerprintSize {
+	if len(b) != fingerprintSize {
 		return newDecodeErr("message", "fingerprint", "bad length")
 	}
-	val := bin.Uint32(v)
+	val := bin.Uint32(b)
 	attrStart := len(m.Raw) - (fingerprintSize + attributeHeaderSize)
 	expected := FingerprintValue(m.Raw[:attrStart])
 	if expected != val {
