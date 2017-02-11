@@ -550,12 +550,6 @@ func TestMessageFromBrowsers(t *testing.T) {
 	}
 }
 
-func TestRFC5769(t *testing.T) {
-	// Test Vectors for Session Traversal Utilities for NAT (STUN)
-	// see https://tools.ietf.org/html/rfc5769
-	t.Skip("RFC5769 test is not implemented")
-}
-
 func BenchmarkMessage_NewTransactionID(b *testing.B) {
 	b.ReportAllocs()
 	m := new(Message)
