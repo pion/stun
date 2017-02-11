@@ -75,3 +75,5 @@ bindata:
 
 package:
 	./extras/scripts/package.sh $(VERSION) $(ITERATION)
+docker-build:
+	docker build -t gortc/stun .
