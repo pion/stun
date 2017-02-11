@@ -1,14 +1,5 @@
 package stun
 
-// Error is error type for constant errors in stun package.
-//
-// See http://dave.cheney.net/2016/04/07/constant-errors for more info.
-type Error string
-
-func (e Error) Error() string {
-	return string(e)
-}
-
 // DecodeErr records an error and place when it is occurred.
 type DecodeErr struct {
 	Place   DecodeErrPlace

@@ -1,6 +1,7 @@
 package stun
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -118,8 +119,6 @@ func (t AttrType) String() string {
 // don't understand, but cannot successfully process a message if it
 // contains comprehension-required attributes that are not
 // understood.
-//
-// TODO(ar): Decide to use pointer or non-pointer RawAttribute.
 type RawAttribute struct {
 	Type   AttrType
 	Length uint16 // ignored while encoding
@@ -157,7 +156,7 @@ func (a RawAttribute) String() string {
 
 // ErrAttributeNotFound means that attribute with provided attribute
 // type does not exist in message.
-const ErrAttributeNotFound Error = "Attribute not found"
+var ErrAttributeNotFound = errors.New("Attribute not found")
 
 // Get returns byte slice that represents attribute value,
 // if there is no attribute with such type,

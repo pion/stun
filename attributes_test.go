@@ -212,6 +212,19 @@ func BenchmarkErrorCodeAttribute_AddTo(b *testing.B) {
 	}
 }
 
+func BenchmarkErrorCodeAttribute_GetFrom(b *testing.B) {
+	m := New()
+	b.ReportAllocs()
+	a := &ErrorCodeAttribute{
+		Code:   404,
+		Reason: []byte("not found!"),
+	}
+	a.AddTo(m)
+	for i := 0; i < b.N; i++ {
+		a.GetFrom(m)
+	}
+}
+
 func TestMessage_AddErrorCode(t *testing.T) {
 	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
@@ -241,5 +254,13 @@ func TestMessage_AddErrorCode(t *testing.T) {
 	}
 	if string(errCodeAttr.Reason) != expectedReason {
 		t.Error("bad reason", string(errCodeAttr.Reason))
+	}
+}
+
+func BenchmarkMessage_GetNotFound(b *testing.B) {
+	m := New()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		m.Get(AttrRealm)
 	}
 }

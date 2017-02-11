@@ -24,6 +24,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -261,11 +262,9 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	return int64(n), m.Decode()
 }
 
-const (
-	// ErrUnexpectedHeaderEOF means that there were not enough bytes in
-	// m.Raw to read header.
-	ErrUnexpectedHeaderEOF Error = "unexpected EOF: not enough bytes to read header"
-)
+// ErrUnexpectedHeaderEOF means that there were not enough bytes in
+// m.Raw to read header.
+var ErrUnexpectedHeaderEOF = errors.New("unexpected EOF: not enough bytes to read header")
 
 // Decode decodes m.Raw into m.
 func (m *Message) Decode() error {

@@ -15,17 +15,10 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 func bUint16(v uint16) string {
 	return fmt.Sprintf("0b%016s", strconv.FormatUint(uint64(v), 2))
-}
-
-func init() {
-	log.SetLevel(log.DebugLevel)
 }
 
 func (m *Message) reader() *bytes.Reader {
@@ -185,7 +178,7 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 	mDecoded := New()
 	binary.BigEndian.PutUint16(m.Raw[2:4], 2) // rewrite to bad length
 	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+2]))
-	switch e := errors.Cause(err).(type) {
+	switch e := err.(type) {
 	case *DecodeErr:
 		if !e.IsPlace(DecodeErrPlace{"attribute", "header"}) {
 			t.Error(e, "bad place")
@@ -213,7 +206,7 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	bin.PutUint16(m.Raw[2:4], 5) // rewrite to bad length
 	mDecoded := New()
 	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+5]))
-	switch e := errors.Cause(err).(type) {
+	switch e := err.(type) {
 	case *DecodeErr:
 		if !e.IsPlace(DecodeErrPlace{"attribute", "value"}) {
 			t.Error(e, "bad place")
@@ -232,7 +225,7 @@ func (r unexpectedEOFReader) Read(b []byte) (int, error) {
 func TestMessage_ReadFromError(t *testing.T) {
 	mDecoded := New()
 	_, err := mDecoded.ReadFrom(unexpectedEOFReader{})
-	if errors.Cause(err) != io.ErrUnexpectedEOF {
+	if err != io.ErrUnexpectedEOF {
 		t.Error(err, "should be", io.ErrUnexpectedEOF)
 	}
 }

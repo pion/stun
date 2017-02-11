@@ -1,5 +1,7 @@
 package stun
 
+import "errors"
+
 // ErrorCodeAttribute represents ERROR-CODE attribute.
 type ErrorCodeAttribute struct {
 	Code   ErrorCode
@@ -15,21 +17,26 @@ const (
 	errorCodeModulo      = 100
 )
 
+// ErrReasonLengthTooBig means that len(Reason) > 763 bytes.
+var ErrReasonLengthTooBig = errors.New("reason for ERROR-CODE is too big")
+
 // AddTo adds ERROR-CODE to m.
 func (c *ErrorCodeAttribute) AddTo(m *Message) error {
-	value := make([]byte,
-		errorCodeReasonStart, errorCodeReasonMaxB,
-	)
+	value := make([]byte, 0, errorCodeReasonMaxB)
+	if len(c.Reason) > errorCodeReasonMaxB {
+		return ErrReasonLengthTooBig
+	}
+	value = value[:errorCodeReasonStart+len(c.Reason)]
 	number := byte(c.Code % errorCodeModulo) // error code modulo 100
 	class := byte(c.Code / errorCodeModulo)  // hundred digit
 	value[errorCodeClassByte] = class
 	value[errorCodeNumberByte] = number
-	value = append(value, c.Reason...)
+	copy(value[errorCodeReasonStart:], c.Reason)
 	m.Add(AttrErrorCode, value)
 	return nil
 }
 
-// GetFrom decodes ERROR-CODE from m.
+// GetFrom decodes ERROR-CODE from m. Reason is valid until m.Raw is valid.
 func (c *ErrorCodeAttribute) GetFrom(m *Message) error {
 	v, err := m.Get(AttrErrorCode)
 	if err != nil {
@@ -39,10 +46,9 @@ func (c *ErrorCodeAttribute) GetFrom(m *Message) error {
 		class  = uint16(v[errorCodeClassByte])
 		number = uint16(v[errorCodeNumberByte])
 		code   = int(class*errorCodeModulo + number)
-		reason = v[errorCodeReasonStart:]
 	)
 	c.Code = ErrorCode(code)
-	c.Reason = reason
+	c.Reason = v[errorCodeReasonStart:]
 	return nil
 }
 
@@ -51,7 +57,7 @@ type ErrorCode int
 
 // ErrNoDefaultReason means that default reason for provided error code
 // is not defined in RFC.
-const ErrNoDefaultReason Error = "No default reason for ErrorCode"
+var ErrNoDefaultReason = errors.New("No default reason for ErrorCode")
 
 // AddTo adds ERROR-CODE with default reason to m. If there
 // is no default reason, returns ErrNoDefaultReason.
