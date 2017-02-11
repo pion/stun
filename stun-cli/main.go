@@ -190,7 +190,7 @@ func discover(c *cli.Context) error {
 			Class:  stun.ClassRequest,
 		},
 	}
-	m.AddRaw(stun.AttrSoftware, software.Raw)
+	m.Add(stun.AttrSoftware, software.Raw)
 	m.WriteHeader()
 
 	request := Request{
@@ -200,15 +200,13 @@ func discover(c *cli.Context) error {
 
 	return DefaultClient.Do(request, func(r Response) error {
 		var (
-			ip   net.IP
-			port int
-			err  error
+			err error
 		)
-		ip, port, err = r.Message.GetXORMappedAddress()
-		if err != nil {
+		addr := new(stun.XORMappedAddress)
+		if err = addr.GetFrom(r.Message); err != nil {
 			return errors.Wrap(err, "failed to get ip")
 		}
-		fmt.Println(ip, port)
+		fmt.Println(addr)
 		return nil
 	})
 }

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"runtime"
+	"net/http"
 	"strings"
+
+	_ "net/http/pprof"
 
 	"github.com/ernado/stun"
 	"github.com/pkg/errors"
@@ -16,6 +18,8 @@ import (
 var (
 	network = flag.String("net", "udp", "network to listen")
 	address = flag.String("addr", "0.0.0.0:3478", "address to listen")
+	workers = flag.Int("workers", 1, "workers to start")
+	profile = flag.Bool("profile", false, "profile")
 )
 
 // Server is RFC 5389 basic server implementation.
@@ -80,7 +84,7 @@ func basicProcess(addr net.Addr, b []byte, req, res *stun.Message) error {
 	if !stun.IsMessage(b) {
 		return errNotSTUNMessage
 	}
-	if _, err := req.ReadBytes(b); err != nil {
+	if _, err := req.Write(b); err != nil {
 		return errors.Wrap(err, "failed to read message")
 	}
 	res.TransactionID = req.TransactionID
@@ -99,8 +103,12 @@ func basicProcess(addr net.Addr, b []byte, req, res *stun.Message) error {
 	default:
 		panic(fmt.Sprintf("unknown addr: %v", addr))
 	}
-	res.AddXORMappedAddress(ip, port)
-	res.AddRaw(stun.AttrSoftware, software.Raw)
+	xma := &stun.XORMappedAddress{
+		IP:   ip,
+		Port: port,
+	}
+	xma.AddTo(res)
+	software.AddTo(res)
 	res.WriteHeader()
 	return nil
 }
@@ -116,8 +124,8 @@ func (s *Server) serveConn(c net.PacketConn, res, req *stun.Message) error {
 		return nil
 	}
 	// s.logger().Printf("read %d bytes from %s", n, addr)
-	if _, err = req.ReadBytes(buf[:n]); err != nil {
-		s.logger().Printf("ReadBytes: %v", err)
+	if _, err = req.Write(buf[:n]); err != nil {
+		s.logger().Printf("Write: %v", err)
 		return err
 	}
 	if err = basicProcess(addr, buf[:n], req, res); err != nil {
@@ -156,8 +164,10 @@ func ListenUDPAndServe(serverNet, laddr string) error {
 	if err != nil {
 		return err
 	}
-	s := &Server{}
-	return s.Serve(c)
+	for i := 1; i < *workers; i++ {
+		go new(Server).Serve(c)
+	}
+	return new(Server).Serve(c)
 }
 
 func normalize(address string) string {
@@ -172,7 +182,11 @@ func normalize(address string) string {
 
 func main() {
 	flag.Parse()
-	runtime.GOMAXPROCS(1)
+	if *profile {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
 	switch *network {
 	case "udp":
 		normalized := normalize(*address)

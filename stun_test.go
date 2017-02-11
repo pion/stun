@@ -9,13 +9,12 @@ import (
 	"hash/crc64"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-
-	"net"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -33,24 +32,11 @@ func (m *Message) reader() *bytes.Reader {
 	return bytes.NewReader(m.Raw)
 }
 
-func TestMessageCopy(t *testing.T) {
-	m := New()
-	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
-	m.TransactionID = NewTransactionID()
-	m.AddRaw(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
-	m.WriteHeader()
-	mCopy := New()
-	m.CopyTo(mCopy)
-	if !mCopy.Equal(m) {
-		t.Error(mCopy, "!=", m)
-	}
-}
-
 func TestMessageBuffer(t *testing.T) {
 	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
-	m.AddRaw(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	m.WriteHeader()
 	mDecoded := New()
 	if _, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw)); err != nil {
@@ -69,7 +55,7 @@ func BenchmarkMessage_Write(b *testing.B) {
 	transactionID := NewTransactionID()
 	m := New()
 	for i := 0; i < b.N; i++ {
-		m.AddRaw(AttrErrorCode, attributeValue)
+		m.Add(AttrErrorCode, attributeValue)
 		m.TransactionID = transactionID
 		m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 		m.WriteHeader()
@@ -133,6 +119,25 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 	}
 }
 
+func TestMessage_WriteTo(t *testing.T) {
+	m := New()
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.WriteHeader()
+	buf := new(bytes.Buffer)
+	if _, err := m.WriteTo(buf); err != nil {
+		t.Fatal(err)
+	}
+	mDecoded := New()
+	if _, err := mDecoded.ReadFrom(buf); err != nil {
+		t.Error(err)
+	}
+	if !mDecoded.Equal(m) {
+		t.Error(mDecoded, "!", m)
+	}
+}
+
 func TestMessage_Cookie(t *testing.T) {
 	buf := make([]byte, 20)
 	mDecoded := New()
@@ -156,11 +161,11 @@ func TestMessage_BadLength(t *testing.T) {
 		Length:        4,
 		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 	}
-	m.AddRaw(0x1, []byte{1, 2})
+	m.Add(0x1, []byte{1, 2})
 	m.WriteHeader()
 	m.Raw[20+3] = 10 // set attr length = 10
 	mDecoded := New()
-	if _, err := mDecoded.ReadBytes(m.Raw); err == nil {
+	if _, err := mDecoded.Write(m.Raw); err == nil {
 		t.Error("should error")
 	}
 }
@@ -295,7 +300,7 @@ func BenchmarkMessage_ReadBytes(b *testing.B) {
 	b.SetBytes(int64(len(m.Raw)))
 	mRec := New()
 	for i := 0; i < b.N; i++ {
-		if _, err := mRec.ReadBytes(m.Raw); err != nil {
+		if _, err := mRec.Write(m.Raw); err != nil {
 			b.Fatal(err)
 		}
 		mRec.Reset()
@@ -439,9 +444,7 @@ func TestMessage_String(t *testing.T) {
 
 func TestIsMessage(t *testing.T) {
 	m := New()
-	m.Add(&Software{
-		Raw: []byte("test"),
-	})
+	NewSoftware("software").AddTo(m)
 	m.WriteHeader()
 
 	var tt = [...]struct {
@@ -468,7 +471,7 @@ func BenchmarkIsMessage(b *testing.B) {
 	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
-	m.AddSoftware("cydev/stun test")
+	NewSoftware("cydev/stun test").AddTo(m)
 	m.WriteHeader()
 
 	b.SetBytes(int64(messageHeaderSize))
@@ -502,13 +505,13 @@ func loadData(tb testing.TB, name string) []byte {
 func TestExampleChrome(t *testing.T) {
 	buf := loadData(t, "ex1_chrome.stun")
 	m := New()
-	_, err := m.ReadBytes(buf)
+	_, err := m.Write(buf)
 	if err != nil {
 		t.Errorf("Failed to parse ex1_chrome: %s", err)
 	}
 }
 
-func TestNearestLen(t *testing.T) {
+func TestPadding(t *testing.T) {
 	tt := []struct {
 		in, out int
 	}{
@@ -525,7 +528,7 @@ func TestNearestLen(t *testing.T) {
 		{40, 40}, // 10
 	}
 	for i, c := range tt {
-		if got := nearestLength(c.in); got != c.out {
+		if got := nearestPaddedValueLength(c.in); got != c.out {
 			t.Errorf("[%d]: padd(%d) %d (got) != %d (expected)",
 				i, c.in, got, c.out,
 			)
@@ -562,7 +565,7 @@ func TestMessageFromBrowsers(t *testing.T) {
 		if b != crc64.Checksum(data, crcTable) {
 			t.Error("crc64 check failed for ", line[1])
 		}
-		if _, err = m.ReadBytes(data); err != nil {
+		if _, err = m.Write(data); err != nil {
 			t.Error("failed to decode ", line[1], " as message: ", err)
 		}
 		m.Reset()
@@ -583,20 +586,29 @@ func BenchmarkNewTransactionID(b *testing.B) {
 	}
 }
 
+func BenchmarkMessage_NewTransactionID(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	for i := 0; i < b.N; i++ {
+		if err := m.NewTransactionID(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func BenchmarkMessageFull(b *testing.B) {
 	b.ReportAllocs()
 	m := new(Message)
 	s := NewSoftware("software")
 	addr := &XORMappedAddress{
-		ip: net.IPv4(213, 1, 223, 5),
+		IP: net.IPv4(213, 1, 223, 5),
 	}
-	fingerprint := new(Fingerprint)
 	for i := 0; i < b.N; i++ {
-		m.Add(addr)
-		m.Add(s)
+		addAttr(b, m, addr)
+		addAttr(b, m, s)
 		m.WriteAttributes()
 		m.WriteHeader()
-		fingerprint.AddTo(m)
+		Fingerprint.AddTo(m)
 		m.WriteHeader()
 		m.Reset()
 	}
@@ -607,19 +619,26 @@ func BenchmarkMessageFullHardcore(b *testing.B) {
 	m := new(Message)
 	s := NewSoftware("software")
 	addr := &XORMappedAddress{
-		ip: net.IPv4(213, 1, 223, 5),
+		IP: net.IPv4(213, 1, 223, 5),
 	}
-	t, v, _ := addr.Encode(nil, m)
 	for i := 0; i < b.N; i++ {
-		m.AddRaw(AttrSoftware, s.Raw)
-		m.AddRaw(t, v)
-		m.WriteAttributes()
+		if err := addr.AddTo(m); err != nil {
+			b.Fatal(err)
+		}
+		if err := s.AddTo(m); err != nil {
+			b.Fatal(err)
+		}
+		m.WriteHeader()
 		m.Reset()
 	}
 }
 
-func addAttr(t testing.TB, m *Message, a AttrEncoder) {
-	if err := m.Add(a); err != nil {
+type attributeEncoder interface {
+	AddTo(m *Message) error
+}
+
+func addAttr(t testing.TB, m *Message, a attributeEncoder) {
+	if err := a.AddTo(m); err != nil {
 		t.Error(err)
 	}
 }
@@ -629,14 +648,13 @@ func BenchmarkFingerprint_AddTo(b *testing.B) {
 	m := new(Message)
 	s := NewSoftware("software")
 	addr := &XORMappedAddress{
-		ip: net.IPv4(213, 1, 223, 5),
+		IP: net.IPv4(213, 1, 223, 5),
 	}
 	addAttr(b, m, addr)
 	addAttr(b, m, s)
-	fingerprint := new(Fingerprint)
 	b.SetBytes(int64(len(m.Raw)))
 	for i := 0; i < b.N; i++ {
-		fingerprint.AddTo(m)
+		Fingerprint.AddTo(m)
 		m.WriteLength()
 		m.Length -= attributeHeaderSize + fingerprintSize
 		m.Raw = m.Raw[:m.Length+messageHeaderSize]
@@ -648,12 +666,10 @@ func TestFingerprint_Check(t *testing.T) {
 	m := new(Message)
 	addAttr(t, m, NewSoftware("software"))
 	m.WriteHeader()
-	fInit := new(Fingerprint)
-	fInit.AddTo(m)
+	Fingerprint.AddTo(m)
 	m.WriteHeader()
-	f := new(Fingerprint)
-	if err := f.Check(m); err != nil {
-		t.Errorf("decoded: %d, encoded: %d, err: %s", f.Value, fInit.Value, err)
+	if err := Fingerprint.Check(m); err != nil {
+		t.Error(err)
 	}
 }
 
@@ -662,17 +678,16 @@ func BenchmarkFingerprint_Check(b *testing.B) {
 	m := new(Message)
 	s := NewSoftware("software")
 	addr := &XORMappedAddress{
-		ip: net.IPv4(213, 1, 223, 5),
+		IP: net.IPv4(213, 1, 223, 5),
 	}
 	addAttr(b, m, addr)
 	addAttr(b, m, s)
-	fingerprint := new(Fingerprint)
 	m.WriteHeader()
-	fingerprint.AddTo(m)
+	Fingerprint.AddTo(m)
 	m.WriteHeader()
 	b.SetBytes(int64(len(m.Raw)))
 	for i := 0; i < b.N; i++ {
-		if err := fingerprint.Check(m); err != nil {
+		if err := Fingerprint.Check(m); err != nil {
 			b.Fatal(err)
 		}
 	}

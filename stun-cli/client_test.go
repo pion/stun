@@ -33,7 +33,7 @@ func TestClient_Do(t *testing.T) {
 	m := stun.New()
 	m.Type = stun.MessageType{Method: stun.MethodBinding, Class: stun.ClassRequest}
 	m.TransactionID = stun.NewTransactionID()
-	m.Add(stun.NewSoftware("cydev/stun alpha"))
+	stun.NewSoftware("cydev/stun alpha").AddTo(m)
 	m.WriteHeader()
 	request := Request{
 		Target:  "stun.l.google.com:19302",
@@ -43,11 +43,11 @@ func TestClient_Do(t *testing.T) {
 		if r.Message.TransactionID != m.TransactionID {
 			t.Error("transaction id messmatch")
 		}
-		ip, port, err := r.Message.GetXORMappedAddress()
-		if err != nil {
+		addr := new(stun.XORMappedAddress)
+		if err := addr.GetFrom(m); err != nil {
 			t.Error(err)
 		}
-		log.Println("got", ip, port)
+		log.Println("got", addr)
 		return nil
 	}); err != nil {
 		t.Fatal(err)

@@ -12,12 +12,12 @@ func FuzzMessage(data []byte) int {
 	// fuzzer dont know about cookies
 	binary.BigEndian.PutUint32(data[4:8], magicCookie)
 	// trying to read data as message
-	if _, err := m.ReadBytes(data); err != nil {
+	if _, err := m.Write(data); err != nil {
 		return 0
 	}
 	m.WriteHeader()
 	m2 := New()
-	if _, err := m2.ReadBytes(m2.Raw); err != nil {
+	if _, err := m2.Write(m2.Raw); err != nil {
 		panic(err)
 	}
 	if m2.TransactionID != m.TransactionID {

@@ -17,7 +17,7 @@ func BenchmarkBasicProcess(b *testing.B) {
 		b.Fatal(err)
 	}
 	m.TransactionID = stun.NewTransactionID()
-	m.Add(stun.NewSoftware("some software"))
+	stun.NewSoftware("some software").AddTo(m)
 	m.WriteHeader()
 	b.SetBytes(int64(len(m.Raw)))
 	for i := 0; i < b.N; i++ {

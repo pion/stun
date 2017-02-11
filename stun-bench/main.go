@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"runtime"
+	"sync/atomic"
 	"time"
 
 	"github.com/ernado/stun"
@@ -17,13 +17,14 @@ var (
 		fmt.Sprintf("127.0.0.1:%d", stun.DefaultPort),
 		"addr to attack",
 	)
+	readWorkers  = flag.Int("read-workers", 1, "concurrent read workers")
+	writeWorkers = flag.Int("write-workers", 1, "concurrent write workers")
 
 	count int64
 )
 
 func main() {
 	flag.Parse()
-	runtime.GOMAXPROCS(2)
 	log.SetFlags(log.Lshortfile)
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
@@ -43,30 +44,42 @@ func main() {
 		},
 		TransactionID: stun.NewTransactionID(),
 	}
-	m.AddRaw(stun.AttrSoftware, []byte("stun benchmark"))
+	m.Add(stun.AttrSoftware, []byte("stun benchmark"))
 	m.Encode()
-	go func() {
-		mRec := stun.New()
-		mRec.Raw = make([]byte, 1024)
-		start := time.Now()
-		for {
-			_, err := c.Read(mRec.Raw[:cap(mRec.Raw)])
-			if err != nil {
-				log.Fatalln("read back:", err)
+	for i := 0; i < *readWorkers; i++ {
+		go func() {
+			mRec := stun.New()
+			mRec.Raw = make([]byte, 1024)
+			start := time.Now()
+			for {
+				_, err := c.Read(mRec.Raw[:cap(mRec.Raw)])
+				if err != nil {
+					log.Fatalln("read back:", err)
+				}
+				// mRec.Raw = mRec.Raw[:n]
+				// if err := mRec.Decode(); err != nil {
+				// 	log.Fatalln("Decode:", err)
+				// }
+				atomic.AddInt64(&count, 1)
+				if c := atomic.LoadInt64(&count); c%10000 == 0 {
+					fmt.Printf("%d\n", c)
+					elapsed := time.Since(start)
+					fmt.Println(float64(c)/elapsed.Seconds(), "per second")
+				}
+				// mRec.Reset()
 			}
-			// mRec.Raw = mRec.Raw[:n]
-			// if err := mRec.Decode(); err != nil {
-			// 	log.Fatalln("Decode:", err)
-			// }
-			count++
-			if count%10000 == 0 {
-				fmt.Printf("%d\n", count)
-				elapsed := time.Since(start)
-				fmt.Println(float64(count)/elapsed.Seconds(), "per second")
+		}()
+	}
+	for i := 1; i < *writeWorkers; i++ {
+		go func() {
+			for {
+				_, err := c.Write(m.Raw)
+				if err != nil {
+					log.Fatalln("write:", err)
+				}
 			}
-			// mRec.Reset()
-		}
-	}()
+		}()
+	}
 	for {
 		_, err := c.Write(m.Raw)
 		if err != nil {

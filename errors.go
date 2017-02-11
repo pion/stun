@@ -15,6 +15,12 @@ type DecodeErr struct {
 	Message string
 }
 
+// IsInvalidCookie returns true if error means that magic cookie
+// value is invalid.
+func (e DecodeErr) IsInvalidCookie() bool {
+	return e.Place == DecodeErrPlace{"message", "cookie"}
+}
+
 // IsPlaceParent reports if error place parent is p.
 func (e DecodeErr) IsPlaceParent(p string) bool {
 	return e.Place.Parent == p
@@ -49,4 +55,9 @@ func newDecodeErr(parent, children, message string) *DecodeErr {
 		Place:   DecodeErrPlace{Parent: parent, Children: children},
 		Message: message,
 	}
+}
+
+// TODO(ar): rewrite errors to be more precise.
+func newAttrDecodeErr(children, message string) *DecodeErr {
+	return newDecodeErr("attribute", children, message)
 }
