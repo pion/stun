@@ -7,9 +7,9 @@
 
 # stun
 Package stun implements Session Traversal Utilities for
-NAT (STUN) [RFC 5389](https://tools.ietf.org/html/rfc5389).
+NAT (STUN) [RFC 5389](https://tools.ietf.org/html/rfc5389) with focus
+on speed and zero allocations in hot paths, no external dependencies.
 
-Currently in active development. Do not use this package at all. API will
-definitely break. TURN and ICE implementations are planned too.
+Currently in active development, API is subject to change.
 
 Needs go 1.7 or better.
