@@ -1,4 +1,3 @@
-// Package stun implements Session Traversal Utilities for NAT (STUN) RFC 5389.
 package stun
 
 import (
