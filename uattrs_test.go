@@ -48,7 +48,7 @@ func BenchmarkUnknownAttributes(b *testing.B) {
 			m.Reset()
 		}
 	})
-	b.Run("AppendFrom", func(b *testing.B) {
+	b.Run("GetFrom", func(b *testing.B) {
 		b.ReportAllocs()
 		if err := a.AddTo(m); err != nil {
 			b.Fatal(err)
