@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	familyIPv4 byte = 0x01
-	familyIPv6 byte = 0x02
+	familyIPv4 uint16 = 0x01
+	familyIPv6 uint16 = 0x02
 )
 
 // XORMappedAddress implements XOR-MAPPED-ADDRESS attribute.
@@ -62,7 +62,7 @@ func (a *XORMappedAddress) AddTo(m *Message) error {
 	xorValue := make([]byte, net.IPv6len)
 	copy(xorValue[4:], m.TransactionID[:])
 	bin.PutUint32(xorValue[0:4], magicCookie)
-	bin.PutUint16(value[0:2], uint16(family))
+	bin.PutUint16(value[0:2], family)
 	bin.PutUint16(value[2:4], uint16(a.Port^magicCookie>>16))
 	xorBytes(value[4:4+len(ip)], ip, xorValue)
 	m.Add(AttrXORMappedAddress, value[:4+len(ip)])
@@ -95,7 +95,7 @@ func (a *XORMappedAddress) GetFrom(m *Message) error {
 	if err != nil {
 		return err
 	}
-	family := byte(bin.Uint16(v[0:2]))
+	family := bin.Uint16(v[0:2])
 	if family != familyIPv6 && family != familyIPv4 {
 		return newDecodeErr("xor-mapped address", "family",
 			fmt.Sprintf("bad value %d", family),
