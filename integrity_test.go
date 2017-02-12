@@ -72,7 +72,7 @@ func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 		m.Reset()
 	}
 }
-func BenchmarkMessageIntegrity_GetFrom(b *testing.B) {
+func BenchmarkMessageIntegrity_Check(b *testing.B) {
 	m := new(Message)
 	NewSoftware("software").AddTo(m)
 	integrity := &MessageIntegrity{
