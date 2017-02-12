@@ -12,4 +12,7 @@ on speed and zero allocations in hot paths, no external dependencies.
 
 Currently in active development, API is subject to change.
 
+RFC 3489 implementation is ignored by purpose, this RFC is obselete 
+and can be implemented in separate package.
+
 Needs go 1.7 or better.
