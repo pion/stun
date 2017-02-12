@@ -27,6 +27,13 @@ func TestUsername(t *testing.T) {
 			if got.String() != username {
 				t.Errorf("expedted: %s, got: %s", username, got)
 			}
+			t.Run("Not found", func(t *testing.T) {
+				m := new(Message)
+				u := new(Username)
+				if err := u.GetFrom(m); err != ErrAttributeNotFound {
+					t.Error("Should error")
+				}
+			})
 		})
 	})
 	t.Run("No allocations", func(t *testing.T) {

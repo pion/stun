@@ -8,7 +8,6 @@ import (
 func TestRFC5769(t *testing.T) {
 	// Test Vectors for Session Traversal Utilities for NAT (STUN)
 	// see https://tools.ietf.org/html/rfc5769
-	// TODO(ar): add HMAC check.
 	t.Run("Request", func(t *testing.T) {
 		m := &Message{
 			Raw: []byte("\x00\x01\x00\x58" +
@@ -62,6 +61,37 @@ func TestRFC5769(t *testing.T) {
 				),
 			}
 			if err := m.Decode(); err != nil {
+				t.Error(err)
+			}
+			u := new(Username)
+			if err := u.GetFrom(m); err != nil {
+				t.Error(err)
+			}
+			expectedUsername := "\u30DE\u30C8\u30EA\u30C3\u30AF\u30B9"
+			if u.String() != expectedUsername {
+				t.Errorf("username: %q (got) != %q (exp)", u, expectedUsername)
+			}
+			n := new(Nonce)
+			if err := n.GetFrom(m); err != nil {
+				t.Error(err)
+			}
+			if n.String() != "f//499k954d6OL34oL9FSTvy64sA" {
+				t.Error("bad nonce")
+			}
+			r := new(Realm)
+			if err := r.GetFrom(m); err != nil {
+				t.Error(err)
+			}
+			if r.String() != "example.org" {
+				t.Error("bad realm")
+			}
+			// checking HMAC
+			i := NewLongtermIntegrity(
+				"\u30DE\u30C8\u30EA\u30C3\u30AF\u30B9",
+				"example.org",
+				"TheMatrIX",
+			)
+			if err := i.Check(m); err != nil {
 				t.Error(err)
 			}
 		})
