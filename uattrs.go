@@ -28,9 +28,9 @@ const attrTypeSize = 4
 // AddTo adds UNKNOWN-ATTRIBUTES attribute to message.
 func (a *UnknownAttributes) AddTo(m *Message) error {
 	v := make([]byte, 0, attrTypeSize*20) // 20 should be enough
-	// If len(a.Types) > 20, there will be allocations
+	// If len(a.Types) > 20, there will be allocations.
 	for i, t := range a.Types {
-		v = append(v, 0, 0, 0, 0) // 4 times by 0 (16 bits)1
+		v = append(v, 0, 0, 0, 0) // 4 times by 0 (16 bits)
 		first := attrTypeSize * i
 		last := first + attrTypeSize
 		bin.PutUint16(v[first:last], t.Value())
