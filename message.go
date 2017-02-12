@@ -29,7 +29,7 @@ const (
 // NewTransactionID returns new random transaction ID using crypto/rand
 // as source.
 func NewTransactionID() (b [transactionIDSize]byte) {
-	_, err := rand.Read(b[:])
+	_, err := io.ReadFull(rand.Reader, b[:])
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +68,7 @@ type Message struct {
 // NewTransactionID sets m.TransactionID to random value from crypto/rand
 // and returns error if any.
 func (m *Message) NewTransactionID() error {
-	_, err := rand.Read(m.TransactionID[:])
+	_, err := io.ReadFull(rand.Reader, m.TransactionID[:])
 	return err
 }
 
