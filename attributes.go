@@ -3,7 +3,6 @@ package stun
 import (
 	"errors"
 	"fmt"
-	"strconv"
 )
 
 // Attributes is list of message attributes.
@@ -107,7 +106,7 @@ func (t AttrType) String() string {
 	s, ok := attrNames[t]
 	if !ok {
 		// Just return hex representation of unknown attribute type.
-		return "0x" + strconv.FormatUint(uint64(t), 16)
+		return fmt.Sprintf("0x%x", uint16(t))
 	}
 	return s
 }
@@ -145,7 +144,7 @@ func (a RawAttribute) Equal(b RawAttribute) bool {
 }
 
 func (a RawAttribute) String() string {
-	return fmt.Sprintf("%s: %x", a.Type, a.Value)
+	return fmt.Sprintf("%s: 0x%x", a.Type, a.Value)
 }
 
 // ErrAttributeNotFound means that attribute with provided attribute

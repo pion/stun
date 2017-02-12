@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 )
 
 const (
@@ -382,7 +381,7 @@ func (m Method) String() string {
 	case MethodChannelBind:
 		return "channel bind"
 	default:
-		return fmt.Sprintf("0x%s", strconv.FormatUint(uint64(m), 16))
+		return fmt.Sprintf("0x%x", uint16(m))
 	}
 }
 
