@@ -12,9 +12,9 @@ import (
 // separator for credentials.
 const credentialsSep = ":"
 
-// NewLongtermIntegrity returns new MessageIntegrity with key for long-term
+// NewLongTermIntegrity returns new MessageIntegrity with key for long-term
 // credentials. Password and username must be SASL-prepared.
-func NewLongtermIntegrity(username, realm, password string) MessageIntegrity {
+func NewLongTermIntegrity(username, realm, password string) MessageIntegrity {
 	// TODO: perform sasl prep.
 	k := strings.Join(
 		[]string{

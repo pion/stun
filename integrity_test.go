@@ -7,7 +7,7 @@ import (
 )
 
 func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
-	i := NewLongtermIntegrity("user", "realm", "pass")
+	i := NewLongTermIntegrity("user", "realm", "pass")
 	expected, err := hex.DecodeString("8493fbc53ba582fb4c044c456bdc40eb")
 	if err != nil {
 		t.Fatal(err)

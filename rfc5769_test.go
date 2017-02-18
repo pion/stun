@@ -86,7 +86,7 @@ func TestRFC5769(t *testing.T) {
 				t.Error("bad realm")
 			}
 			// checking HMAC
-			i := NewLongtermIntegrity(
+			i := NewLongTermIntegrity(
 				"\u30DE\u30C8\u30EA\u30C3\u30AF\u30B9",
 				"example.org",
 				"TheMatrIX",
