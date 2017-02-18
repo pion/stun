@@ -26,7 +26,7 @@ Go 1.8 is currently supported and tested in CI. Should work on 1.7 and tip.
 
 # benchmarks
 
-Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz, go 1.7:
+Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz, go 1.8:
 
 ```
 benchmark                                     iter       time/iter      throughput   bytes alloc        allocs
