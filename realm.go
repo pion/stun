@@ -2,24 +2,20 @@ package stun
 
 import "errors"
 
-// NewRealm returns *Realm with provided value.
+// NewRealm returns Realm with provided value.
 // Must be SASL-prepared.
-func NewRealm(nonce string) *Realm {
+func NewRealm(nonce string) Realm {
 	// TODO: use sasl
-	return &Realm{
-		Raw: []byte(nonce),
-	}
+	return Realm(nonce)
 }
 
 // Realm represents REALM attribute.
 //
 // https://tools.ietf.org/html/rfc5389#section-15.7
-type Realm struct {
-	Raw []byte
-}
+type Realm []byte
 
 func (n Realm) String() string {
-	return string(n.Raw)
+	return string(n)
 }
 
 const maxRealmB = 763
@@ -28,11 +24,11 @@ const maxRealmB = 763
 var ErrRealmTooBig = errors.New("REALM value bigger than 763 bytes")
 
 // AddTo adds NONCE to message.
-func (n *Realm) AddTo(m *Message) error {
-	if len(n.Raw) > maxRealmB {
+func (n Realm) AddTo(m *Message) error {
+	if len(n) > maxRealmB {
 		return ErrRealmTooBig
 	}
-	m.Add(AttrRealm, n.Raw)
+	m.Add(AttrRealm, n)
 	return nil
 }
 
@@ -42,6 +38,6 @@ func (n *Realm) GetFrom(m *Message) error {
 	if err != nil {
 		return err
 	}
-	n.Raw = v
+	*n = v
 	return nil
 }

@@ -40,9 +40,7 @@ func TestRealm_GetFrom(t *testing.T) {
 
 func TestRealm_AddTo_Invalid(t *testing.T) {
 	m := New()
-	r := &Realm{
-		Raw: make([]byte, 1024),
-	}
+	r := make(Realm, 1024)
 	if err := r.AddTo(m); err != ErrRealmTooBig {
 		t.Errorf("AddTo should return %q, got: %v", ErrRealmTooBig, err)
 	}
