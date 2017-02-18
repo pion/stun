@@ -93,6 +93,18 @@ const (
 	CodeServerError      ErrorCode = 500
 )
 
+// Error codes from RFC 5766.
+//
+// https://trac.tools.ietf.org/html/rfc5766#section-15
+const (
+	CodeForbidden             ErrorCode = 403 // Forbidden
+	CodeAllocMismatch         ErrorCode = 437 // Allocation Mismatch
+	CodeWrongCredentials      ErrorCode = 441 // Wrong Credentials
+	CodeUnsupportedTransProto ErrorCode = 442 // Unsupported Transport Protocol
+	CodeAllocQuotaReached     ErrorCode = 486 // Allocation Quota Reached
+	CodeInsufficientCapacity  ErrorCode = 508 // Insufficient Capacity
+)
+
 var errorReasons = map[ErrorCode][]byte{
 	CodeTryAlternate:     []byte("Try Alternate"),
 	CodeBadRequest:       []byte("Bad Request"),
@@ -101,4 +113,12 @@ var errorReasons = map[ErrorCode][]byte{
 	CodeStaleNonce:       []byte("Stale Nonce"),
 	CodeServerError:      []byte("Server Error"),
 	CodeRoleConflict:     []byte("Role Conflict"),
+
+	// RFC 5766.
+	CodeForbidden:             []byte("Forbidden"),
+	CodeAllocMismatch:         []byte("Allocation Mismatch"),
+	CodeWrongCredentials:      []byte("Wrong Credentials"),
+	CodeUnsupportedTransProto: []byte("Unsupported Transport Protocol"),
+	CodeAllocQuotaReached:     []byte("Allocation Quota Reached"),
+	CodeInsufficientCapacity:  []byte("Insufficient Capacity"),
 }
