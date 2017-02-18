@@ -13,7 +13,7 @@ import (
 const credentialsSep = ":"
 
 // NewLongTermIntegrity returns new MessageIntegrity with key for long-term
-// credentials. Password and username must be SASL-prepared.
+// credentials. Password, username, and realm must be SASL-prepared.
 func NewLongTermIntegrity(username, realm, password string) MessageIntegrity {
 	// TODO: perform sasl prep.
 	k := strings.Join(
@@ -28,6 +28,13 @@ func NewLongTermIntegrity(username, realm, password string) MessageIntegrity {
 	h := md5.New()
 	fmt.Fprint(h, k)
 	return MessageIntegrity(h.Sum(nil))
+}
+
+// NewShortTermIntegrity returns new MessageIntegrity with key for short-term
+// credentials. Password must be SASL-prepared.
+func NewShortTermIntegrity(password string) MessageIntegrity {
+	// TODO: perform sasl prep.
+	return MessageIntegrity(password)
 }
 
 // MessageIntegrity represents MESSAGE-INTEGRITY attribute. AddTo and GetFrom

@@ -43,7 +43,7 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 func TestMessageIntegrity(t *testing.T) {
 	m := new(Message)
 	//NewSoftware("software")
-	i := MessageIntegrity("password")
+	i := NewShortTermIntegrity("password")
 	m.WriteHeader()
 	if err := i.AddTo(m); err != nil {
 		t.Error(err)
@@ -56,7 +56,7 @@ func TestMessageIntegrity(t *testing.T) {
 
 func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 	m := new(Message)
-	integrity := MessageIntegrity("password")
+	integrity := NewShortTermIntegrity("password")
 	m.WriteHeader()
 	b.ReportAllocs()
 	b.SetBytes(int64(len(m.Raw)))
@@ -71,7 +71,7 @@ func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 func BenchmarkMessageIntegrity_Check(b *testing.B) {
 	m := new(Message)
 	NewSoftware("software").AddTo(m)
-	integrity := MessageIntegrity("password")
+	integrity := NewShortTermIntegrity("password")
 	b.ReportAllocs()
 	m.WriteHeader()
 	b.SetBytes(int64(len(m.Raw)))
