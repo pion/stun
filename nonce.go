@@ -2,22 +2,13 @@ package stun
 
 import "errors"
 
-// NewNonce returns *Nonce with provided value.
-func NewNonce(nonce string) *Nonce {
-	return &Nonce{
-		Raw: []byte(nonce),
-	}
-}
-
 // Nonce represents NONCE attribute.
 //
 // https://tools.ietf.org/html/rfc5389#section-15.8
-type Nonce struct {
-	Raw []byte
-}
+type Nonce []byte
 
 func (n Nonce) String() string {
-	return string(n.Raw)
+	return string(n)
 }
 
 const maxNonceB = 763
@@ -26,11 +17,11 @@ const maxNonceB = 763
 var ErrNonceTooBig = errors.New("NONCE value bigger than 763 bytes")
 
 // AddTo adds NONCE to message.
-func (n *Nonce) AddTo(m *Message) error {
-	if len(n.Raw) > maxNonceB {
+func (n Nonce) AddTo(m *Message) error {
+	if len(n) > maxNonceB {
 		return ErrNonceTooBig
 	}
-	m.Add(AttrNonce, n.Raw)
+	m.Add(AttrNonce, n)
 	return nil
 }
 
@@ -40,6 +31,6 @@ func (n *Nonce) GetFrom(m *Message) error {
 	if err != nil {
 		return err
 	}
-	n.Raw = v
+	*n = v
 	return nil
 }

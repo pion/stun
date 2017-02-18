@@ -14,7 +14,7 @@ func TestNonce_GetFrom(t *testing.T) {
 	m2 := &Message{
 		Raw: make([]byte, 0, 256),
 	}
-	nonce := new(Nonce)
+	var nonce Nonce
 	if _, err := m2.ReadFrom(m.reader()); err != nil {
 		t.Error(err)
 	}
@@ -37,9 +37,7 @@ func TestNonce_GetFrom(t *testing.T) {
 
 func TestNonce_AddTo_Invalid(t *testing.T) {
 	m := New()
-	n := &Nonce{
-		Raw: make([]byte, 1024),
-	}
+	n := make(Nonce, 1024)
 	if err := n.AddTo(m); err != ErrNonceTooBig {
 		t.Errorf("AddTo should return %q, got: %v", ErrNonceTooBig, err)
 	}
@@ -50,7 +48,7 @@ func TestNonce_AddTo_Invalid(t *testing.T) {
 
 func TestNonce_AddTo(t *testing.T) {
 	m := New()
-	n := NewNonce("example.org")
+	n := Nonce("example.org")
 	if err := n.AddTo(m); err != nil {
 		t.Error(err)
 	}
