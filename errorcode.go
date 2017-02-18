@@ -6,6 +6,8 @@ import (
 )
 
 // ErrorCodeAttribute represents ERROR-CODE attribute.
+//
+// https://tools.ietf.org/html/rfc5389#section-15.6
 type ErrorCodeAttribute struct {
 	Code   ErrorCode
 	Reason []byte

@@ -13,6 +13,8 @@ const (
 )
 
 // XORMappedAddress implements XOR-MAPPED-ADDRESS attribute.
+//
+// https://tools.ietf.org/html/rfc5389#section-15.2
 type XORMappedAddress struct {
 	IP   net.IP
 	Port int

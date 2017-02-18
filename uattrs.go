@@ -2,7 +2,9 @@ package stun
 
 import "errors"
 
-// UnknownAttributes represents UNKNOWN-ATTRIBUTES
+// UnknownAttributes represents UNKNOWN-ATTRIBUTES attribute.
+//
+// https://tools.ietf.org/html/rfc5389#section-15.9
 type UnknownAttributes struct {
 	Types []AttrType
 }

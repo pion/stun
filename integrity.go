@@ -37,7 +37,7 @@ func NewLongtermIntegrity(username, realm, password string) *MessageIntegrity {
 // version of MessageIntegrity is not implemented. Implementation and changes
 // to it is subject to security review.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.3
+// https://tools.ietf.org/html/rfc5389#section-15.4
 type MessageIntegrity struct {
 	Key []byte // HMAC key
 }

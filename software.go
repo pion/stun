@@ -11,6 +11,8 @@ var ErrSoftwareTooBig = errors.New(
 )
 
 // Software is SOFTWARE attribute.
+//
+// https://tools.ietf.org/html/rfc5389#section-15.10
 type Software struct {
 	Raw []byte
 }

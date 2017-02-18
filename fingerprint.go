@@ -6,6 +6,8 @@ import (
 )
 
 // FingerprintAttr represents FINGERPRINT attribute.
+//
+// https://tools.ietf.org/html/rfc5389#section-15.5
 type FingerprintAttr byte
 
 // CRCMismatch represents CRC check error.
@@ -54,7 +56,7 @@ func (FingerprintAttr) AddTo(m *Message) error {
 }
 
 // Check reads fingerprint value from m and checks it, returning error if any.
-// Can return *DecodeErr, ErrAttributeNotFound and *CRCMismatch.
+// Can return *DecodeErr, ErrAttributeNotFound, and *CRCMismatch.
 func (FingerprintAttr) Check(m *Message) error {
 	b, err := m.Get(AttrFingerprint)
 	if err != nil {

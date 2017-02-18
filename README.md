@@ -10,9 +10,52 @@ Package stun implements Session Traversal Utilities for
 NAT (STUN) [RFC 5389](https://tools.ietf.org/html/rfc5389) with focus
 on speed and zero allocations in hot paths, no external dependencies.
 
-Currently in active development, API is subject to change.
+# stability
+Package is currently approaching beta stage, API should be fairly stable
+and implementation is almost complete. Bug reports are welcome.
 
-RFC 3489 implementation is ignored by purpose, this RFC is obselete 
-and can be implemented in separate package.
+Additional attributes are unlikely to be implemented in scope of stun package,
+the only exception is constants for attribute or message types.
 
-Needs go 1.7 or better.
+# RFC 3489 notes
+RFC 5389 obseletes RFC 3489, so implementation was ignored by purpose, however,
+RFC 3489 can be easily implemented as separate package.
+
+# requirements
+Go 1.8 is currently supported and tested in CI. Should work on 1.7 and tip.
+
+# benchmarks
+
+Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz, go 1.7:
+
+```
+benchmark                                     iter       time/iter      throughput   bytes alloc        allocs
+---------                                     ----       ---------      ----------   -----------        ------
+BenchmarkMappedAddress_AddTo-8            50000000     25.90 ns/op                        0 B/op   0 allocs/op
+BenchmarkAlternateServer_AddTo-8          50000000     25.90 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_GetNotFound-8           200000000      6.10 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCode_AddTo-8                30000000     45.10 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCodeAttribute_AddTo-8       50000000     36.90 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCodeAttribute_GetFrom-8    200000000      9.20 ns/op                        0 B/op   0 allocs/op
+BenchmarkFingerprint_AddTo-8              30000000     52.50 ns/op    1294.63 MB/s        0 B/op   0 allocs/op
+BenchmarkFingerprint_Check-8              30000000     45.50 ns/op    1670.92 MB/s        0 B/op   0 allocs/op
+BenchmarkMessageIntegrity_AddTo-8          2000000    884.00 ns/op      22.62 MB/s      480 B/op   6 allocs/op
+BenchmarkMessageIntegrity_Check-8          2000000    982.00 ns/op      24.43 MB/s      480 B/op   6 allocs/op
+BenchmarkMessage_Write-8                 100000000     18.50 ns/op    1513.46 MB/s        0 B/op   0 allocs/op
+BenchmarkMessageType_Value-8            2000000000      0.27 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_WriteTo-8               100000000     15.40 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_ReadFrom-8              100000000     22.70 ns/op     881.70 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_ReadBytes-8             100000000     14.60 ns/op    1371.19 MB/s        0 B/op   0 allocs/op
+BenchmarkIsMessage-8                    2000000000      1.03 ns/op   19389.66 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_NewTransactionID-8        1000000   1448.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageFull-8                    10000000    151.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageFullHardcore-8            30000000     57.50 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_WriteHeader-8           200000000      6.42 ns/op                        0 B/op   0 allocs/op
+BenchmarkUnknownAttributes/AddTo-8       100000000     23.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkUnknownAttributes/GetFrom-8     100000000     16.90 ns/op                        0 B/op   0 allocs/op
+BenchmarkXOR-8                            50000000     23.60 ns/op   43421.24 MB/s        0 B/op   0 allocs/op
+BenchmarkXORSafe-8                        10000000    169.00 ns/op    6048.93 MB/s        0 B/op   0 allocs/op
+BenchmarkXORFast-8                       100000000     23.00 ns/op   44457.23 MB/s        0 B/op   0 allocs/op
+BenchmarkXORMappedAddress_AddTo-8         50000000     38.30 ns/op                        0 B/op   0 allocs/op
+BenchmarkXORMappedAddress_GetFrom-8       50000000     25.40 ns/op                        0 B/op   0 allocs/op
+```

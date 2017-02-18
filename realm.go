@@ -13,7 +13,7 @@ func NewRealm(nonce string) *Realm {
 
 // Realm represents REALM attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.8
+// https://tools.ietf.org/html/rfc5389#section-15.7
 type Realm struct {
 	Raw []byte
 }

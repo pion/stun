@@ -10,7 +10,8 @@ import (
 //
 // This attribute is used only by servers for achieving backwards
 // compatibility with RFC 3489 clients.
-// https://tools.ietf.org/html/rfc5389#section-15.4
+//
+// https://tools.ietf.org/html/rfc5389#section-15.1
 type MappedAddress struct {
 	IP   net.IP
 	Port int
@@ -18,7 +19,7 @@ type MappedAddress struct {
 
 // AlternateServer represents ALTERNATE-SERVER attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.4
+// https://tools.ietf.org/html/rfc5389#section-15.11
 type AlternateServer struct {
 	IP   net.IP
 	Port int
