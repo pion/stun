@@ -59,3 +59,8 @@ BenchmarkXORFast-8                       100000000     23.00 ns/op   44457.23 MB
 BenchmarkXORMappedAddress_AddTo-8         50000000     38.30 ns/op                        0 B/op   0 allocs/op
 BenchmarkXORMappedAddress_GetFrom-8       50000000     25.40 ns/op                        0 B/op   0 allocs/op
 ```
+
+# development
+
+stun package is low-level core gortc module, so security, efficiency (both memory and cpu), simplicity,
+code quality, and low dependencies are paramount goals.

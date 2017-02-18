@@ -36,7 +36,12 @@ const (
 	fingerprintSize            = 4 // 32 bit
 )
 
-// FingerprintValue returns CRC32 of m XOR-ed by 0x5354554e.
+// FingerprintValue returns CRC-32 of b XOR-ed by 0x5354554e.
+//
+// The value of the attribute is computed as the CRC-32 of the STUN message
+// up to (but excluding) the FINGERPRINT attribute itself, XOR'ed with
+// the 32-bit value 0x5354554e (the XOR helps in cases where an
+// application packet is also using CRC-32 in it).
 func FingerprintValue(b []byte) uint32 {
 	return crc32.ChecksumIEEE(b) ^ fingerprintXORValue // XOR
 }
