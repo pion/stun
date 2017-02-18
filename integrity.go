@@ -45,7 +45,7 @@ var ErrFingerprintBeforeIntegrity = errors.New(
 )
 
 func (i MessageIntegrity) String() string {
-	return fmt.Sprintf("KEY: 0x%x", i)
+	return fmt.Sprintf("KEY: 0x%x", []byte(i))
 }
 
 const messageIntegritySize = 20
