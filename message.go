@@ -70,7 +70,7 @@ func (m *Message) NewTransactionID() error {
 	return err
 }
 
-func (m Message) String() string {
+func (m *Message) String() string {
 	return fmt.Sprintf("%s l=%d attrs=%d id=%s",
 		m.Type,
 		m.Length,
