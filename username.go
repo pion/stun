@@ -2,22 +2,18 @@ package stun
 
 import "errors"
 
-// NewUsername returns *Username with provided value.
-func NewUsername(username string) *Username {
-	return &Username{
-		Raw: []byte(username),
-	}
+// NewUsername returns Username with provided value.
+func NewUsername(username string) Username {
+	return Username(username)
 }
 
 // Username represents USERNAME attribute.
 //
 // https://tools.ietf.org/html/rfc5389#section-15.3
-type Username struct {
-	Raw []byte
-}
+type Username []byte
 
 func (u Username) String() string {
-	return string(u.Raw)
+	return string(u)
 }
 
 const maxUsernameB = 513
@@ -26,11 +22,11 @@ const maxUsernameB = 513
 var ErrUsernameTooBig = errors.New("USERNAME value bigger than 513 bytes")
 
 // AddTo adds USERNAME attribute to message.
-func (u *Username) AddTo(m *Message) error {
-	if len(u.Raw) > maxUsernameB {
+func (u Username) AddTo(m *Message) error {
+	if len(u) > maxUsernameB {
 		return ErrUsernameTooBig
 	}
-	m.Add(AttrUsername, u.Raw)
+	m.Add(AttrUsername, u)
 	return nil
 }
 
@@ -40,6 +36,6 @@ func (u *Username) GetFrom(m *Message) error {
 	if err != nil {
 		return err
 	}
-	u.Raw = v
+	*u = v
 	return nil
 }

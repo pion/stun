@@ -4,13 +4,37 @@ import (
 	"testing"
 )
 
+func BenchmarkUsername_AddTo(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	u := Username("test")
+	for i := 0; i < b.N; i++ {
+		if err := u.AddTo(m); err != nil {
+			b.Fatal(err)
+		}
+		m.Reset()
+	}
+}
+
+func BenchmarkUsername_GetFrom(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	Username("test").AddTo(m)
+	for i := 0; i < b.N; i++ {
+		var u Username
+		if err := u.GetFrom(m); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func TestUsername(t *testing.T) {
 	username := "username"
 	u := NewUsername(username)
 	m := new(Message)
 	m.WriteHeader()
 	t.Run("Bad length", func(t *testing.T) {
-		badU := &Username{Raw: make([]byte, 600)}
+		badU := make(Username, 600)
 		if err := badU.AddTo(m); err != ErrUsernameTooBig {
 			t.Errorf("expected %s, got %v", ErrUsernameTooBig, err)
 		}
