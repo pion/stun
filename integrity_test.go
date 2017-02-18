@@ -12,10 +12,10 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(expected, i.Key) {
+	if !bytes.Equal(expected, i) {
 		t.Error(&IntegrityErr{
 			Expected: expected,
-			Actual:   i.Key,
+			Actual:   i,
 		})
 	}
 	t.Run("Check", func(t *testing.T) {
@@ -43,9 +43,7 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 func TestMessageIntegrity(t *testing.T) {
 	m := new(Message)
 	//NewSoftware("software")
-	i := &MessageIntegrity{
-		Key: []byte("password"),
-	}
+	i := MessageIntegrity("password")
 	m.WriteHeader()
 	if err := i.AddTo(m); err != nil {
 		t.Error(err)
@@ -58,9 +56,7 @@ func TestMessageIntegrity(t *testing.T) {
 
 func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 	m := new(Message)
-	integrity := &MessageIntegrity{
-		Key: []byte("password"),
-	}
+	integrity := MessageIntegrity("password")
 	m.WriteHeader()
 	b.ReportAllocs()
 	b.SetBytes(int64(len(m.Raw)))
@@ -75,9 +71,7 @@ func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 func BenchmarkMessageIntegrity_Check(b *testing.B) {
 	m := new(Message)
 	NewSoftware("software").AddTo(m)
-	integrity := &MessageIntegrity{
-		Key: []byte("password"),
-	}
+	integrity := MessageIntegrity("password")
 	b.ReportAllocs()
 	m.WriteHeader()
 	b.SetBytes(int64(len(m.Raw)))

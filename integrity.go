@@ -12,9 +12,9 @@ import (
 // separator for credentials.
 const credentialsSep = ":"
 
-// NewLongtermIntegrity returns new *MessageIntegrity with key for long-term
+// NewLongtermIntegrity returns new MessageIntegrity with key for long-term
 // credentials. Password and username must be SASL-prepared.
-func NewLongtermIntegrity(username, realm, password string) *MessageIntegrity {
+func NewLongtermIntegrity(username, realm, password string) MessageIntegrity {
 	// TODO: perform sasl prep.
 	k := strings.Join(
 		[]string{
@@ -27,9 +27,7 @@ func NewLongtermIntegrity(username, realm, password string) *MessageIntegrity {
 	// #nosec
 	h := md5.New()
 	fmt.Fprint(h, k)
-	return &MessageIntegrity{
-		Key: h.Sum(nil),
-	}
+	return MessageIntegrity(h.Sum(nil))
 }
 
 // MessageIntegrity represents MESSAGE-INTEGRITY attribute. AddTo and GetFrom
@@ -38,9 +36,7 @@ func NewLongtermIntegrity(username, realm, password string) *MessageIntegrity {
 // to it is subject to security review.
 //
 // https://tools.ietf.org/html/rfc5389#section-15.4
-type MessageIntegrity struct {
-	Key []byte // HMAC key
-}
+type MessageIntegrity []byte
 
 // ErrFingerprintBeforeIntegrity means that FINGEPRINT attribute is already in
 // message, so MESSAGE-INTEGRITY attribute cannot be added.
@@ -48,15 +44,15 @@ var ErrFingerprintBeforeIntegrity = errors.New(
 	"FINGERPRINT before MESSAGE-INTEGRITY attribute",
 )
 
-func (i *MessageIntegrity) String() string {
-	return fmt.Sprintf("KEY: 0x%x", i.Key)
+func (i MessageIntegrity) String() string {
+	return fmt.Sprintf("KEY: 0x%x", i)
 }
 
 const messageIntegritySize = 20
 
 // AddTo adds MESSAGE-INTEGRITY attribute to message. Be advised, CPU
 // and allocations costly, can be cause of DOS.
-func (i *MessageIntegrity) AddTo(m *Message) error {
+func (i MessageIntegrity) AddTo(m *Message) error {
 	for _, a := range m.Attributes {
 		// Message should not contain FINGERPRINT attribute
 		// before MESSAGE-INTEGRITY.
@@ -70,9 +66,9 @@ func (i *MessageIntegrity) AddTo(m *Message) error {
 	l := m.Length
 	// Adjusting m.Length to contain MESSAGE-INTEGRITY TLV.
 	m.Length += messageIntegritySize + attributeHeaderSize
-	m.WriteLength()            // writing length to m.Raw
-	v := newHMAC(i.Key, m.Raw) // calculating HMAC for adjusted m.Raw
-	m.Length = l               // changing m.Length back
+	m.WriteLength()        // writing length to m.Raw
+	v := newHMAC(i, m.Raw) // calculating HMAC for adjusted m.Raw
+	m.Length = l           // changing m.Length back
 	m.Add(AttrMessageIntegrity, v)
 	return nil
 }
@@ -101,7 +97,7 @@ func newHMAC(key, message []byte) []byte {
 
 // Check checks MESSAGE-INTEGRITY attribute. Be advised, CPU and allocations
 // costly, can be cause of DOS.
-func (i *MessageIntegrity) Check(m *Message) error {
+func (i MessageIntegrity) Check(m *Message) error {
 	v, err := m.Get(AttrMessageIntegrity)
 	if err != nil {
 		return err
@@ -122,7 +118,7 @@ func (i *MessageIntegrity) Check(m *Message) error {
 		}
 	}
 	m.Length -= uint32(sizeReduced)
-	expected := newHMAC(i.Key, m.Raw[:m.Length+messageHeaderSize])
+	expected := newHMAC(i, m.Raw[:m.Length+messageHeaderSize])
 	m.Length = l
 	m.WriteLength() // writing length back
 
