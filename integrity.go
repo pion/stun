@@ -121,23 +121,7 @@ func (i MessageIntegrity) Check(m *Message) error {
 	expected := newHMAC(i, m.Raw[:m.Length+messageHeaderSize])
 	m.Length = l
 	m.WriteLength() // writing length back
-
-	equal := true
-	if len(v) != len(expected) {
-		// Retuning early to make check below valid.
-		return &IntegrityErr{
-			Expected: expected,
-			Actual:   v,
-		}
-	}
-	// Not using bytes.Equal to mitigate timing attack.
-	for i, b := range expected {
-		if v[i] != b {
-			equal = false
-		}
-	}
-	// Not retuning early in cycle to mitigate timing attack.
-	if !equal {
+	if !hmac.Equal(v, expected) {
 		return &IntegrityErr{
 			Expected: expected,
 			Actual:   v,
