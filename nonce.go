@@ -7,6 +7,11 @@ import "errors"
 // https://tools.ietf.org/html/rfc5389#section-15.8
 type Nonce []byte
 
+// NewNonce returns new Nonce from string.
+func NewNonce(nonce string) Nonce {
+	return Nonce(nonce)
+}
+
 func (n Nonce) String() string {
 	return string(n)
 }

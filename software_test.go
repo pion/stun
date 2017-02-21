@@ -37,9 +37,7 @@ func TestSoftware_GetFrom(t *testing.T) {
 
 func TestSoftware_AddTo_Invalid(t *testing.T) {
 	m := New()
-	s := &Software{
-		Raw: make([]byte, 1024),
-	}
+	s :=  make(Software, 1024)
 	if err := s.AddTo(m); err != ErrSoftwareTooBig {
 		t.Errorf("AddTo should return %q, got: %v", ErrSoftwareTooBig, err)
 	}
@@ -51,7 +49,7 @@ func TestSoftware_AddTo_Invalid(t *testing.T) {
 func TestSoftware_AddTo_Regression(t *testing.T) {
 	// s.AddTo checked len(m.Raw) instead of len(s.Raw).
 	m := &Message{Raw: make([]byte, 2048)}
-	s := &Software{Raw: make([]byte, 100)}
+	s := make(Software, 100)
 	if err := s.AddTo(m); err != nil {
 		t.Errorf("AddTo should return <nil>, got: %v", err)
 	}

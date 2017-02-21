@@ -13,22 +13,20 @@ var ErrSoftwareTooBig = errors.New(
 // Software is SOFTWARE attribute.
 //
 // https://tools.ietf.org/html/rfc5389#section-15.10
-type Software struct {
-	Raw []byte
-}
+type Software []byte
 
-func (s *Software) String() string {
-	return string(s.Raw)
+func (s Software) String() string {
+	return string(s)
 }
 
 // NewSoftware returns *Software from string.
-func NewSoftware(software string) *Software {
-	return &Software{Raw: []byte(software)}
+func NewSoftware(software string) Software {
+	return Software(software)
 }
 
 // AddTo adds Software attribute to m.
-func (s *Software) AddTo(m *Message) error {
-	if len(s.Raw) > softwareRawMaxB {
+func (s Software) AddTo(m *Message) error {
+	if len(s) > softwareRawMaxB {
 		return ErrSoftwareTooBig
 	}
 	m.Add(AttrSoftware, m.Raw)
@@ -41,6 +39,6 @@ func (s *Software) GetFrom(m *Message) error {
 	if err != nil {
 		return err
 	}
-	s.Raw = v
+	*s = v
 	return nil
 }

@@ -4,9 +4,9 @@ import "errors"
 
 // NewRealm returns Realm with provided value.
 // Must be SASL-prepared.
-func NewRealm(nonce string) Realm {
+func NewRealm(realm string) Realm {
 	// TODO: use sasl
-	return Realm(nonce)
+	return Realm(realm)
 }
 
 // Realm represents REALM attribute.

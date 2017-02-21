@@ -67,6 +67,9 @@ type Message struct {
 // and returns error if any.
 func (m *Message) NewTransactionID() error {
 	_, err := io.ReadFull(rand.Reader, m.TransactionID[:])
+	if err == nil {
+		m.WriteTransactionID()
+	}
 	return err
 }
 
@@ -151,6 +154,7 @@ func (m *Message) Add(t AttrType, v []byte) {
 		m.Length += uint32(bytesToAdd) // rendering length change
 	}
 	m.Attributes = append(m.Attributes, attr)
+	m.WriteLength()
 }
 
 // Equal returns true if Message b equals to m.
@@ -192,10 +196,18 @@ func (m *Message) WriteHeader() {
 	}
 	_ = m.Raw[:messageHeaderSize] // early bounds check to guarantee safety of writes below
 
-	bin.PutUint16(m.Raw[0:2], m.Type.Value())                       // message type
-	bin.PutUint16(m.Raw[2:4], uint16(len(m.Raw)-messageHeaderSize)) // size of payload
-	bin.PutUint32(m.Raw[4:8], magicCookie)                          // magic cookie
-	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:])            // transaction ID
+	m.WriteType()
+	m.WriteLength()
+	bin.PutUint32(m.Raw[4:8], magicCookie)               // magic cookie
+	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
+}
+
+func (m *Message) writeMagicCookie() {
+
+}
+
+func (m *Message) WriteTransactionID() {
+	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
 }
 
 // WriteAttributes encodes all m.Attributes to m.
@@ -203,6 +215,17 @@ func (m *Message) WriteAttributes() {
 	for _, a := range m.Attributes {
 		m.Add(a.Type, a.Value)
 	}
+}
+
+// WriteType writes m.Type to m.Raw.
+func (m *Message) WriteType() {
+	bin.PutUint16(m.Raw[0:2], m.Type.Value()) // message type
+}
+
+// SetTypes sets m.Type and writes it to m.Raw.
+func (m *Message) SetType(t MessageType) {
+	m.Type = t
+	m.WriteType()
 }
 
 // Encode resets m.Raw and calls WriteHeader and WriteAttributes.
@@ -389,6 +412,18 @@ func (m Method) String() string {
 type MessageType struct {
 	Class  MessageClass
 	Method Method
+}
+
+func (t MessageType) AddTo(m *Message) error {
+	m.SetType(t)
+	return nil
+}
+
+func NewType(class MessageClass, method Method) MessageType {
+	return MessageType{
+		Method: method,
+		Class:  class,
+	}
 }
 
 const (
