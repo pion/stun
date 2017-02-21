@@ -24,6 +24,7 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 		if err := i.AddTo(m); err != nil {
 			t.Error(err)
 		}
+		NewSoftware("software").AddTo(m)
 		m.WriteHeader()
 		dM := new(Message)
 		dM.Raw = m.Raw
@@ -33,11 +34,28 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 		if err := i.Check(dM); err != nil {
 			t.Error(err)
 		}
-		m.Raw[3] = m.Raw[3] + 12 // HMAC now invalid
+		dM.Raw[24] += 12 // HMAC now invalid
 		if err, ok := i.Check(dM).(*IntegrityErr); !ok {
 			t.Error(err, "should be *IntegrityErr")
 		}
 	})
+}
+
+func TestMessageIntegrityWithFingerprint(t *testing.T) {
+	m := new(Message)
+	m.TransactionID = [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+	m.WriteHeader()
+	NewSoftware("software").AddTo(m)
+	i := NewShortTermIntegrity("pwd")
+	if err := i.AddTo(m); err != nil {
+		t.Fatal(err)
+	}
+	if err := Fingerprint.AddTo(m); err != nil {
+		t.Fatal(err)
+	}
+	if err := i.Check(m); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestMessageIntegrity(t *testing.T) {

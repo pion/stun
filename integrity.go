@@ -70,12 +70,12 @@ func (i MessageIntegrity) AddTo(m *Message) error {
 	// The text used as input to HMAC is the STUN message,
 	// including the header, up to and including the attribute preceding the
 	// MESSAGE-INTEGRITY attribute.
-	l := m.Length
+	length := m.Length
 	// Adjusting m.Length to contain MESSAGE-INTEGRITY TLV.
 	m.Length += messageIntegritySize + attributeHeaderSize
-	m.WriteLength()        // writing length to m.Raw
+	m.WriteLength() // writing length to m.Raw
 	v := newHMAC(i, m.Raw) // calculating HMAC for adjusted m.Raw
-	m.Length = l           // changing m.Length back
+	m.Length = length      // changing m.Length back
 	m.Add(AttrMessageIntegrity, v)
 	return nil
 }
@@ -112,9 +112,11 @@ func (i MessageIntegrity) Check(m *Message) error {
 
 	// Adjusting length in header to match m.Raw that was
 	// used when computing HMAC.
-	l := m.Length
-	afterIntegrity := false
-	sizeReduced := int(messageIntegritySize + attributeHeaderSize)
+	var (
+		length         = m.Length
+		afterIntegrity = false
+		sizeReduced    int
+	)
 	for _, a := range m.Attributes {
 		if afterIntegrity {
 			sizeReduced += nearestPaddedValueLength(int(a.Length))
@@ -125,8 +127,12 @@ func (i MessageIntegrity) Check(m *Message) error {
 		}
 	}
 	m.Length -= uint32(sizeReduced)
-	expected := newHMAC(i, m.Raw[:m.Length+messageHeaderSize])
-	m.Length = l
+	m.WriteLength()
+	// startOfHMAC should be first byte of integrity attribute.
+	startOfHMAC := messageHeaderSize + m.Length - (attributeHeaderSize + messageIntegritySize)
+	b := m.Raw[:startOfHMAC] // data before integrity attribute
+	expected := newHMAC(i, b)
+	m.Length = length
 	m.WriteLength() // writing length back
 	if !hmac.Equal(v, expected) {
 		return &IntegrityErr{
