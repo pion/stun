@@ -296,6 +296,7 @@ func (m *Message) Decode() error {
 	m.Length = uint32(size)
 	copy(m.TransactionID[:], buf[8:messageHeaderSize])
 
+	m.Attributes = m.Attributes[:0]
 	var (
 		offset = 0
 		b      = buf[messageHeaderSize:fullSize]
