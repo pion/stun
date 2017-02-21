@@ -44,7 +44,7 @@ func isZeros(p net.IP) bool {
 var ErrBadIPLength = errors.New("invalid length of IP value")
 
 // AddToAs adds XOR-MAPPED-ADDRESS value to m as t attribute.
-func (a *XORMappedAddress) AddToAs(m *Message, t AttrType) error {
+func (a XORMappedAddress) AddToAs(m *Message, t AttrType) error {
 	var (
 		family = familyIPv4
 		ip     = a.IP
@@ -72,7 +72,7 @@ func (a *XORMappedAddress) AddToAs(m *Message, t AttrType) error {
 
 // AddTo adds XOR-MAPPED-ADDRESS to m. Can return ErrBadIPLength
 // if len(a.IP) is invalid.
-func (a *XORMappedAddress) AddTo(m *Message) error {
+func (a XORMappedAddress) AddTo(m *Message) error {
 	return a.AddToAs(m, AttrXORMappedAddress)
 }
 
