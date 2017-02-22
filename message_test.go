@@ -610,3 +610,14 @@ func BenchmarkMessage_WriteHeader(b *testing.B) {
 		m.WriteHeader()
 	}
 }
+
+func TestMessage_Contains(t *testing.T) {
+	m := new(Message)
+	m.Add(AttrSoftware, []byte("value"))
+	if !m.Contains(AttrSoftware) {
+		t.Error("message should contain software")
+	}
+	if m.Contains(AttrNonce) {
+		t.Error("message should not contain nonce")
+	}
+}

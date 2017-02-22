@@ -502,3 +502,13 @@ func (t *MessageType) ReadValue(v uint16) {
 func (t MessageType) String() string {
 	return fmt.Sprintf("%s %s", t.Method, t.Class)
 }
+
+// Contains return true if message contain t attribute.
+func (m *Message) Contains(t AttrType) bool {
+	for _, a := range m.Attributes {
+		if a.Type == t {
+			return true
+		}
+	}
+	return false
+}
