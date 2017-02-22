@@ -635,10 +635,10 @@ func ExampleMessage() {
 	// Instead of calling Build, use AddTo(m) directly for all setters
 	// that are available before.
 	// For example:
-	// 	software := NewSoftware("ernado/stun")
-	// 	software.AddTo(m)  // no allocations
+	//	software := NewSoftware("ernado/stun")
+	//	software.AddTo(m)  // no allocations
 	// Or pass software as follows:
-	//  m.Build(&software) // no allocations
+	//	m.Build(&software) // no allocations
 	// If you pass software as value, there will be 1 allocation.
 	// This rule is correct for all setters.
 	fmt.Println(m, "buff length:", len(m.Raw))
