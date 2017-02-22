@@ -630,6 +630,7 @@ func ExampleMessage() {
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
 		NewSoftware("ernado/stun"),
+		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
 	)
 	// Instead of calling Build, use AddTo(m) directly for all setters
@@ -657,10 +658,41 @@ func ExampleMessage() {
 	decoded.Parse(&software) // or software.GetFrom(decoded)
 	// Rule for Parse method is same as for Build.
 	fmt.Println("software:", software)
+	if err := Fingerprint.Check(decoded); err == nil {
+		fmt.Println("fingerprint is correct")
+	} else {
+		fmt.Println("fingerprint is incorrect:", err)
+	}
+	// Checking integrity
+	i := NewLongTermIntegrity("username", "realm", "password")
+	if err := i.Check(decoded); err == nil {
+		fmt.Println("integrity ok")
+	} else {
+		fmt.Println("integrity bad:", err)
+	}
+	fmt.Println("for corrupted message:")
+	decoded.Raw[22] = 33
+	fmt.Println("fingerprint:", Fingerprint.Check(decoded))
+	iErr, ok := i.Check(decoded).(*IntegrityErr)
+	if ok {
+		fmt.Println("integrity check failed")
+		fmt.Printf("got:  %x\n", iErr.Actual)
+		fmt.Printf("want: %x\n", iErr.Expected)
+	} else {
+		fmt.Println("assertion failed")
+	}
+
 	// Output:
-	// binding request l=24 attrs=2 id=AQIDBAUGBwgJAAEA buff length: 44
-	// wrote 44 err <nil>
+	// binding request l=48 attrs=3 id=AQIDBAUGBwgJAAEA buff length: 68
+	// wrote 68 err <nil>
 	// has software: true
 	// has nonce: false
 	// software: ernado/stun
+	// fingerprint is correct
+	// integrity ok
+	// for corrupted message:
+	// fingerprint: CRC mismatch: b36d2c38 (expected) != 8ef13141 (actual)
+	// integrity check failed
+	// got:  06f0692c159f4256c14b9442927889e341256ac2
+	// want: c1105962efee5c96f4f194cc91b4eb8ab7667c7a
 }
