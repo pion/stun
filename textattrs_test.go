@@ -238,6 +238,18 @@ func BenchmarkNonce_AddTo(b *testing.B) {
 	}
 }
 
+func BenchmarkNonce_AddTo_BadLength(b *testing.B) {
+	b.ReportAllocs()
+	m := New()
+	n := make(Nonce, 2048)
+	for i := 0; i < b.N; i++ {
+		if err := n.AddTo(m); err == nil {
+			b.Fatal("should error")
+		}
+		m.Reset()
+	}
+}
+
 func BenchmarkNonce_GetFrom(b *testing.B) {
 	b.ReportAllocs()
 	m := New()
