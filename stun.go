@@ -2,6 +2,13 @@
 //
 // The stun package is intended to use by package that implements extension
 // to STUN (e.g. TURN) or client/server applications.
+//
+// Most methods are designed to be zero allocations. If it is not enough,
+// low-level methods are available. On other hand, there are helpers that
+// reduce code repeat.
+//
+// See examples for Message for basic usage, or https://github.com/ernado/turn
+// package for example of stun extension implementation.
 package stun
 
 import "encoding/binary"

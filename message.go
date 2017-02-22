@@ -512,3 +512,17 @@ func (m *Message) Contains(t AttrType) bool {
 	}
 	return false
 }
+
+type transactionIDValueSetter [transactionIDSize]byte
+
+// NewTransactionIDSetter returns new Setter that sets message transaction id
+// to proided value.
+func NewTransactionIDSetter(value [transactionIDSize]byte) Setter {
+	return transactionIDValueSetter(value)
+}
+
+func (t transactionIDValueSetter) AddTo(m *Message) error {
+	m.TransactionID = t
+	m.WriteTransactionID()
+	return nil
+}

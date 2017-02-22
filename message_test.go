@@ -621,3 +621,46 @@ func TestMessage_Contains(t *testing.T) {
 		t.Error("message should not contain nonce")
 	}
 }
+
+func ExampleMessage() {
+	buf := new(bytes.Buffer)
+	m := new(Message)
+	m.Build(BindingRequest,
+		NewTransactionIDSetter([transactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+		}),
+		NewSoftware("ernado/stun"),
+		Fingerprint,
+	)
+	// Instead of calling Build, use AddTo(m) directly for all setters
+	// that are available before.
+	// For example:
+	// 	software := NewSoftware("ernado/stun")
+	// 	software.AddTo(m)  // no allocations
+	// Or pass software as follows:
+	//  m.Build(&software) // no allocations
+	// If you pass software as value, there will be 1 allocation.
+	// This rule is correct for all setters.
+	fmt.Println(m, "buff length:", len(m.Raw))
+	n, err := m.WriteTo(buf)
+	fmt.Println("wrote", n, "err", err)
+
+	// Decoding from buf new *Message.
+	decoded := new(Message)
+	decoded.Raw = make([]byte, 0, 1024) // for ReadFrom that reuses m.Raw
+	// ReadFrom does not allocate internal buffer for reading from io.Reader,
+	// instead it uses m.Raw, expanding it length to capacity.
+	decoded.ReadFrom(buf)
+	fmt.Println("has software:", decoded.Contains(AttrSoftware))
+	fmt.Println("has nonce:", decoded.Contains(AttrNonce))
+	var software Software
+	decoded.Parse(&software) // or software.GetFrom(decoded)
+	// Rule for Parse method is same as for Build.
+	fmt.Println("software:", software)
+	// Output:
+	// binding request l=24 attrs=2 id=AQIDBAUGBwgJAAEA buff length: 44
+	// wrote 44 err <nil>
+	// has software: true
+	// has nonce: false
+	// software: ernado/stun
+}
