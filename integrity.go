@@ -73,7 +73,7 @@ func (i MessageIntegrity) AddTo(m *Message) error {
 	length := m.Length
 	// Adjusting m.Length to contain MESSAGE-INTEGRITY TLV.
 	m.Length += messageIntegritySize + attributeHeaderSize
-	m.WriteLength() // writing length to m.Raw
+	m.WriteLength()        // writing length to m.Raw
 	v := newHMAC(i, m.Raw) // calculating HMAC for adjusted m.Raw
 	m.Length = length      // changing m.Length back
 	m.Add(AttrMessageIntegrity, v)

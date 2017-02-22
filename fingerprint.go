@@ -68,7 +68,10 @@ func (FingerprintAttr) Check(m *Message) error {
 		return err
 	}
 	if len(b) != fingerprintSize {
-		return newDecodeErr("message", "fingerprint", "bad length")
+		return newDecodeErr("message",
+			"fingerprint",
+			"bad length",
+		)
 	}
 	val := bin.Uint32(b)
 	attrStart := len(m.Raw) - (fingerprintSize + attributeHeaderSize)

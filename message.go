@@ -3,7 +3,6 @@ package stun
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -202,10 +201,6 @@ func (m *Message) WriteHeader() {
 	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
 }
 
-func (m *Message) writeMagicCookie() {
-
-}
-
 func (m *Message) WriteTransactionID() {
 	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
 }
@@ -272,10 +267,10 @@ func (m *Message) Decode() error {
 		return ErrUnexpectedHeaderEOF
 	}
 	var (
-		t        = binary.BigEndian.Uint16(buf[0:2])      // first 2 bytes
-		size     = int(binary.BigEndian.Uint16(buf[2:4])) // second 2 bytes
-		cookie   = binary.BigEndian.Uint32(buf[4:8])
-		fullSize = messageHeaderSize + size
+		t        = bin.Uint16(buf[0:2])      // first 2 bytes
+		size     = int(bin.Uint16(buf[2:4])) // second 2 bytes
+		cookie   = bin.Uint32(buf[4:8])      // last 4 bytes
+		fullSize = messageHeaderSize + size  // len(m.Raw)
 	)
 	if cookie != magicCookie {
 		msg := fmt.Sprintf(
@@ -322,8 +317,8 @@ func (m *Message) Decode() error {
 		offset += attributeHeaderSize
 		if len(b) < aBuffL { // checking size
 			msg := fmt.Sprintf(
-				"buffer length %d is less than %d (expected value size)",
-				len(b), aBuffL,
+				"buffer length %d is less than %d (expected value size for %s)",
+				len(b), aBuffL, a.Type,
 			)
 			return newAttrDecodeErr("value", msg)
 		}
@@ -344,10 +339,6 @@ func (m *Message) Write(tBuf []byte) (int, error) {
 	return len(tBuf), m.Decode()
 }
 
-// MaxPacketSize is maximum size of UDP packet that is processable in
-// this package for STUN message.
-const MaxPacketSize = 2048
-
 // MessageClass is 8-bit representation of 2-bit class of STUN Message Class.
 type MessageClass byte
 
@@ -357,6 +348,16 @@ const (
 	ClassIndication      MessageClass = 0x01 // 0b01
 	ClassSuccessResponse MessageClass = 0x02 // 0b10
 	ClassErrorResponse   MessageClass = 0x03 // 0b11
+)
+
+// Common STUN message types.
+var (
+	// Binding request message type.
+	BindingRequest = NewType(MethodBinding, ClassRequest)
+	// Binding success response message type
+	BindingSuccess = NewType(MethodBinding, ClassSuccessResponse)
+	// Binding error response message type.
+	BindingError = NewType(MethodBinding, ClassErrorResponse)
 )
 
 func (c MessageClass) String() string {
@@ -411,16 +412,18 @@ func (m Method) String() string {
 
 // MessageType is STUN Message Type Field.
 type MessageType struct {
-	Class  MessageClass
-	Method Method
+	Method Method       // e.g. binding
+	Class  MessageClass // e.g. request
 }
 
+// AddTo sets m type to t.
 func (t MessageType) AddTo(m *Message) error {
 	m.SetType(t)
 	return nil
 }
 
-func NewType(class MessageClass, method Method) MessageType {
+// NewType returns new message type with provided method and class.
+func NewType(method Method, class MessageClass) MessageType {
 	return MessageType{
 		Method: method,
 		Class:  class,
@@ -465,7 +468,7 @@ func (t MessageType) Value() uint16 {
 	// Shifting to add "holes" for C0 (at 4 bit) and C1 (8 bit).
 	m = a + (b << methodBShift) + (d << methodDShift)
 
-	// C0 is zero bit of C, C1 is fist bit.
+	// C0 is zero bit of C, C1 is first bit.
 	// C0 = C * 0b01, C1 = (C * 0b10) >> 1
 	// Ct = C0 << 4 + C1 << 8.
 	// Optimizations: "((C * 0b10) >> 1) << 8" as "(C * 0b10) << 7"
