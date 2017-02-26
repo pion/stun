@@ -19,7 +19,6 @@ func FuzzMessage(data []byte) int {
 	if _, err := m.Write(data); err != nil {
 		return 0
 	}
-	m.WriteHeader()
 	m2 := New()
 	if _, err := m2.Write(m.Raw); err != nil {
 		panic(err)
