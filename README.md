@@ -8,7 +8,8 @@
 # stun
 Package stun implements Session Traversal Utilities for
 NAT (STUN) [RFC 5389](https://tools.ietf.org/html/rfc5389) with focus
-on speed and zero allocations in hot paths, no external dependencies.
+on speed and no external dependencies. See [example](https://godoc.org/github.com/ernado/stun#example-Message)
+or [stun server](https://github.com/ernado/stund) for usage.
 
 # stability
 Package is currently approaching beta stage, API should be fairly stable
