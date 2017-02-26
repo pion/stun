@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"io"
 )
 
 const (
@@ -103,6 +104,12 @@ func (a *XORMappedAddress) GetFromAs(m *Message, t AttrType) error {
 	a.IP = a.IP[:ipLen]
 	for i := range a.IP {
 		a.IP[i] = 0
+	}
+	if len(v) <= 4 {
+		return io.ErrUnexpectedEOF
+	}
+	if len(v[4:]) > len(a.IP) {
+		return errors.New("Bad format for XOR-MAPPED-ADDRESS")
 	}
 	a.Port = int(bin.Uint16(v[2:4])) ^ (magicCookie >> 16)
 	xorValue := make([]byte, 4+transactionIDSize)
