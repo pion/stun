@@ -1,0 +1,5 @@
+panic: runtime error: index out of range
+github.com/ernado/stun.(*ErrorCodeAttribute).GetFrom
+github.com/ernado/stun.FuzzSetters
+go-fuzz-dep.Main
+main.main

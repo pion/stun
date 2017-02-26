@@ -3,6 +3,7 @@ package stun
 import (
 	"errors"
 	"fmt"
+	"io"
 )
 
 // ErrorCodeAttribute represents ERROR-CODE attribute.
@@ -50,6 +51,9 @@ func (c *ErrorCodeAttribute) GetFrom(m *Message) error {
 	v, err := m.Get(AttrErrorCode)
 	if err != nil {
 		return err
+	}
+	if len(v) < errorCodeReasonStart {
+		return io.ErrUnexpectedEOF
 	}
 	var (
 		class  = uint16(v[errorCodeClassByte])

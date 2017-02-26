@@ -3,10 +3,10 @@
 package stun
 
 import (
-	"testing"
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 )
 
 func TestMessageType_FuzzerCrash1(t *testing.T) {
@@ -70,4 +70,26 @@ func TestFuzzType_Crashers(t *testing.T) {
 		FuzzType(buf)
 	}
 }
+
+func TestAttrPick(t *testing.T) {
+	attributes := attrs{
+		{new(XORMappedAddress), AttrXORMappedAddress},
+	}
+	for i := byte(0); i < 255; i++ {
+		attributes.pick(i)
+	}
+}
+
+func TestFuzzSetters_Crashers(t *testing.T) {
+	for _, buf := range corpus(t, "stun-setters", "crashers") {
+		FuzzSetters(buf)
+	}
+}
+
+func TestFuzzSetters_Coverage(t *testing.T) {
+	for _, buf := range corpus(t, "stun-setters", "corpus") {
+		FuzzSetters(buf)
+	}
+}
+
 

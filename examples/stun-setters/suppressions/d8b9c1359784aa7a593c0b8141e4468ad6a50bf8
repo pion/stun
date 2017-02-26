@@ -1,0 +1,6 @@
+panic: runtime error: slice bounds out of range
+github.com/ernado/stun.(*XORMappedAddress).GetFromAs
+github.com/ernado/stun.(*XORMappedAddress).GetFrom
+github.com/ernado/stun.FuzzSetters
+go-fuzz-dep.Main
+main.main

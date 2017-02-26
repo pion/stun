@@ -4,6 +4,7 @@ package stun
 
 import (
 	"encoding/binary"
+	"fmt"
 )
 
 var (
@@ -51,4 +52,82 @@ func FuzzType(data []byte) int {
 		panic("t2 != t")
 	}
 	return 0
+}
+
+type attr interface {
+	Getter
+	Setter
+}
+
+type attrs []struct {
+	g attr
+	t AttrType
+}
+
+func (a attrs) pick(v byte) struct {
+	g attr
+	t AttrType
+} {
+	idx := int(v) % len(a)
+	return a[idx]
+}
+
+func FuzzSetters(data []byte) int {
+	var (
+		m1 = &Message{
+			Raw: make([]byte, 0, 2048),
+		}
+		m2 = &Message{
+			Raw: make([]byte, 0, 2048),
+		}
+		m3 = &Message{
+			Raw: make([]byte, 0, 2048),
+		}
+	)
+	attributes := attrs{
+		{new(Realm), AttrRealm},
+		{new(XORMappedAddress), AttrXORMappedAddress},
+		{new(Nonce), AttrNonce},
+		{new(Software), AttrSoftware},
+		{new(AlternateServer), AttrAlternateServer},
+		{new(ErrorCodeAttribute), AttrErrorCode},
+		{new(UnknownAttributes), AttrUnknownAttributes},
+		{new(Username), AttrUsername},
+	}
+	var firstByte = byte(0)
+	if len(data) > 0 {
+		firstByte = data[0]
+	}
+	a := attributes.pick(firstByte)
+	value := data
+	if len(data) > 1 {
+		value = value[1:]
+	}
+	m1.WriteHeader()
+	m.Add(a.t, value)
+	err := a.g.GetFrom(m)
+	if err == ErrAttributeNotFound {
+		fmt.Println("unexpected 404")
+		panic(err)
+	}
+	if err != nil {
+		return 1
+	}
+	m2.WriteHeader()
+	if err := a.g.AddTo(m2); err != nil {
+		fmt.Println("failed to add atribute to m2")
+		panic(err)
+	}
+	m3.WriteHeader()
+	v, err := m2.Get(a.t)
+	if err != nil {
+		panic(err)
+	}
+	m3.Add(a.t, v)
+
+	if !m2.Equal(m3) {
+		fmt.Println(m2, "not equal", m3)
+		panic("not equal")
+	}
+	return 1
 }

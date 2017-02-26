@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"io"
 )
 
 // MappedAddress represents MAPPED-ADDRESS attribute.
@@ -45,6 +46,9 @@ func (a *MappedAddress) getAs(m *Message, t AttrType) error {
 	v, err := m.Get(t)
 	if err != nil {
 		return err
+	}
+	if len(v) <= 4 {
+		return io.ErrUnexpectedEOF
 	}
 	family := bin.Uint16(v[0:2])
 	if family != familyIPv6 && family != familyIPv4 {

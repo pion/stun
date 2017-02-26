@@ -15,10 +15,14 @@ fuzz-prepare-msg:
 	go-fuzz-build -func FuzzMessage -o stun-msg-fuzz.zip github.com/ernado/stun
 fuzz-prepare-typ:
 	go-fuzz-build -func FuzzType -o stun-typ-fuzz.zip github.com/ernado/stun
+fuzz-prepare-setters:
+	go-fuzz-build -func FuzzSetters -o stun-setters-fuzz.zip github.com/ernado/stun
 fuzz-msg:
 	go-fuzz -bin=./stun-msg-fuzz.zip -workdir=examples/stun-msg
 fuzz-typ:
 	go-fuzz -bin=./stun-typ-fuzz.zip -workdir=examples/stun-typ
+fuzz-setters:
+	go-fuzz -bin=./stun-setters-fuzz.zip -workdir=examples/stun-setters
 fuzz-test:
 	go test -tags gofuzz -run TestFuzz -v .
 lint:
