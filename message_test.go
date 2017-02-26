@@ -696,3 +696,80 @@ func ExampleMessage() {
 	// got:  06f0692c159f4256c14b9442927889e341256ac2
 	// want: c1105962efee5c96f4f194cc91b4eb8ab7667c7a
 }
+
+func TestAllocations(t *testing.T) {
+	// Not testing AttrMessageIntegrity because it allocates.
+	setters := []Setter{
+		BindingRequest,
+		TransactionID,
+		Fingerprint,
+		NewNonce("nonce"),
+		NewUsername("username"),
+		XORMappedAddress{
+			IP:   net.IPv4(11, 22, 33, 44),
+			Port: 334,
+		},
+		UnknownAttributes{AttrLifetime, AttrChannelNumber},
+		CodeInsufficientCapacity,
+		ErrorCodeAttribute{
+			Code:   200,
+			Reason: []byte("hello"),
+		},
+	}
+	m := New()
+	for i, s := range setters {
+		allocs := testing.AllocsPerRun(10, func() {
+			m.Reset()
+			m.WriteHeader()
+			if err := s.AddTo(m); err != nil {
+				t.Errorf("[%d] failed to add", i)
+			}
+		})
+		if allocs > 0 {
+			t.Errorf("[%d] allocated %.0f", i, allocs)
+		}
+	}
+}
+
+func TestAllocationsGetters(t *testing.T) {
+	// Not testing AttrMessageIntegrity because it allocates.
+	setters := []Setter{
+		BindingRequest,
+		TransactionID,
+		NewNonce("nonce"),
+		NewUsername("username"),
+		XORMappedAddress{
+			IP:   net.IPv4(11, 22, 33, 44),
+			Port: 334,
+		},
+		UnknownAttributes{AttrLifetime, AttrChannelNumber},
+		CodeInsufficientCapacity,
+		ErrorCodeAttribute{
+			Code:   200,
+			Reason: []byte("hello"),
+		},
+		NewShortTermIntegrity("pwd"),
+		Fingerprint,
+	}
+	m := New()
+	if err := m.Build(setters...); err != nil {
+		t.Error("failed to build", err)
+	}
+	getters := []Getter{
+		new(Nonce),
+		new(Username),
+		new(XORMappedAddress),
+		new(UnknownAttributes),
+		new(ErrorCodeAttribute),
+	}
+	for i, g := range getters {
+		allocs := testing.AllocsPerRun(10, func() {
+			if err := g.GetFrom(m); err != nil {
+				t.Errorf("[%d] failed to get", i)
+			}
+		})
+		if allocs > 0 {
+			t.Errorf("[%d] allocated %.0f", i, allocs)
+		}
+	}
+}

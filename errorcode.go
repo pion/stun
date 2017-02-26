@@ -30,7 +30,7 @@ const (
 var ErrReasonLengthTooBig = errors.New("reason for ERROR-CODE is too big")
 
 // AddTo adds ERROR-CODE to m.
-func (c *ErrorCodeAttribute) AddTo(m *Message) error {
+func (c ErrorCodeAttribute) AddTo(m *Message) error {
 	value := make([]byte, 0, errorCodeReasonMaxB)
 	if len(c.Reason) > errorCodeReasonMaxB {
 		return ErrReasonLengthTooBig
