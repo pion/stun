@@ -25,7 +25,7 @@ lint:
 		-e "_test.go.+(gocyclo|errcheck|dupl)" \
 		-e "attributes\.go.+credentials,.+,LOW.+\(gas\)" \
                 -e "Message.+\(aligncheck\)" \
-		--enable="lll" --line-length=90 \
+		--enable="lll" --line-length=100 \
 		--enable="gofmt" \
 		--disable="gotype" \
 		--enable="goimports" \

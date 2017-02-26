@@ -76,7 +76,7 @@ func (a XORMappedAddress) AddTo(m *Message) error {
 	return a.AddToAs(m, AttrXORMappedAddress)
 }
 
-// GetFrom decodes XOR-MAPPED-ADDRESS attribute value in message
+// GetFromAs decodes XOR-MAPPED-ADDRESS attribute value in message
 // getting it as for t type.
 func (a *XORMappedAddress) GetFromAs(m *Message, t AttrType) error {
 	v, err := m.Get(t)

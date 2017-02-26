@@ -201,6 +201,7 @@ func (m *Message) WriteHeader() {
 	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
 }
 
+// WriteTransactionID writes m.TransactionID to m.Raw.
 func (m *Message) WriteTransactionID() {
 	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
 }
@@ -217,7 +218,7 @@ func (m *Message) WriteType() {
 	bin.PutUint16(m.Raw[0:2], m.Type.Value()) // message type
 }
 
-// SetTypes sets m.Type and writes it to m.Raw.
+// SetType sets m.Type and writes it to m.Raw.
 func (m *Message) SetType(t MessageType) {
 	m.Type = t
 	m.WriteType()

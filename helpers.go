@@ -43,7 +43,7 @@ func (m *Message) Build(setters ...Setter) error {
 	return nil
 }
 
-// Checker applies chereks to message in batch, returning on first error.
+// Check applies checkers to message in batch, returning on first error.
 func (m *Message) Check(checkers ...Checker) error {
 	for _, c := range checkers {
 		if err := c.Check(m); err != nil {
