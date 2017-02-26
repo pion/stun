@@ -43,8 +43,7 @@ func (a UnknownAttributes) AddTo(m *Message) error {
 // has invalid length.
 var ErrBadUnknownAttrsSize = errors.New("bad UNKNOWN-ATTRIBUTES size")
 
-// GetFrom appends UNKNOWN-ATTRIBUTES from m to a.Types,
-// returning error if any.
+// GetFrom parses UNKNOWN-ATTRIBUTES from message.
 func (a *UnknownAttributes) GetFrom(m *Message) error {
 	v, err := m.Get(AttrUnknownAttributes)
 	if err != nil {
