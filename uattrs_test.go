@@ -1,14 +1,14 @@
 package stun
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestUnknownAttributes(t *testing.T) {
 	m := new(Message)
 	a := &UnknownAttributes{
-		Types: []AttrType{
-			AttrDontFragment,
-			AttrChannelNumber,
-		},
+		AttrDontFragment,
+		AttrChannelNumber,
 	}
 	if a.String() != "DONT-FRAGMENT, CHANNEL-NUMBER" {
 		t.Error("bad String:", a)
@@ -17,13 +17,13 @@ func TestUnknownAttributes(t *testing.T) {
 		t.Error(err)
 	}
 	t.Run("AppendFrom", func(t *testing.T) {
-		attrs := new(UnknownAttributes)
+		attrs := make(UnknownAttributes, 10)
 		if err := attrs.GetFrom(m); err != nil {
 			t.Error(err)
 		}
-		for i, at := range a.Types {
-			if at != attrs.Types[i] {
-				t.Error("expected", at, "!=", attrs.Types[i])
+		for i, at := range *a {
+			if at != attrs[i] {
+				t.Error("expected", at, "!=", attrs[i])
 			}
 		}
 	})
@@ -31,13 +31,11 @@ func TestUnknownAttributes(t *testing.T) {
 
 func BenchmarkUnknownAttributes(b *testing.B) {
 	m := new(Message)
-	a := &UnknownAttributes{
-		Types: []AttrType{
-			AttrDontFragment,
-			AttrChannelNumber,
-			AttrRealm,
-			AttrMessageIntegrity,
-		},
+	a := UnknownAttributes{
+		AttrDontFragment,
+		AttrChannelNumber,
+		AttrRealm,
+		AttrMessageIntegrity,
 	}
 	b.Run("AddTo", func(b *testing.B) {
 		b.ReportAllocs()
@@ -53,12 +51,12 @@ func BenchmarkUnknownAttributes(b *testing.B) {
 		if err := a.AddTo(m); err != nil {
 			b.Fatal(err)
 		}
-		attrs := new(UnknownAttributes)
+		attrs := make(UnknownAttributes, 0, 10)
 		for i := 0; i < b.N; i++ {
 			if err := attrs.GetFrom(m); err != nil {
 				b.Fatal(err)
 			}
-			attrs.Types = attrs.Types[:0]
+			attrs = attrs[:0]
 		}
 	})
 }

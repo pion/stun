@@ -5,17 +5,15 @@ import "errors"
 // UnknownAttributes represents UNKNOWN-ATTRIBUTES attribute.
 //
 // https://tools.ietf.org/html/rfc5389#section-15.9
-type UnknownAttributes struct {
-	Types []AttrType
-}
+type UnknownAttributes []AttrType
 
 func (a UnknownAttributes) String() string {
 	s := ""
-	if len(a.Types) == 0 {
+	if len(a) == 0 {
 		return s + "<nil>"
 	}
-	last := len(a.Types) - 1
-	for i, t := range a.Types {
+	last := len(a) - 1
+	for i, t := range a {
 		s += t.String()
 		if i != last {
 			s += ", "
@@ -28,10 +26,10 @@ func (a UnknownAttributes) String() string {
 const attrTypeSize = 4
 
 // AddTo adds UNKNOWN-ATTRIBUTES attribute to message.
-func (a *UnknownAttributes) AddTo(m *Message) error {
+func (a UnknownAttributes) AddTo(m *Message) error {
 	v := make([]byte, 0, attrTypeSize*20) // 20 should be enough
 	// If len(a.Types) > 20, there will be allocations.
-	for i, t := range a.Types {
+	for i, t := range a {
 		v = append(v, 0, 0, 0, 0) // 4 times by 0 (16 bits)
 		first := attrTypeSize * i
 		last := first + attrTypeSize
@@ -55,10 +53,11 @@ func (a *UnknownAttributes) GetFrom(m *Message) error {
 	if len(v)%attrTypeSize != 0 {
 		return ErrBadUnknownAttrsSize
 	}
+	*a = (*a)[:0]
 	first := 0
 	for first < len(v) {
 		last := first + attrTypeSize
-		a.Types = append(a.Types,
+		*a = append(*a,
 			AttrType(bin.Uint16(v[first:last])),
 		)
 		first = last
