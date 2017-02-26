@@ -19,6 +19,8 @@ fuzz-msg:
 	go-fuzz -bin=./stun-msg-fuzz.zip -workdir=examples/stun-msg
 fuzz-typ:
 	go-fuzz -bin=./stun-typ-fuzz.zip -workdir=examples/stun-typ
+fuzz-test:
+	go test -tags gofuzz -run TestFuzz -v .
 lint:
 	@echo "linting on $(PROCS) cores"
 	@gometalinter \

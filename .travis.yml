@@ -19,4 +19,5 @@ install:
  - go get -v -t .
 
 script:
+ - go test -tags gofuzz -run TestFuzz -v .
  - $HOME/gopath/bin/goveralls -service=travis-ci -v -package .

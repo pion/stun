@@ -6,6 +6,7 @@ import (
 	"testing"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func TestMessageType_FuzzerCrash1(t *testing.T) {
@@ -18,8 +19,9 @@ func TestMessageCrash2(t *testing.T) {
 	FuzzMessage(input)
 }
 
-func TestFuzzingCoverage(t *testing.T) {
-	p := filepath.Join("examples", "stun-msg", "corpus")
+func corpus(t *testing.T, function, typ string) [][]byte {
+	var data [][]byte
+	p := filepath.Join("examples", function, typ)
 	f, err := os.Open(p)
 	if err != nil {
 		t.Fatal(err)
@@ -29,13 +31,43 @@ func TestFuzzingCoverage(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, d := range list {
+		if strings.Contains(d.Name(), ".") {
+			// Skipping non-raw files.
+			continue
+		}
 		df, err := os.Open(filepath.Join(p, d.Name()))
 		if err != nil {
 			t.Fatal(err)
 		}
 		buf := make([]byte, 5000)
 		n, _ := df.Read(buf)
+		data = append(data, buf[:n])
 		df.Close()
-		FuzzMessage(buf[:n])
+	}
+	return data
+}
+
+func TestFuzzMessage_Coverage(t *testing.T) {
+	for _, buf := range corpus(t, "stun-msg", "corpus") {
+		FuzzMessage(buf)
 	}
 }
+
+func TestFuzzMessage_Crashers(t *testing.T) {
+	for _, buf := range corpus(t, "stun-msg", "crashers") {
+		FuzzMessage(buf)
+	}
+}
+
+func TestFuzzType_Coverage(t *testing.T) {
+	for _, buf := range corpus(t, "stun-typ", "corpus") {
+		FuzzType(buf)
+	}
+}
+
+func TestFuzzType_Crashers(t *testing.T) {
+	for _, buf := range corpus(t, "stun-typ", "crashers") {
+		FuzzType(buf)
+	}
+}
+
