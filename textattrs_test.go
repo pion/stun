@@ -76,6 +76,7 @@ func BenchmarkUsername_GetFrom(b *testing.B) {
 		if err := u.GetFrom(m); err != nil {
 			b.Fatal(err)
 		}
+		u = u[:0]
 	}
 }
 

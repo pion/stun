@@ -553,6 +553,7 @@ func TestMessageFromBrowsers(t *testing.T) {
 func BenchmarkMessage_NewTransactionID(b *testing.B) {
 	b.ReportAllocs()
 	m := new(Message)
+	m.WriteHeader()
 	for i := 0; i < b.N; i++ {
 		if err := m.NewTransactionID(); err != nil {
 			b.Fatal(err)
@@ -569,7 +570,7 @@ func BenchmarkMessageFull(b *testing.B) {
 	}
 	for i := 0; i < b.N; i++ {
 		addAttr(b, m, addr)
-		addAttr(b, m, s)
+		addAttr(b, m, &s)
 		m.WriteAttributes()
 		m.WriteHeader()
 		Fingerprint.AddTo(m)
