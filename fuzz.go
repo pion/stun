@@ -104,8 +104,8 @@ func FuzzSetters(data []byte) int {
 		value = value[1:]
 	}
 	m1.WriteHeader()
-	m.Add(a.t, value)
-	err := a.g.GetFrom(m)
+	m1.Add(a.t, value)
+	err := a.g.GetFrom(m1)
 	if err == ErrAttributeNotFound {
 		fmt.Println("unexpected 404")
 		panic(err)
@@ -115,8 +115,10 @@ func FuzzSetters(data []byte) int {
 	}
 	m2.WriteHeader()
 	if err := a.g.AddTo(m2); err != nil {
-		fmt.Println("failed to add atribute to m2")
-		panic(err)
+		// We allow decoding some text attributes
+		// when their length is too big, but
+		// not encoding.
+		return 1
 	}
 	m3.WriteHeader()
 	v, err := m2.Get(a.t)

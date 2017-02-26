@@ -1,0 +1,4 @@
+panic: Length of USERNAME attribute 524 exceeds maximum 513
+github.com/ernado/stun.FuzzSetters
+go-fuzz-dep.Main
+main.main
