@@ -3,6 +3,7 @@ package stun
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"testing"
 )
 
@@ -47,6 +48,12 @@ func TestMessageIntegrityWithFingerprint(t *testing.T) {
 	m.WriteHeader()
 	NewSoftware("software").AddTo(m)
 	i := NewShortTermIntegrity("pwd")
+	if i.String() != "KEY: 0x707764" {
+		t.Error("bad string", i)
+	}
+	if err := i.Check(m); err == nil {
+		t.Error("should error")
+	}
 	if err := i.AddTo(m); err != nil {
 		t.Fatal(err)
 	}
@@ -55,6 +62,14 @@ func TestMessageIntegrityWithFingerprint(t *testing.T) {
 	}
 	if err := i.Check(m); err != nil {
 		t.Fatal(err)
+	}
+	m.Raw[24] = 33
+	errStr := fmt.Sprintf("Integrity check failed: 0x%s (expected) !- 0x%s (actual)",
+		"19985afb819c098acfe1c2771881227f14c70eaf",
+		"ef9da0e0caf0b0e4ff321e7b56f1e114c802cb7e",
+	)
+	if err := i.Check(m); err.Error() != errStr {
+		t.Fatal(err, "!=", errStr)
 	}
 }
 
@@ -69,6 +84,17 @@ func TestMessageIntegrity(t *testing.T) {
 	_, err := m.Get(AttrMessageIntegrity)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestMessageIntegrityBeforeFingerprint(t *testing.T) {
+	m := new(Message)
+	//NewSoftware("software")
+	m.WriteHeader()
+	Fingerprint.AddTo(m)
+	i := NewShortTermIntegrity("password")
+	if err := i.AddTo(m); err == nil {
+		t.Error("should error")
 	}
 }
 

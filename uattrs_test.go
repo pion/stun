@@ -13,10 +13,13 @@ func TestUnknownAttributes(t *testing.T) {
 	if a.String() != "DONT-FRAGMENT, CHANNEL-NUMBER" {
 		t.Error("bad String:", a)
 	}
+	if (UnknownAttributes{}).String() != "<nil>" {
+		t.Error("bad blank stirng")
+	}
 	if err := a.AddTo(m); err != nil {
 		t.Error(err)
 	}
-	t.Run("AppendFrom", func(t *testing.T) {
+	t.Run("GetFrom", func(t *testing.T) {
 		attrs := make(UnknownAttributes, 10)
 		if err := attrs.GetFrom(m); err != nil {
 			t.Error(err)
@@ -25,6 +28,14 @@ func TestUnknownAttributes(t *testing.T) {
 			if at != attrs[i] {
 				t.Error("expected", at, "!=", attrs[i])
 			}
+		}
+		mBlank := new(Message)
+		if err := attrs.GetFrom(mBlank); err == nil {
+			t.Error("should error")
+		}
+		mBlank.Add(AttrUnknownAttributes, []byte{1, 2, 3})
+		if err := attrs.GetFrom(mBlank); err == nil {
+			t.Error("should error")
 		}
 	})
 }

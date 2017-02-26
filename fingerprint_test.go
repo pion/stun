@@ -39,6 +39,19 @@ func TestFingerprint_Check(t *testing.T) {
 	}
 }
 
+func TestFingerprint_CheckBad(t *testing.T) {
+	m := new(Message)
+	addAttr(t, m, NewSoftware("software"))
+	m.WriteHeader()
+	if err := Fingerprint.Check(m); err == nil {
+		t.Error("should error")
+	}
+	m.Add(AttrFingerprint, []byte{1, 2, 3})
+	if err := Fingerprint.Check(m); err == nil {
+		t.Error("should error")
+	}
+}
+
 func BenchmarkFingerprint_Check(b *testing.B) {
 	b.ReportAllocs()
 	m := new(Message)

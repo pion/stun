@@ -1,6 +1,9 @@
 package stun
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func BenchmarkBuildOverhead(b *testing.B) {
 	var (
@@ -64,5 +67,35 @@ func TestMessage_Apply(t *testing.T) {
 	}
 	if err := integrity.Check(decoded); err != nil {
 		t.Fatal(err)
+	}
+}
+
+type errReturner struct {
+	Err error
+}
+
+func (e errReturner) AddTo(m *Message) error {
+	return e.Err
+}
+
+func (e errReturner) Check(m *Message) error {
+	return e.Err
+}
+
+func (e errReturner) GetFrom(m *Message) error {
+	return e.Err
+}
+
+func TestHelpersErrorHandling(t *testing.T) {
+	m := New()
+	e := errReturner{Err: errors.New("tError")}
+	if err := m.Build(e); err != e.Err {
+		t.Error(err, "!=", e.Err)
+	}
+	if err := m.Check(e); err != e.Err {
+		t.Error(err, "!=", e.Err)
+	}
+	if err := m.Parse(e); err != e.Err {
+		t.Error(err, "!=", e.Err)
 	}
 }

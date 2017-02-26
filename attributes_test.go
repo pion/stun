@@ -59,3 +59,14 @@ func TestPadding(t *testing.T) {
 		}
 	}
 }
+
+func TestAttrLengthError_Error(t *testing.T) {
+	err := AttrLengthError{
+		Got:  100,
+		Max:  50,
+		Type: AttrLifetime,
+	}
+	if err.Error() != "Length of LIFETIME attribute 100 exceeds maximum 50" {
+		t.Error("bad error string", err)
+	}
+}
