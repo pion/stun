@@ -6,9 +6,13 @@ import (
 	"encoding/binary"
 )
 
+var (
+	m = New()
+)
+
 // FuzzMessage is go-fuzz endpoint for message.
 func FuzzMessage(data []byte) int {
-	m := New()
+	m.Reset()
 	// fuzzer dont know about cookies
 	binary.BigEndian.PutUint32(data[4:8], magicCookie)
 	// trying to read data as message
@@ -17,7 +21,7 @@ func FuzzMessage(data []byte) int {
 	}
 	m.WriteHeader()
 	m2 := New()
-	if _, err := m2.Write(m2.Raw); err != nil {
+	if _, err := m2.Write(m.Raw); err != nil {
 		panic(err)
 	}
 	if m2.TransactionID != m.TransactionID {
