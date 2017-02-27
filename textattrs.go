@@ -29,7 +29,6 @@ func (u *Username) GetFrom(m *Message) error {
 // NewRealm returns Realm with provided value.
 // Must be SASL-prepared.
 func NewRealm(realm string) Realm {
-	// TODO: use sasl
 	return Realm(realm)
 }
 
