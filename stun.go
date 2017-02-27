@@ -16,7 +16,7 @@ import "encoding/binary"
 // bin is shorthand to binary.BigEndian.
 var bin = binary.BigEndian
 
-// IANA assigned ports for "stun" protocol/
+// IANA assigned ports for "stun" protocol.
 const (
 	DefaultPort    = 3478
 	DefaultTLSPort = 5349
