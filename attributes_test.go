@@ -61,7 +61,7 @@ func TestPadding(t *testing.T) {
 }
 
 func TestAttrLengthError_Error(t *testing.T) {
-	err := AttrLengthError{
+	err := AttrOverflowErr{
 		Got:  100,
 		Max:  50,
 		Type: AttrLifetime,

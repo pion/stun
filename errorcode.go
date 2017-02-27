@@ -34,7 +34,11 @@ var ErrReasonLengthTooBig = errors.New("reason for ERROR-CODE is too big")
 func (c ErrorCodeAttribute) AddTo(m *Message) error {
 	value := make([]byte, 0, errorCodeReasonMaxB)
 	if len(c.Reason) > errorCodeReasonMaxB {
-		return ErrReasonLengthTooBig
+		return &AttrOverflowErr{
+			Got:  len(c.Reason) + errorCodeReasonStart,
+			Max:  errorCodeReasonMaxB + errorCodeReasonStart,
+			Type: AttrErrorCode,
+		}
 	}
 	value = value[:errorCodeReasonStart+len(c.Reason)]
 	number := byte(c.Code % errorCodeModulo) // error code modulo 100

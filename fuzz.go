@@ -118,6 +118,10 @@ func FuzzSetters(data []byte) int {
 		// We allow decoding some text attributes
 		// when their length is too big, but
 		// not encoding.
+		_, ok := err.(*AttrOverflowErr)
+		if !ok {
+			panic(err)
+		}
 		return 1
 	}
 	m3.WriteHeader()

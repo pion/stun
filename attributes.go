@@ -162,16 +162,31 @@ func (m *Message) Get(t AttrType) ([]byte, error) {
 	return v.Value, nil
 }
 
-// AttrLengthError occurs when len(v) > Max.
-type AttrLengthError struct {
+// AttrOverflowErr occurs when len(v) > Max.
+type AttrOverflowErr struct {
 	Type AttrType
 	Max  int
 	Got  int
 }
 
-func (e AttrLengthError) Error() string {
+func (e AttrOverflowErr) Error() string {
 	return fmt.Sprintf("Length of %s attribute %d exceeds maximum %d",
 		e.Type, e.Got, e.Max,
+	)
+}
+
+// AttrLengthErr means that length for attribute is invalid.
+type AttrLengthErr struct {
+	Attr     AttrType
+	Got      int
+	Expected int
+}
+
+func (e AttrLengthErr) Error() string {
+	return fmt.Sprintf("incorrect length for %s: got %d, expected %d",
+		e.Attr,
+		e.Got,
+		e.Expected,
 	)
 }
 

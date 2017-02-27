@@ -113,7 +113,7 @@ type TextAttribute []byte
 // is less than 0, no check is performed.
 func (v TextAttribute) AddToAs(m *Message, t AttrType, maxLen int) error {
 	if maxLen > 0 && len(v) > maxLen {
-		return &AttrLengthError{
+		return &AttrOverflowErr{
 			Max:  maxLen,
 			Got:  len(v),
 			Type: t,
