@@ -30,6 +30,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	laddr := c.LocalAddr()
+	fmt.Println("LISTEN ON", laddr)
 	defer c.Close()
 	m, err := stun.Build(stun.BindingRequest, stun.TransactionID)
 	if err != nil {
@@ -47,5 +49,12 @@ func main() {
 	if response.Type != stun.BindingSuccess {
 		log.Fatalln("bad message", response)
 	}
-	fmt.Println("OK", response)
+	var xorMapped stun.XORMappedAddress
+	if err = response.Parse(&xorMapped); err != nil {
+		log.Fatalln("failed to parse xor mapped address:", err)
+	}
+	if laddr.String() != xorMapped.String() {
+		log.Fatalln(laddr, "!=", xorMapped)
+	}
+	fmt.Println("OK", response, "GOT", xorMapped)
 }
