@@ -59,3 +59,5 @@ install:
 	go get -u github.com/dvyukov/go-fuzz/go-fuzz
 docker-build:
 	docker build -t gortc/stun .
+test-integration:
+	cd integration-test && bash ./test.sh

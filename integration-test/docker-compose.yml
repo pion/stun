@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  stun-client:
+    depends_on:
+      - stun-server
+    links:
+      - stun-server
+    build:
+      context: ..
+      dockerfile: integration-test/Dockerfile
+  stun-server:
+    image: bprodoehl/turnserver
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+    environment:
+      - SKIP_AUTO_IP=1
