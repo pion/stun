@@ -635,7 +635,7 @@ func ExampleMessage() {
 		Fingerprint,
 	)
 	// Instead of calling Build, use AddTo(m) directly for all setters
-	// that are available before.
+	// to reduce allocations.
 	// For example:
 	//	software := NewSoftware("ernado/stun")
 	//	software.AddTo(m)  // no allocations
