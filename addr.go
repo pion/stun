@@ -2,9 +2,9 @@ package stun
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strconv"
-	"io"
 )
 
 // MappedAddress represents MAPPED-ADDRESS attribute.

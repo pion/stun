@@ -91,5 +91,3 @@ func TestFuzzSetters_Coverage(t *testing.T) {
 		FuzzSetters(buf)
 	}
 }
-
-

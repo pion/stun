@@ -3,9 +3,9 @@ package stun
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
-	"io"
 )
 
 const (

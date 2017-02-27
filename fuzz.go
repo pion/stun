@@ -114,7 +114,7 @@ func FuzzSetters(data []byte) int {
 		return 1
 	}
 	m2.WriteHeader()
-	if err := a.g.AddTo(m2); err != nil {
+	if err = a.g.AddTo(m2); err != nil {
 		// We allow decoding some text attributes
 		// when their length is too big, but
 		// not encoding.
