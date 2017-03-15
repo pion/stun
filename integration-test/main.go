@@ -15,6 +15,7 @@ func main() {
 		addr *net.UDPAddr
 		err  error
 	)
+
 	fmt.Println("START")
 	for i := 0; i < 10; i++ {
 		addr, err = net.ResolveUDPAddr("udp", fmt.Sprintf("stun-server:%d", stun.DefaultPort))
@@ -26,12 +27,12 @@ func main() {
 	if err != nil {
 		log.Println("too many attempts to resolve:", err)
 	}
+
 	client := new(stun.Client)
 	fmt.Println("DIALING", addr)
 	if err = client.Dial(addr); err != nil {
 		log.Fatalln("failed to client.Dial:", err)
 	}
-	defer client.Close()
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
@@ -64,4 +65,6 @@ func main() {
 	}); err != nil {
 		log.Fatalln("failed to Do:", err)
 	}
+	client.Close()
+	wg.Wait()
 }
