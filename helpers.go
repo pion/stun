@@ -63,6 +63,15 @@ func (m *Message) Parse(getters ...Getter) error {
 	return nil
 }
 
+// MustBuild wraps Build call and panics on error
+func MustBuild(setters ...Setter) *Message {
+	m, err := Build(setters...)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
+
 // Build wraps Message.Build method.
 func Build(setters ...Setter) (*Message, error) {
 	m := new(Message)

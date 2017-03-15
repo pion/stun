@@ -23,38 +23,34 @@ func main() {
 		time.Sleep(time.Millisecond * 300 * time.Duration(i))
 	}
 	if err != nil {
-		log.Println("too many attempts")
-		log.Fatalln("unable to resolve addr:", err)
+		log.Println("too many attempts to resolve:", err)
 	}
-	c, err := net.DialUDP("udp", nil, addr)
-	if err != nil {
-		log.Fatal(err)
+	client := new(stun.Client)
+	fmt.Println("DIALING", addr)
+	if err = client.Dial(addr); err != nil {
+		log.Fatalln("failed to client.Dial:", err)
 	}
-	laddr := c.LocalAddr()
+	defer client.Close()
+	laddr := client.LocalAddr()
 	fmt.Println("LISTEN ON", laddr)
-	defer c.Close()
-	m, err := stun.Build(stun.BindingRequest, stun.TransactionID)
+	request, err := stun.Build(stun.BindingRequest, stun.TransactionID)
 	if err != nil {
 		log.Fatalln("failed to build:", err)
 	}
-	if _, err := m.WriteTo(c); err != nil {
-		log.Fatalln("failed to write:", err)
+	if err := client.Do(request, func(response *stun.Message) error {
+		if response.Type != stun.BindingSuccess {
+			log.Fatalln("bad message", response)
+		}
+		var xorMapped stun.XORMappedAddress
+		if err = response.Parse(&xorMapped); err != nil {
+			log.Fatalln("failed to parse xor mapped address:", err)
+		}
+		if laddr.String() != xorMapped.String() {
+			log.Fatalln(laddr, "!=", xorMapped)
+		}
+		fmt.Println("OK", response, "GOT", xorMapped)
+		return nil
+	}); err != nil {
+		log.Fatalln("failed to Do:", err)
 	}
-	response := new(stun.Message)
-	response.Raw = make([]byte, 0, 1024)
-	c.SetReadDeadline(time.Now().Add(time.Second * 5))
-	if _, err := response.ReadFrom(c); err != nil {
-		log.Fatalln("failed to read:", err)
-	}
-	if response.Type != stun.BindingSuccess {
-		log.Fatalln("bad message", response)
-	}
-	var xorMapped stun.XORMappedAddress
-	if err = response.Parse(&xorMapped); err != nil {
-		log.Fatalln("failed to parse xor mapped address:", err)
-	}
-	if laddr.String() != xorMapped.String() {
-		log.Fatalln(laddr, "!=", xorMapped)
-	}
-	fmt.Println("OK", response, "GOT", xorMapped)
 }

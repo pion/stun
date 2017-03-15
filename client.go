@@ -57,6 +57,7 @@ type Client struct {
 	packets      chan clientPacket
 	t            sync.Mutex
 	initialized  bool
+	readErr      error
 }
 
 func (c *Client) worker() {
@@ -87,14 +88,34 @@ type transactionID [transactionIDSize]byte
 var tPool = &sync.Pool{
 	New: func() interface{} {
 		return &clientTransaction{
-			res:   make(chan response),
-			close: make(chan interface{}),
+			res: make(chan response),
 		}
 	},
 }
 
+func (c *Client) timeOuter() {
+	ticker := time.NewTicker(time.Millisecond * 5)
+	for now := range ticker.C {
+		c.t.Lock()
+		toRemove := make([]*clientTransaction, 0, 100)
+		for _, t := range c.transactions {
+			if t.deadline.After(now) {
+				continue
+			}
+			toRemove = append(toRemove, t)
+		}
+		for _, t := range toRemove {
+			t.res <- response{
+				err: ErrTimedOut,
+			}
+		}
+		c.t.Unlock()
+	}
+}
+
 func (c *Client) addTransaction(id transactionID) *clientTransaction {
 	t := tPool.Get().(*clientTransaction)
+	t.deadline = time.Now().Add(defaultTimeout)
 	c.t.Lock()
 	if c.transactions == nil {
 		// Lazily initializing map.
@@ -114,8 +135,8 @@ type response struct {
 func (c *Client) closeTransaction(t *clientTransaction) {
 	c.t.Lock()
 	delete(c.transactions, t.id)
-	t.close <- nil
 	c.t.Unlock()
+	tPool.Put(t)
 }
 
 func (c *Client) processMessage(m *Message, addr net.Addr) {
@@ -131,11 +152,9 @@ func (c *Client) processMessage(m *Message, addr net.Addr) {
 		return
 	}
 	t.res <- r
-	<-t.close
-	tPool.Put(t)
 }
 
-func (c Client) writeTo(b []byte, addr net.Addr) (int, error) {
+func (c *Client) writeTo(b []byte, addr net.Addr) (int, error) {
 	if c.m != nil {
 		return c.m.WriteTo(b, addr)
 	}
@@ -149,9 +168,15 @@ const defaultTimeout = time.Second * 2
 
 // Read reads and processes message from internal connection.
 func (c *Client) Read() error {
+	c.t.Lock()
+	c.readErr = nil
+	c.t.Unlock()
 	b := make([]byte, 1024)
 	n, addr, err := c.conn.ReadFrom(b)
 	if err != nil {
+		c.t.Lock()
+		c.readErr = err
+		c.t.Unlock()
 		return err
 	}
 	c.packets <- clientPacket{
@@ -161,12 +186,31 @@ func (c *Client) Read() error {
 	return nil
 }
 
+// ReadUntilClosed calls Read until it errors. If it errors after
+// c.Close call, nil error is returned.
+func (c *Client) ReadUntilClosed() error {
+	for {
+		err := c.Read()
+		if err == nil {
+			continue
+		}
+		c.t.Lock()
+		if !c.initialized {
+			err = nil
+		}
+		c.t.Unlock()
+		return err
+	}
+}
+
 func (c *Client) init() {
 	if c.initialized {
 		return
 	}
 	c.packets = make(chan clientPacket)
 	c.spinWorkers(8)
+	go c.timeOuter()
+	c.initialized = true
 }
 
 func (c *Client) spinWorkers(n int) {
@@ -184,33 +228,26 @@ func (c *Client) Indicate(req *Message) error {
 // ErrTimedOut means that client did not received message in timeout window.
 var ErrTimedOut = errors.New("timed out")
 
-var timerPool = &sync.Pool{
-	New: func() interface{} {
-		return time.NewTimer(time.Second)
-	},
-}
-
-func getTimer(d time.Duration) *time.Timer {
-	t := timerPool.Get().(*time.Timer)
-	t.Reset(d)
-	return t
-}
-
-func putTimer(t *time.Timer) {
-	t.Stop()
-	timerPool.Put(t)
-}
-
 type clientTransaction struct {
-	id    transactionID
-	res   chan response
-	close chan interface{}
-	l     sync.Mutex
+	id       transactionID
+	res      chan response
+	deadline time.Time
+	l        sync.Mutex
+}
+
+func (c *Client) LocalAddr() net.Addr {
+	if c.conn != nil {
+		return c.conn.LocalAddr()
+	}
+	return nil
 }
 
 // Do performs request-response routine handling timeouts and retransmissions.
 func (c *Client) Do(req *Message, handler func(*Message) error) error {
 	// TODO(ar): handle RTO
+	if c.readErr != nil {
+		return c.readErr
+	}
 
 	t := c.addTransaction(req.TransactionID)
 	defer c.closeTransaction(t)
@@ -219,18 +256,11 @@ func (c *Client) Do(req *Message, handler func(*Message) error) error {
 		return err
 	}
 
-	timeout := getTimer(defaultTimeout)
-	defer putTimer(timeout)
-
-	select {
-	case <-timeout.C:
-		return ErrTimedOut
-	case r := <-t.res:
-		if r.err != nil {
-			return r.err
-		}
-		return handler(r.m)
+	r := <-t.res
+	if r.err != nil {
+		return r.err
 	}
+	return handler(r.m)
 }
 
 // Multiplex sets m as multiplexer to client and
@@ -278,10 +308,15 @@ func Dial(uri string) (*Client, error) {
 // Close stops internal workers and resets state of client.
 func (c *Client) Close() error {
 	c.t.Lock()
+	if !c.initialized {
+		c.t.Unlock()
+		return nil
+	}
 	close(c.packets)
 	c.addr = nil
 	c.initialized = false
 	c.m = nil
+	c.conn.Close()
 	c.conn = nil
 	c.transactions = nil
 	c.t.Unlock()
