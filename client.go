@@ -159,7 +159,7 @@ func (c *Client) writeTo(b []byte, addr net.Addr) (int, error) {
 		return c.m.WriteTo(b, addr)
 	}
 	if c.conn != nil {
-		return c.conn.WriteTo(b, addr)
+		return c.conn.Write(b)
 	}
 	return 0, errors.New("client not initialized")
 }
@@ -338,10 +338,19 @@ func (c *Client) Dial(addr net.Addr) error {
 		return nil
 	}
 	// Using null addr.
-	conn, err := net.ListenUDP("udp", nil)
-	if err != nil {
-		return err
+	if udpAddr, ok := addr.(*net.UDPAddr); ok {
+		conn, err := net.DialUDP("udp", nil, udpAddr)
+		if err != nil {
+			return err
+		}
+		c.conn = conn
+	} else {
+		conn, err := net.ListenUDP("udp", nil)
+		if err != nil {
+			return err
+		}
+		c.conn = conn
 	}
-	c.conn = conn
+
 	return nil
 }

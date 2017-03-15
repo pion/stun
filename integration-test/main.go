@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/ernado/stun"
@@ -31,6 +32,16 @@ func main() {
 		log.Fatalln("failed to client.Dial:", err)
 	}
 	defer client.Close()
+
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	go func() {
+		if err := client.ReadUntilClosed(); err != nil {
+			log.Fatalln("read until closed loop:", err)
+		}
+		wg.Done()
+	}()
+
 	laddr := client.LocalAddr()
 	fmt.Println("LISTEN ON", laddr)
 	request, err := stun.Build(stun.BindingRequest, stun.TransactionID)
