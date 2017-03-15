@@ -20,6 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer c.Close()
 	req, err := stun.Build(stun.TransactionID, stun.BindingRequest)
 	if err != nil {
 		log.Fatal(err)
