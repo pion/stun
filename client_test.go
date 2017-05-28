@@ -3,6 +3,7 @@ package stun
 import (
 	"net"
 	"testing"
+	"time"
 )
 
 type stubMultiplexer struct {
@@ -96,5 +97,42 @@ func TestClient_Do(t *testing.T) {
 		return nil
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestAgent_Process(t *testing.T) {
+	a := NewAgent(AgentOptions{})
+	if err := a.Close(); err != nil {
+		t.Error(err)
+	}
+}
+
+var noopHandler = func(e AgentEvent) {}
+
+func BenchmarkAgent_Process(b *testing.B) {
+	a := NewAgent(AgentOptions{
+		Handler: noopHandler,
+	})
+	deadline := time.Now().AddDate(0, 0, 1)
+	for i := 0; i < 1000; i++ {
+		if err := a.Start(NewTransactionID(), deadline, noopHandler); err != nil {
+			b.Fatal(err)
+		}
+	}
+	defer func() {
+		if err := a.Close(); err != nil {
+			b.Error(err)
+		}
+	}()
+	b.ReportAllocs()
+	ev := AgentProcessArgs{
+		Message: MustBuild(
+			TransactionID,
+		),
+	}
+	for i := 0; i < b.N; i++ {
+		if err := a.Process(ev); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

@@ -9,6 +9,150 @@ import (
 	"time"
 )
 
+type AgentOptions struct {
+	Handler AgentFn // Default handler, can be nil.
+}
+
+func NewAgent(o AgentOptions) *Agent {
+	a := &Agent{
+		transactions: make(map[transactionID]agentTransaction),
+		zeroHandler:  o.Handler,
+	}
+	return a
+}
+
+// Agent is low-level abstraction over transactions.
+type Agent struct {
+	transactions map[transactionID]agentTransaction
+	closed       bool
+	zeroHandler  AgentFn
+	mux          sync.Mutex // protects transactions and closed
+}
+
+// AgentFn is called on incoming message.
+// Usage of message is valid only during call.
+type AgentFn func(e AgentEvent)
+
+type AgentEvent struct {
+	RAddr   net.Addr
+	LAddr   net.Addr
+	Message *Message
+	Error   error
+}
+
+type agentTransaction struct {
+	id       transactionID
+	deadline time.Time
+	f        AgentFn
+}
+
+func (a *Agent) Stop(id transactionID) error {
+	a.mux.Lock()
+	if a.closed {
+		a.mux.Unlock()
+		return ErrAgentClosed
+	}
+	t, exists := a.transactions[id]
+	delete(a.transactions, id)
+	a.mux.Unlock()
+	if !exists {
+		return errors.New("not exists")
+	}
+	t.f(AgentEvent{
+		Error: errors.New("stopped"),
+	})
+	return nil
+}
+
+var ErrAgentClosed = errors.New("agent is closed")
+
+func (a *Agent) Start(id transactionID, deadline time.Time, f AgentFn) error {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+	if a.closed {
+		return ErrAgentClosed
+	}
+	_, exists := a.transactions[id]
+	if exists {
+		return errors.New("already exists")
+	}
+	a.transactions[id] = agentTransaction{
+		id:       id,
+		f:        f,
+		deadline: deadline,
+	}
+	return nil
+}
+
+func (a *Agent) garbageCollect(deadline time.Time) {
+	var (
+		toCall   []AgentFn
+		toRemove []transactionID
+	)
+	a.mux.Lock()
+	if a.closed {
+		a.mux.Unlock()
+		return
+	}
+	for id, t := range a.transactions {
+		if t.deadline.After(deadline) {
+			toRemove = append(toRemove, id)
+			toCall = append(toCall, t.f)
+		}
+	}
+	for _, id := range toRemove {
+		delete(a.transactions, id)
+	}
+	a.mux.Unlock()
+	event := AgentEvent{
+		Error: errors.New("timed out"),
+	}
+	for _, f := range toCall {
+		f(event)
+	}
+}
+
+type AgentProcessArgs struct {
+	Message *Message
+}
+
+// Process incoming message.
+// Blocks until handler returns.
+func (a *Agent) Process(args AgentProcessArgs) error {
+	m := args.Message
+	a.mux.Lock()
+	if a.closed {
+		a.mux.Unlock()
+		return ErrAgentClosed
+	}
+	t, ok := a.transactions[m.TransactionID]
+	delete(a.transactions, m.TransactionID)
+	a.mux.Unlock()
+	event := AgentEvent{
+		Message: m,
+	}
+	if ok {
+		t.f(event)
+	} else if a.zeroHandler != nil {
+		a.zeroHandler(event)
+	}
+	return nil
+}
+
+func (a *Agent) Close() error {
+	e := AgentEvent{
+		Error: ErrAgentClosed,
+	}
+	a.mux.Lock()
+	for _, t := range a.transactions {
+		t.f(e)
+	}
+	a.transactions = nil
+	a.closed = true
+	a.mux.Unlock()
+	return nil
+}
+
 // MultiplexFunc should return true if multiplex client is interested in b.
 type MultiplexFunc func(b []byte) bool
 
@@ -32,7 +176,7 @@ func (m *Multiplexer) Add(f MultiplexFunc, c func([]byte, net.Addr)) {
 	})
 }
 
-// ClientMultiplexer wraps methods that are needed to multiples STUN and other protocols
+// ClientMultiplexer wraps methods that are needed to multiplex STUN and other protocols
 // on one connection.
 type ClientMultiplexer interface {
 	Add(f MultiplexFunc, c func([]byte, net.Addr))
