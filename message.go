@@ -390,25 +390,23 @@ const (
 	MethodChannelBind      Method = 0x009
 )
 
+var methodName = map[Method]string{
+	MethodBinding:          "binding",
+	MethodAllocate:         "allocate",
+	MethodRefresh:          "refresh",
+	MethodSend:             "send",
+	MethodData:             "data",
+	MethodCreatePermission: "create permission",
+	MethodChannelBind:      "channel bind",
+}
+
 func (m Method) String() string {
-	switch m {
-	case MethodBinding:
-		return "binding"
-	case MethodAllocate:
-		return "allocate"
-	case MethodRefresh:
-		return "refresh"
-	case MethodSend:
-		return "send"
-	case MethodData:
-		return "data"
-	case MethodCreatePermission:
-		return "create permission"
-	case MethodChannelBind:
-		return "channel bind"
-	default:
-		return fmt.Sprintf("0x%x", uint16(m))
+	s, ok := methodName[m]
+	if !ok {
+		// Falling back to hex representation.
+		s = fmt.Sprintf("0x%x", uint16(m))
 	}
+	return s
 }
 
 // MessageType is STUN Message Type Field.
