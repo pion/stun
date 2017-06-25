@@ -25,14 +25,17 @@ func NewAgent(o AgentOptions) *Agent {
 type Agent struct {
 	transactions map[transactionID]agentTransaction
 	closed       bool
-	zeroHandler  AgentFn
 	mux          sync.Mutex // protects transactions and closed
+	zeroHandler  AgentFn    // handles non-registered transactions if set
 }
 
-// AgentFn is called on incoming message.
-// Usage of message is valid only during call.
+// AgentFn is called on transaction state change.
+// Usage of e is valid only during call, user must
+// copy needed fields explicitly.
 type AgentFn func(e AgentEvent)
 
+// AgentEvent is set of arguments passed to AgentFn, describing
+// an transaction event.
 type AgentEvent struct {
 	RAddr   net.Addr
 	LAddr   net.Addr
@@ -46,6 +49,17 @@ type agentTransaction struct {
 	f        AgentFn
 }
 
+var (
+	// ErrTransactionStopped indicates that transaction was manually stopped.
+	ErrTransactionStopped = errors.New("transaction is stopped")
+	// ErrTransactionNotExists indicates that agent failed to find transaction.
+	ErrTransactionNotExists = errors.New("transaction not exists")
+	// ErrTransactionExists indicates that transaction with same id is already
+	// registered.
+	ErrTransactionExists = errors.New("transaction exists with same id")
+)
+
+// Stop stops transaction by id with ErrTransactionStopped.
 func (a *Agent) Stop(id transactionID) error {
 	a.mux.Lock()
 	if a.closed {
@@ -56,16 +70,22 @@ func (a *Agent) Stop(id transactionID) error {
 	delete(a.transactions, id)
 	a.mux.Unlock()
 	if !exists {
-		return errors.New("not exists")
+		return ErrTransactionNotExists
 	}
 	t.f(AgentEvent{
-		Error: errors.New("stopped"),
+		Error: ErrTransactionStopped,
 	})
 	return nil
 }
 
+// ErrAgentClosed indicates that agent is in closed state and is unable
+// to handle transactions.
 var ErrAgentClosed = errors.New("agent is closed")
 
+// Start registers transaction with provided id, deadline and callback.
+// Could return ErrAgentClosed, ErrTransactionExists.
+// Callback f is guaranteed to be eventually called. See AgentFn for
+// callback processing constraints.
 func (a *Agent) Start(id transactionID, deadline time.Time, f AgentFn) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
@@ -74,7 +94,7 @@ func (a *Agent) Start(id transactionID, deadline time.Time, f AgentFn) error {
 	}
 	_, exists := a.transactions[id]
 	if exists {
-		return errors.New("already exists")
+		return ErrTransactionExists
 	}
 	a.transactions[id] = agentTransaction{
 		id:       id,
@@ -84,34 +104,53 @@ func (a *Agent) Start(id transactionID, deadline time.Time, f AgentFn) error {
 	return nil
 }
 
-func (a *Agent) garbageCollect(deadline time.Time) {
-	var (
-		toCall   []AgentFn
-		toRemove []transactionID
-	)
+// agentGCInitCap is initial capacity for Agent.garbageCollect slices,
+// sufficient to make function zero-alloc in most cases.
+const agentGCInitCap = 100
+
+// ErrTransactionTimeOut indicates that transaction has reached deadline.
+var ErrTransactionTimeOut = errors.New("transaction is timed out")
+
+// garbageCollect terminates all timed out transactions.
+func (a *Agent) garbageCollect(gcTime time.Time) {
+	toCall := make([]AgentFn, 0, agentGCInitCap)
+	toRemove := make([]transactionID, 0, agentGCInitCap)
 	a.mux.Lock()
 	if a.closed {
+		// Doing nothing if agent is closed.
+		// All transactions should be already closed
+		// during Close() call.
 		a.mux.Unlock()
 		return
 	}
+	// Adding all transactions with deadline before gcTime
+	// to toCall and toRemove slices.
+	// No allocs if there are less than agentGCInitCap
+	// timed out transactions.
 	for id, t := range a.transactions {
-		if t.deadline.After(deadline) {
+		if t.deadline.Before(gcTime) {
 			toRemove = append(toRemove, id)
 			toCall = append(toCall, t.f)
 		}
 	}
+	// Un-registering timed out transactions.
 	for _, id := range toRemove {
 		delete(a.transactions, id)
 	}
+	// Calling callbacks does not require locked mutex,
+	// reducing lock time.
 	a.mux.Unlock()
+	// Sending ErrTransactionTimeOut to all callbacks, blocking
+	// garbageCollect until last one.
 	event := AgentEvent{
-		Error: errors.New("timed out"),
+		Error: ErrTransactionTimeOut,
 	}
 	for _, f := range toCall {
 		f(event)
 	}
 }
 
+// AgentProcessArgs is set of arguments passed to Agent.Process.
 type AgentProcessArgs struct {
 	Message *Message
 }
@@ -139,6 +178,8 @@ func (a *Agent) Process(args AgentProcessArgs) error {
 	return nil
 }
 
+// Close terminated all transactions with ErrAgentClosed and renders Agent to
+// closed state.
 func (a *Agent) Close() error {
 	e := AgentEvent{
 		Error: ErrAgentClosed,
