@@ -156,6 +156,12 @@ func (m *Message) Add(t AttrType, v []byte) {
 }
 
 func attrEqual(a, b Attributes) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
 	for _, attr := range a {
 		attrB, ok := b.Get(attr.Type)
 		if !ok {

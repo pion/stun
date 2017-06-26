@@ -429,6 +429,26 @@ func TestMessage_Equal(t *testing.T) {
 	if a.Equal(nil) {
 		t.Error("non-nil should not be equal to nil")
 	}
+	t.Run("Nil attributes", func(t *testing.T) {
+		a := &Message{
+			Attributes: nil,
+			Length:     4 + 2,
+		}
+		b := &Message{
+			Attributes: attrs,
+			Length:     4 + 2,
+		}
+		if a.Equal(b) {
+			t.Error("should not equal")
+		}
+		if b.Equal(a) {
+			t.Error("should not equal")
+		}
+		b.Attributes = nil
+		if !a.Equal(b) {
+			t.Error("should equal")
+		}
+	})
 }
 
 func TestMessageGrow(t *testing.T) {
