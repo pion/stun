@@ -7,10 +7,12 @@ import (
 	"time"
 )
 
+// AgentOptions are required to initialize Agent.
 type AgentOptions struct {
 	Handler AgentFn // Default handler, can be nil.
 }
 
+// NewAgent initializes and returns new Agent from options.
 func NewAgent(o AgentOptions) *Agent {
 	a := &Agent{
 		transactions: make(map[transactionID]agentTransaction),
@@ -191,6 +193,5 @@ func (a *Agent) Close() error {
 	a.mux.Unlock()
 	return nil
 }
-
 
 type transactionID [transactionIDSize]byte
