@@ -60,7 +60,7 @@ var (
 )
 
 // Stop stops transaction by id with ErrTransactionStopped.
-func (a *Agent) Stop(id transactionID) error {
+func (a *Agent) Stop(id [TransactionIDSize]byte) error {
 	a.mux.Lock()
 	if a.closed {
 		a.mux.Unlock()
@@ -86,7 +86,7 @@ var ErrAgentClosed = errors.New("agent is closed")
 // Could return ErrAgentClosed, ErrTransactionExists.
 // Callback f is guaranteed to be eventually called. See AgentFn for
 // callback processing constraints.
-func (a *Agent) Start(id transactionID, deadline time.Time, f AgentFn) error {
+func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	if a.closed {
@@ -194,4 +194,4 @@ func (a *Agent) Close() error {
 	return nil
 }
 
-type transactionID [transactionIDSize]byte
+type transactionID [TransactionIDSize]byte

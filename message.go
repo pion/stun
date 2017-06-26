@@ -20,12 +20,14 @@ const (
 	magicCookie         = 0x2112A442
 	attributeHeaderSize = 4
 	messageHeaderSize   = 20
-	transactionIDSize   = 12 // 96 bit
+
+	// TransactionIDSize is length of transaction id array (in bytes).
+	TransactionIDSize = 12 // 96 bit
 )
 
 // NewTransactionID returns new random transaction ID using crypto/rand
 // as source.
-func NewTransactionID() (b [transactionIDSize]byte) {
+func NewTransactionID() (b [TransactionIDSize]byte) {
 	readFullOrPanic(rand.Reader, b[:])
 	return b
 }
@@ -54,7 +56,7 @@ func New() *Message {
 type Message struct {
 	Type          MessageType
 	Length        uint32 // len(Raw) not including header
-	TransactionID [transactionIDSize]byte
+	TransactionID [TransactionIDSize]byte
 	Attributes    Attributes
 	Raw           []byte
 }
@@ -515,11 +517,11 @@ func (m *Message) Contains(t AttrType) bool {
 	return false
 }
 
-type transactionIDValueSetter [transactionIDSize]byte
+type transactionIDValueSetter [TransactionIDSize]byte
 
 // NewTransactionIDSetter returns new Setter that sets message transaction id
 // to provided value.
-func NewTransactionIDSetter(value [transactionIDSize]byte) Setter {
+func NewTransactionIDSetter(value [TransactionIDSize]byte) Setter {
 	return transactionIDValueSetter(value)
 }
 

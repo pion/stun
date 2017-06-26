@@ -116,7 +116,7 @@ func (a *XORMappedAddress) GetFromAs(m *Message, t AttrType) error {
 		}
 	}
 	a.Port = int(bin.Uint16(v[2:4])) ^ (magicCookie >> 16)
-	xorValue := make([]byte, 4+transactionIDSize)
+	xorValue := make([]byte, 4+TransactionIDSize)
 	bin.PutUint32(xorValue[0:4], magicCookie)
 	copy(xorValue[4:], m.TransactionID[:])
 	xorBytes(a.IP, v[4:], xorValue)

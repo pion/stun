@@ -162,7 +162,7 @@ func TestMessage_BadLength(t *testing.T) {
 	m := &Message{
 		Type:          mType,
 		Length:        4,
-		TransactionID: [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+		TransactionID: [TransactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 	}
 	m.Add(0x1, []byte{1, 2})
 	m.WriteHeader()
@@ -253,7 +253,7 @@ func BenchmarkMessage_WriteTo(b *testing.B) {
 	m := &Message{
 		Type:   mType,
 		Length: 0,
-		TransactionID: [transactionIDSize]byte{
+		TransactionID: [TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
 	}
@@ -271,7 +271,7 @@ func BenchmarkMessage_ReadFrom(b *testing.B) {
 	m := &Message{
 		Type:   mType,
 		Length: 0,
-		TransactionID: [transactionIDSize]byte{
+		TransactionID: [TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
 	}
@@ -294,7 +294,7 @@ func BenchmarkMessage_ReadBytes(b *testing.B) {
 	m := &Message{
 		Type:   mType,
 		Length: 0,
-		TransactionID: [transactionIDSize]byte{
+		TransactionID: [TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
 	}
@@ -402,7 +402,7 @@ func TestMessage_Equal(t *testing.T) {
 	if a.Equal(&Message{Type: MessageType{Class: 128}}) {
 		t.Error("should not equal")
 	}
-	tID := [transactionIDSize]byte{
+	tID := [TransactionIDSize]byte{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 	}
 	if a.Equal(&Message{TransactionID: tID}) {
@@ -639,7 +639,7 @@ func ExampleMessage() {
 	buf := new(bytes.Buffer)
 	m := new(Message)
 	m.Build(BindingRequest,
-		NewTransactionIDSetter([transactionIDSize]byte{
+		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
 		NewSoftware("ernado/stun"),
