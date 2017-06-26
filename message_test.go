@@ -423,7 +423,12 @@ func TestMessage_Equal(t *testing.T) {
 	if a.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
 		t.Error("should not equal")
 	}
-
+	if !(*Message)(nil).Equal(nil) {
+		t.Error("nil should be equal to nil")
+	}
+	if a.Equal(nil) {
+		t.Error("non-nil should not be equal to nil")
+	}
 }
 
 func TestMessageGrow(t *testing.T) {

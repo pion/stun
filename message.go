@@ -156,6 +156,12 @@ func (m *Message) Add(t AttrType, v []byte) {
 // Equal returns true if Message b equals to m.
 // Ignores m.Raw.
 func (m *Message) Equal(b *Message) bool {
+	if m == nil && b == nil {
+		return true
+	}
+	if m == nil || b == nil {
+		return false
+	}
 	if m.Type != b.Type {
 		return false
 	}
