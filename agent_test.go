@@ -5,10 +5,66 @@ import (
 	"time"
 )
 
-func TestAgent_Process(t *testing.T) {
-	a := NewAgent(AgentOptions{})
+func TestAgent_ProcessInTransaction(t *testing.T) {
+	m := New()
+	a := NewAgent(AgentOptions{
+		Handler: func(e AgentEvent) {
+			t.Error("should not be called")
+		},
+	})
+	if err := m.NewTransactionID(); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Start(m.TransactionID, time.Time{}, func(e AgentEvent) {
+		if e.Error != nil {
+			t.Errorf("got error: %s", e.Error)
+		}
+		if !e.Message.Equal(m) {
+			t.Errorf("%s (got) != %s (expected)", e.Message, m)
+		}
+
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Process(AgentProcessArgs{
+		Message: m,
+	}); err != nil {
+		t.Error(err)
+	}
 	if err := a.Close(); err != nil {
 		t.Error(err)
+	}
+}
+
+func TestAgent_Process(t *testing.T) {
+	m := New()
+	a := NewAgent(AgentOptions{
+		Handler: func(e AgentEvent) {
+			if e.Error != nil {
+				t.Errorf("got error: %s", e.Error)
+			}
+			if !e.Message.Equal(m) {
+				t.Errorf("%s (got) != %s (expected)", e.Message, m)
+			}
+		},
+	})
+	if err := m.NewTransactionID(); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Process(AgentProcessArgs{
+		Message: m,
+	}); err != nil {
+		t.Error(err)
+	}
+	if err := a.Close(); err != nil {
+		t.Error(err)
+	}
+	if err := a.Process(AgentProcessArgs{
+		Message: m,
+	}); err != ErrAgentClosed {
+		t.Errorf("closed agent should return <%s>, but got <%s>",
+			ErrAgentClosed, err,
+		)
 	}
 }
 
