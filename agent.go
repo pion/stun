@@ -21,8 +21,15 @@ func NewAgent(o AgentOptions) *Agent {
 	return a
 }
 
-// Agent is low-level abstraction over transactions.
+// Agent is low-level abstraction over transaction list that
+// handles concurrency (all calls are goroutine-safe) and
+// time outs (via Collect call).
 type Agent struct {
+	// transactions is map of transactions that are currently
+	// in progress. Event handling is done in such way when
+	// transaction is unregistered before agentTransaction access,
+	// minimizing mux lock and protecting agentTransaction from
+	// data races via unexpected concurrent access.
 	transactions map[transactionID]agentTransaction
 	closed       bool
 	mux          sync.Mutex // protects transactions and closed
@@ -35,7 +42,7 @@ type Agent struct {
 type AgentFn func(e AgentEvent)
 
 // AgentEvent is set of arguments passed to AgentFn, describing
-// an transaction event.
+// an transaction event. Do not reuse outside AgentFn.
 type AgentEvent struct {
 	RAddr   net.Addr
 	LAddr   net.Addr
@@ -43,6 +50,10 @@ type AgentEvent struct {
 	Error   error
 }
 
+// agentTransaction represents transaction in progress.
+// If transaction is succeed or failed, f will be called
+// provided by event.
+// Concurrent access is invalid.
 type agentTransaction struct {
 	id       transactionID
 	deadline time.Time
@@ -59,7 +70,8 @@ var (
 	ErrTransactionExists = errors.New("transaction exists with same id")
 )
 
-// Stop stops transaction by id with ErrTransactionStopped.
+// Stop stops transaction by id with ErrTransactionStopped, blocking
+// until callback returns.
 func (a *Agent) Stop(id [TransactionIDSize]byte) error {
 	a.mux.Lock()
 	if a.closed {
@@ -104,15 +116,19 @@ func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn)
 	return nil
 }
 
-// agentGCInitCap is initial capacity for Agent.garbageCollect slices,
+// agentGCInitCap is initial capacity for Agent.Collect slices,
 // sufficient to make function zero-alloc in most cases.
 const agentGCInitCap = 100
 
 // ErrTransactionTimeOut indicates that transaction has reached deadline.
 var ErrTransactionTimeOut = errors.New("transaction is timed out")
 
-// garbageCollect terminates all timed out transactions.
-func (a *Agent) garbageCollect(gcTime time.Time) {
+// Collect terminates all transactions that have deadline before provided
+// time, blocking until all handlers will process ErrTransactionTimeOut.
+// Will return ErrAgentClosed if agent is already closed.
+//
+// It is safe to call Collect concurrently but makes no sense.
+func (a *Agent) Collect(gcTime time.Time) error {
 	toCall := make([]AgentFn, 0, agentGCInitCap)
 	toRemove := make([]transactionID, 0, agentGCInitCap)
 	a.mux.Lock()
@@ -121,7 +137,7 @@ func (a *Agent) garbageCollect(gcTime time.Time) {
 		// All transactions should be already closed
 		// during Close() call.
 		a.mux.Unlock()
-		return
+		return ErrAgentClosed
 	}
 	// Adding all transactions with deadline before gcTime
 	// to toCall and toRemove slices.
@@ -141,13 +157,14 @@ func (a *Agent) garbageCollect(gcTime time.Time) {
 	// reducing lock time.
 	a.mux.Unlock()
 	// Sending ErrTransactionTimeOut to all callbacks, blocking
-	// garbageCollect until last one.
+	// Collect until last one.
 	event := AgentEvent{
 		Error: ErrTransactionTimeOut,
 	}
 	for _, f := range toCall {
 		f(event)
 	}
+	return nil
 }
 
 // AgentProcessArgs is set of arguments passed to Agent.Process.

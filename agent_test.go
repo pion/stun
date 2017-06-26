@@ -157,12 +157,12 @@ func TestAgent_GC(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	a.garbageCollect(gcDeadline)
+	a.Collect(gcDeadline)
 	if err := a.Close(); err != nil {
 		t.Error(err)
 	}
 	// Should not panic:
-	a.garbageCollect(gcDeadline)
+	a.Collect(gcDeadline)
 }
 
 func BenchmarkAgent_GC(b *testing.B) {
@@ -183,7 +183,7 @@ func BenchmarkAgent_GC(b *testing.B) {
 	b.ReportAllocs()
 	gcDeadline := deadline.Add(-time.Second)
 	for i := 0; i < b.N; i++ {
-		a.garbageCollect(gcDeadline)
+		a.Collect(gcDeadline)
 	}
 }
 
