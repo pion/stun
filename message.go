@@ -155,6 +155,19 @@ func (m *Message) Add(t AttrType, v []byte) {
 	m.WriteLength()
 }
 
+func attrEqual(a, b Attributes) bool {
+	for _, attr := range a {
+		attrB, ok := b.Get(attr.Type)
+		if !ok {
+			return false
+		}
+		if !attrB.Equal(attr) {
+			return false
+		}
+	}
+	return true
+}
+
 // Equal returns true if Message b equals to m.
 // Ignores m.Raw.
 func (m *Message) Equal(b *Message) bool {
@@ -173,14 +186,8 @@ func (m *Message) Equal(b *Message) bool {
 	if m.Length != b.Length {
 		return false
 	}
-	for _, a := range m.Attributes {
-		aB, ok := b.Attributes.Get(a.Type)
-		if !ok {
-			return false
-		}
-		if !aB.Equal(a) {
-			return false
-		}
+	if !attrEqual(m.Attributes, b.Attributes) {
+		return false
 	}
 	return true
 }
