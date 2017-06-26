@@ -11,10 +11,29 @@
 // package for example of stun extension implementation.
 package stun
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"io"
+)
 
 // bin is shorthand to binary.BigEndian.
 var bin = binary.BigEndian
+
+func readFullOrPanic(r io.Reader, v []byte) int {
+	n, err := io.ReadFull(r, v)
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
+func writeOrPanic(w io.Writer, v []byte) int {
+	n, err := w.Write(v)
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
 
 // IANA assigned ports for "stun" protocol.
 const (
@@ -22,11 +41,11 @@ const (
 	DefaultTLSPort = 5349
 )
 
-type transactionIDSetter bool
+type transactionIDSetter struct{}
 
 func (transactionIDSetter) AddTo(m *Message) error {
 	return m.NewTransactionID()
 }
 
 // TransactionID is Setter for m.TransactionID.
-var TransactionID Setter = transactionIDSetter(true)
+var TransactionID Setter = transactionIDSetter{}

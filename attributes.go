@@ -149,7 +149,7 @@ func (a RawAttribute) String() string {
 
 // ErrAttributeNotFound means that attribute with provided attribute
 // type does not exist in message.
-var ErrAttributeNotFound = errors.New("Attribute not found")
+var ErrAttributeNotFound = errors.New("attribute not found")
 
 // Get returns byte slice that represents attribute value,
 // if there is no attribute with such type,

@@ -98,4 +98,17 @@ func TestHelpersErrorHandling(t *testing.T) {
 	if err := m.Parse(e); err != e.Err {
 		t.Error(err, "!=", e.Err)
 	}
+	t.Run("MustBuild", func(t *testing.T) {
+		t.Run("Positive", func(t *testing.T) {
+			MustBuild(NewTransactionIDSetter(transactionID{}))
+		})
+		defer func() {
+			if p := recover(); p != e.Err {
+				t.Errorf("%s != %s",
+					p, e.Err,
+				)
+			}
+		}()
+		MustBuild(e)
+	})
 }

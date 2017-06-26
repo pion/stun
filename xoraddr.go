@@ -109,7 +109,11 @@ func (a *XORMappedAddress) GetFromAs(m *Message, t AttrType) error {
 		return io.ErrUnexpectedEOF
 	}
 	if len(v[4:]) > len(a.IP) {
-		return errors.New("Bad format for XOR-MAPPED-ADDRESS")
+		return &AttrOverflowErr{
+			Got:  len(v[4:]),
+			Type: AttrXORMappedAddress,
+			Max:  len(a.IP),
+		}
 	}
 	a.Port = int(bin.Uint16(v[2:4])) ^ (magicCookie >> 16)
 	xorValue := make([]byte, 4+transactionIDSize)

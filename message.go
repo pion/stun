@@ -26,10 +26,7 @@ const (
 // NewTransactionID returns new random transaction ID using crypto/rand
 // as source.
 func NewTransactionID() (b [transactionIDSize]byte) {
-	_, err := io.ReadFull(rand.Reader, b[:])
-	if err != nil {
-		panic(err)
-	}
+	readFullOrPanic(rand.Reader, b[:])
 	return b
 }
 

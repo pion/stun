@@ -392,7 +392,7 @@ func TestAttribute_Equal(t *testing.T) {
 }
 
 func TestMessage_Equal(t *testing.T) {
-	attr := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
+	attr := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}, Type: 0x1}
 	attrs := Attributes{attr}
 	a := &Message{Attributes: attrs, Length: 4 + 2}
 	b := &Message{Attributes: attrs, Length: 4 + 2}
@@ -412,11 +412,18 @@ func TestMessage_Equal(t *testing.T) {
 		t.Error("should not equal")
 	}
 	tAttrs := Attributes{
-		{Length: 1, Value: []byte{0x1}},
+		{Length: 1, Value: []byte{0x1}, Type: 0x1},
 	}
 	if a.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
 		t.Error("should not equal")
 	}
+	tAttrs = Attributes{
+		{Length: 2, Value: []byte{0x1, 0x1}, Type: 0x2},
+	}
+	if a.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
+		t.Error("should not equal")
+	}
+
 }
 
 func TestMessageGrow(t *testing.T) {

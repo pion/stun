@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"io"
 	"net"
 	"testing"
 )
@@ -63,6 +64,29 @@ func TestXORMappedAddress_GetFrom(t *testing.T) {
 	if addr.Port != 48583 {
 		t.Error("bad Port", addr.Port, "!=", 48583)
 	}
+	t.Run("UnexpectedEOF", func(t *testing.T) {
+		m := New()
+		// {0, 1} is correct addr family.
+		m.Add(AttrXORMappedAddress, []byte{0, 1, 3, 4})
+		addr := new(XORMappedAddress)
+		if err = addr.GetFrom(m); err != io.ErrUnexpectedEOF {
+			t.Errorf("len(v) = 4 should render <%s> error, got <%s>",
+				io.ErrUnexpectedEOF, err,
+			)
+		}
+	})
+	t.Run("AttrOverflowErr", func(t *testing.T) {
+		m := New()
+		// {0, 1} is correct addr family.
+		m.Add(AttrXORMappedAddress, []byte{0, 1, 3, 4, 5, 6, 7, 8, 9, 1, 1, 1, 1, 1, 2, 3, 4})
+		addr := new(XORMappedAddress)
+		err := addr.GetFrom(m)
+		if _, ok := err.(*AttrOverflowErr); !ok {
+			t.Errorf("should render AttrOverflowErr error, got <%s> (%T)",
+				err, err,
+			)
+		}
+	})
 }
 
 func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
