@@ -10,7 +10,7 @@ type UnknownAttributes []AttrType
 func (a UnknownAttributes) String() string {
 	s := ""
 	if len(a) == 0 {
-		return s + "<nil>"
+		return "<nil>"
 	}
 	last := len(a) - 1
 	for i, t := range a {
