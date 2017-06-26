@@ -157,12 +157,15 @@ func TestAgent_GC(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	a.Collect(gcDeadline)
+	if err := a.Collect(gcDeadline); err != nil {
+		t.Fatal(err)
+	}
 	if err := a.Close(); err != nil {
 		t.Error(err)
 	}
-	// Should not panic:
-	a.Collect(gcDeadline)
+	if err := a.Collect(gcDeadline); err != ErrAgentClosed {
+		t.Errorf("should <%s>, but got <%s>", ErrAgentClosed, err)
+	}
 }
 
 func BenchmarkAgent_GC(b *testing.B) {
@@ -183,7 +186,9 @@ func BenchmarkAgent_GC(b *testing.B) {
 	b.ReportAllocs()
 	gcDeadline := deadline.Add(-time.Second)
 	for i := 0; i < b.N; i++ {
-		a.Collect(gcDeadline)
+		if err := a.Collect(gcDeadline); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
