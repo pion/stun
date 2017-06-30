@@ -31,7 +31,7 @@ type Agent struct {
 	// minimizing mux lock and protecting agentTransaction from
 	// data races via unexpected concurrent access.
 	transactions map[transactionID]agentTransaction
-	closed       bool
+	closed       bool       // all calls are invalid if true
 	mux          sync.Mutex // protects transactions and closed
 	zeroHandler  AgentFn    // handles non-registered transactions if set
 }
