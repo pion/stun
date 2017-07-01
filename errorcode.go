@@ -16,7 +16,7 @@ type ErrorCodeAttribute struct {
 
 func (c ErrorCodeAttribute) String() string {
 	return fmt.Sprintf("%d: %s", c.Code, c.Reason)
-}	
+}
 
 // constants for ERROR-CODE encoding.
 const (
