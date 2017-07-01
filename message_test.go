@@ -806,3 +806,24 @@ func TestAllocationsGetters(t *testing.T) {
 		}
 	}
 }
+
+func TestMessageFullSize(t *testing.T) {
+	m := new(Message)
+	if err := m.Build(BindingRequest,
+		NewTransactionIDSetter([TransactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+		}),
+		NewSoftware("ernado/stun"),
+		NewLongTermIntegrity("username", "realm", "password"),
+		Fingerprint,
+	); err != nil {
+		t.Fatal(err)
+	}
+	m.Raw = m.Raw[:len(m.Raw)-10]
+
+	decoder := new(Message)
+	decoder.Raw = m.Raw[:len(m.Raw)-10]
+	if err := decoder.Decode(); err == nil {
+		t.Error("decode on truncated buffer should error")
+	}
+}
