@@ -172,8 +172,10 @@ type AgentProcessArgs struct {
 	Message *Message
 }
 
-// Process incoming message.
-// Blocks until handler returns.
+// Process incoming message, picking handler by transaction id.
+// If transaction is not registered, zero handler is used. If default
+// handle is not provided, message is silently ignored.
+// Call blocks until handler returns.
 func (a *Agent) Process(args AgentProcessArgs) error {
 	m := args.Message
 	a.mux.Lock()
