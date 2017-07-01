@@ -197,7 +197,7 @@ func (a *Agent) Process(args AgentProcessArgs) error {
 	return nil
 }
 
-// Close terminated all transactions with ErrAgentClosed and renders Agent to
+// Close terminates all transactions with ErrAgentClosed and renders Agent to
 // closed state.
 func (a *Agent) Close() error {
 	e := AgentEvent{
