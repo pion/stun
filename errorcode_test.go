@@ -2,6 +2,7 @@ package stun
 
 import (
 	"encoding/base64"
+	"io"
 	"testing"
 )
 
@@ -37,6 +38,17 @@ func BenchmarkErrorCodeAttribute_GetFrom(b *testing.B) {
 	a.AddTo(m)
 	for i := 0; i < b.N; i++ {
 		a.GetFrom(m)
+	}
+}
+
+func TestErrorCodeAttribute_GetFrom(t *testing.T) {
+	m := New()
+	m.Add(AttrErrorCode, []byte{1})
+	c := new(ErrorCodeAttribute)
+	if err := c.GetFrom(m); err != io.ErrUnexpectedEOF {
+		t.Errorf("GetFrom should return <%s>, but got <%s>",
+			io.ErrUnexpectedEOF, err,
+		)
 	}
 }
 
