@@ -63,7 +63,7 @@ func (m *Message) Parse(getters ...Getter) error {
 	return nil
 }
 
-// MustBuild wraps Build call and panics on error
+// MustBuild wraps Build call and panics on error.
 func MustBuild(setters ...Setter) *Message {
 	m, err := Build(setters...)
 	if err != nil {
