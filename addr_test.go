@@ -1,6 +1,7 @@
 package stun
 
 import (
+	"io"
 	"net"
 	"testing"
 )
@@ -45,6 +46,13 @@ func TestMappedAddress(t *testing.T) {
 				v.Value[0] = 32
 				if err := got.GetFrom(m); err == nil {
 					t.Error("should error")
+				}
+			})
+			t.Run("Bad length", func(t *testing.T) {
+				message := new(Message)
+				message.Add(AttrMappedAddress, []byte{1, 2, 3})
+				if err := got.GetFrom(message); err != io.ErrUnexpectedEOF {
+					t.Errorf("<%s> should be <%s>", err, io.ErrUnexpectedEOF)
 				}
 			})
 		})

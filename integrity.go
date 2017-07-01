@@ -93,10 +93,7 @@ func (i *IntegrityErr) Error() string {
 
 func newHMAC(key, message []byte) []byte {
 	mac := hmac.New(sha1.New, key)
-	_, err := mac.Write(message)
-	if err != nil {
-		panic(err)
-	}
+	writeOrPanic(mac, message)
 	return mac.Sum(nil)
 }
 

@@ -44,7 +44,7 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 
 func TestMessageIntegrityWithFingerprint(t *testing.T) {
 	m := new(Message)
-	m.TransactionID = [transactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+	m.TransactionID = [TransactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 	m.WriteHeader()
 	NewSoftware("software").AddTo(m)
 	i := NewShortTermIntegrity("pwd")

@@ -74,7 +74,7 @@ type ErrorCode int
 
 // ErrNoDefaultReason means that default reason for provided error code
 // is not defined in RFC.
-var ErrNoDefaultReason = errors.New("No default reason for ErrorCode")
+var ErrNoDefaultReason = errors.New("no default reason for ErrorCode")
 
 // AddTo adds ERROR-CODE with default reason to m. If there
 // is no default reason, returns ErrNoDefaultReason.

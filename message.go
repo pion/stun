@@ -20,16 +20,15 @@ const (
 	magicCookie         = 0x2112A442
 	attributeHeaderSize = 4
 	messageHeaderSize   = 20
-	transactionIDSize   = 12 // 96 bit
+
+	// TransactionIDSize is length of transaction id array (in bytes).
+	TransactionIDSize = 12 // 96 bit
 )
 
 // NewTransactionID returns new random transaction ID using crypto/rand
 // as source.
-func NewTransactionID() (b [transactionIDSize]byte) {
-	_, err := io.ReadFull(rand.Reader, b[:])
-	if err != nil {
-		panic(err)
-	}
+func NewTransactionID() (b [TransactionIDSize]byte) {
+	readFullOrPanic(rand.Reader, b[:])
 	return b
 }
 
@@ -57,7 +56,7 @@ func New() *Message {
 type Message struct {
 	Type          MessageType
 	Length        uint32 // len(Raw) not including header
-	TransactionID [transactionIDSize]byte
+	TransactionID [TransactionIDSize]byte
 	Attributes    Attributes
 	Raw           []byte
 }
@@ -156,9 +155,34 @@ func (m *Message) Add(t AttrType, v []byte) {
 	m.WriteLength()
 }
 
+func attrEqual(a, b Attributes) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	for _, attr := range a {
+		attrB, ok := b.Get(attr.Type)
+		if !ok {
+			return false
+		}
+		if !attrB.Equal(attr) {
+			return false
+		}
+	}
+	return true
+}
+
 // Equal returns true if Message b equals to m.
 // Ignores m.Raw.
 func (m *Message) Equal(b *Message) bool {
+	if m == nil && b == nil {
+		return true
+	}
+	if m == nil || b == nil {
+		return false
+	}
 	if m.Type != b.Type {
 		return false
 	}
@@ -168,14 +192,8 @@ func (m *Message) Equal(b *Message) bool {
 	if m.Length != b.Length {
 		return false
 	}
-	for _, a := range m.Attributes {
-		aB, ok := b.Attributes.Get(a.Type)
-		if !ok {
-			return false
-		}
-		if !aB.Equal(a) {
-			return false
-		}
+	if !attrEqual(m.Attributes, b.Attributes) {
+		return false
 	}
 	return true
 }
@@ -390,25 +408,23 @@ const (
 	MethodChannelBind      Method = 0x009
 )
 
+var methodName = map[Method]string{
+	MethodBinding:          "binding",
+	MethodAllocate:         "allocate",
+	MethodRefresh:          "refresh",
+	MethodSend:             "send",
+	MethodData:             "data",
+	MethodCreatePermission: "create permission",
+	MethodChannelBind:      "channel bind",
+}
+
 func (m Method) String() string {
-	switch m {
-	case MethodBinding:
-		return "binding"
-	case MethodAllocate:
-		return "allocate"
-	case MethodRefresh:
-		return "refresh"
-	case MethodSend:
-		return "send"
-	case MethodData:
-		return "data"
-	case MethodCreatePermission:
-		return "create permission"
-	case MethodChannelBind:
-		return "channel bind"
-	default:
-		return fmt.Sprintf("0x%x", uint16(m))
+	s, ok := methodName[m]
+	if !ok {
+		// Falling back to hex representation.
+		s = fmt.Sprintf("0x%x", uint16(m))
 	}
+	return s
 }
 
 // MessageType is STUN Message Type Field.
@@ -514,11 +530,11 @@ func (m *Message) Contains(t AttrType) bool {
 	return false
 }
 
-type transactionIDValueSetter [transactionIDSize]byte
+type transactionIDValueSetter [TransactionIDSize]byte
 
 // NewTransactionIDSetter returns new Setter that sets message transaction id
 // to provided value.
-func NewTransactionIDSetter(value [transactionIDSize]byte) Setter {
+func NewTransactionIDSetter(value [TransactionIDSize]byte) Setter {
 	return transactionIDValueSetter(value)
 }
 

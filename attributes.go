@@ -149,7 +149,7 @@ func (a RawAttribute) String() string {
 
 // ErrAttributeNotFound means that attribute with provided attribute
 // type does not exist in message.
-var ErrAttributeNotFound = errors.New("Attribute not found")
+var ErrAttributeNotFound = errors.New("attribute not found")
 
 // Get returns byte slice that represents attribute value,
 // if there is no attribute with such type,
@@ -170,7 +170,7 @@ type AttrOverflowErr struct {
 }
 
 func (e AttrOverflowErr) Error() string {
-	return fmt.Sprintf("Length of %s attribute %d exceeds maximum %d",
+	return fmt.Sprintf("incorrect length of %s attribute: %d exceeds maximum %d",
 		e.Type, e.Got, e.Max,
 	)
 }
@@ -183,7 +183,7 @@ type AttrLengthErr struct {
 }
 
 func (e AttrLengthErr) Error() string {
-	return fmt.Sprintf("incorrect length for %s: got %d, expected %d",
+	return fmt.Sprintf("incorrect length of %s attribute: got %d, expected %d",
 		e.Attr,
 		e.Got,
 		e.Expected,
