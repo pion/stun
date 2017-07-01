@@ -177,22 +177,24 @@ type AgentProcessArgs struct {
 // handle is not provided, message is silently ignored.
 // Call blocks until handler returns.
 func (a *Agent) Process(args AgentProcessArgs) error {
-	m := args.Message
+	var (
+		id = args.Message.TransactionID
+		e  = AgentEvent{
+			Message: args.Message,
+		}
+	)
 	a.mux.Lock()
 	if a.closed {
 		a.mux.Unlock()
 		return ErrAgentClosed
 	}
-	t, ok := a.transactions[m.TransactionID]
-	delete(a.transactions, m.TransactionID)
+	t, ok := a.transactions[id]
+	delete(a.transactions, id)
 	a.mux.Unlock()
-	event := AgentEvent{
-		Message: m,
-	}
 	if ok {
-		t.f(event)
+		t.f(e)
 	} else if a.zeroHandler != nil {
-		a.zeroHandler(event)
+		a.zeroHandler(e)
 	}
 	return nil
 }
