@@ -16,7 +16,7 @@ type ErrorCodeAttribute struct {
 
 func (c ErrorCodeAttribute) String() string {
 	return fmt.Sprintf("%d: %s", c.Code, c.Reason)
-}
+}	
 
 // constants for ERROR-CODE encoding.
 const (
@@ -26,9 +26,6 @@ const (
 	errorCodeReasonMaxB  = 763
 	errorCodeModulo      = 100
 )
-
-// ErrReasonLengthTooBig means that len(Reason) > 763 bytes.
-var ErrReasonLengthTooBig = errors.New("reason for ERROR-CODE is too big")
 
 // AddTo adds ERROR-CODE to m.
 func (c ErrorCodeAttribute) AddTo(m *Message) error {
