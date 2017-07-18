@@ -212,7 +212,6 @@ func (c *Client) Start(m *Message, d time.Time, f func(AgentEvent)) error {
 	if f != nil {
 		// Starting transaction only if f is set. Useful for indications.
 		if err := c.a.Start(m.TransactionID, d, f); err != nil {
-			fmt.Println("failed to Start()")
 			return err
 		}
 	}
