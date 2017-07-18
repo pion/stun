@@ -76,7 +76,7 @@ type Client struct {
 	c         Connection
 	close     chan struct{}
 	closed    bool
-	closedMux sync.Mutex
+	closedMux sync.RWMutex
 	gcRate    time.Duration
 	wg        sync.WaitGroup
 }
@@ -209,6 +209,12 @@ func (c *Client) Do(m *Message, d time.Time, f func(AgentEvent)) error {
 // Start starts transaction (if f set) and writes message to server, callback
 // is called asynchronously.
 func (c *Client) Start(m *Message, d time.Time, f func(AgentEvent)) error {
+	c.closedMux.RLock()
+	closed := c.closed
+	c.closedMux.RUnlock()
+	if closed {
+		return ErrClientClosed
+	}
 	if f != nil {
 		// Starting transaction only if f is set. Useful for indications.
 		if err := c.a.Start(m.TransactionID, d, f); err != nil {
