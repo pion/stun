@@ -26,9 +26,7 @@ func TestAgent_ProcessInTransaction(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Process(AgentProcessArgs{
-		Message: m,
-	}); err != nil {
+	if err := a.Process(m); err != nil {
 		t.Error(err)
 	}
 	if err := a.Close(); err != nil {
@@ -51,17 +49,13 @@ func TestAgent_Process(t *testing.T) {
 	if err := m.NewTransactionID(); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Process(AgentProcessArgs{
-		Message: m,
-	}); err != nil {
+	if err := a.Process(m); err != nil {
 		t.Error(err)
 	}
 	if err := a.Close(); err != nil {
 		t.Error(err)
 	}
-	if err := a.Process(AgentProcessArgs{
-		Message: m,
-	}); err != ErrAgentClosed {
+	if err := a.Process(m); err != ErrAgentClosed {
 		t.Errorf("closed agent should return <%s>, but got <%s>",
 			ErrAgentClosed, err,
 		)
@@ -173,7 +167,7 @@ func BenchmarkAgent_GC(b *testing.B) {
 		Handler: noopHandler,
 	})
 	deadline := time.Now().AddDate(0, 0, 1)
-	for i := 0; i < agentGCInitCap; i++ {
+	for i := 0; i < agentCollectCap; i++ {
 		if err := a.Start(NewTransactionID(), deadline, noopHandler); err != nil {
 			b.Fatal(err)
 		}
@@ -208,13 +202,9 @@ func BenchmarkAgent_Process(b *testing.B) {
 		}
 	}()
 	b.ReportAllocs()
-	ev := AgentProcessArgs{
-		Message: MustBuild(
-			TransactionID,
-		),
-	}
+	m := MustBuild(TransactionID)
 	for i := 0; i < b.N; i++ {
-		if err := a.Process(ev); err != nil {
+		if err := a.Process(m); err != nil {
 			b.Fatal(err)
 		}
 	}

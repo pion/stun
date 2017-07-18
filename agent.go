@@ -2,7 +2,6 @@ package stun
 
 import (
 	"errors"
-	"net"
 	"sync"
 	"time"
 )
@@ -44,8 +43,6 @@ type AgentFn func(e AgentEvent)
 // AgentEvent is set of arguments passed to AgentFn, describing
 // an transaction event. Do not reuse outside AgentFn.
 type AgentEvent struct {
-	RAddr   net.Addr
-	LAddr   net.Addr
 	Message *Message
 	Error   error
 }
@@ -70,9 +67,9 @@ var (
 	ErrTransactionExists = errors.New("transaction exists with same id")
 )
 
-// Stop stops transaction by id with ErrTransactionStopped, blocking
-// until callback returns.
-func (a *Agent) Stop(id [TransactionIDSize]byte) error {
+// StopWithError removes transaction from list and calls transaction callback
+// with provided error. Can return ErrTransactionNotExists and ErrAgentClosed.
+func (a *Agent) StopWithError(id [TransactionIDSize]byte, err error) error {
 	a.mux.Lock()
 	if a.closed {
 		a.mux.Unlock()
@@ -85,9 +82,15 @@ func (a *Agent) Stop(id [TransactionIDSize]byte) error {
 		return ErrTransactionNotExists
 	}
 	t.f(AgentEvent{
-		Error: ErrTransactionStopped,
+		Error: err,
 	})
 	return nil
+}
+
+// Stop stops transaction by id with ErrTransactionStopped, blocking
+// until callback returns.
+func (a *Agent) Stop(id [TransactionIDSize]byte) error {
+	return a.StopWithError(id, ErrTransactionStopped)
 }
 
 // ErrAgentClosed indicates that agent is in closed state and is unable
@@ -116,9 +119,9 @@ func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn)
 	return nil
 }
 
-// agentGCInitCap is initial capacity for Agent.Collect slices,
+// agentCollectCap is initial capacity for Agent.Collect slices,
 // sufficient to make function zero-alloc in most cases.
-const agentGCInitCap = 100
+const agentCollectCap = 100
 
 // ErrTransactionTimeOut indicates that transaction has reached deadline.
 var ErrTransactionTimeOut = errors.New("transaction is timed out")
@@ -129,8 +132,8 @@ var ErrTransactionTimeOut = errors.New("transaction is timed out")
 //
 // It is safe to call Collect concurrently but makes no sense.
 func (a *Agent) Collect(gcTime time.Time) error {
-	toCall := make([]AgentFn, 0, agentGCInitCap)
-	toRemove := make([]transactionID, 0, agentGCInitCap)
+	toCall := make([]AgentFn, 0, agentCollectCap)
+	toRemove := make([]transactionID, 0, agentCollectCap)
 	a.mux.Lock()
 	if a.closed {
 		// Doing nothing if agent is closed.
@@ -141,7 +144,7 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	}
 	// Adding all transactions with deadline before gcTime
 	// to toCall and toRemove slices.
-	// No allocs if there are less than agentGCInitCap
+	// No allocs if there are less than agentCollectCap
 	// timed out transactions.
 	for id, t := range a.transactions {
 		if t.deadline.Before(gcTime) {
@@ -167,29 +170,21 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	return nil
 }
 
-// AgentProcessArgs is set of arguments passed to Agent.Process.
-type AgentProcessArgs struct {
-	Message *Message
-}
-
 // Process incoming message, picking handler by transaction id.
 // If transaction is not registered, zero handler is used. If default
 // handle is not provided, message is silently ignored.
 // Call blocks until handler returns.
-func (a *Agent) Process(args AgentProcessArgs) error {
-	var (
-		id = args.Message.TransactionID
-		e  = AgentEvent{
-			Message: args.Message,
-		}
-	)
+func (a *Agent) Process(m *Message) error {
+	e := AgentEvent{
+		Message: m,
+	}
 	a.mux.Lock()
 	if a.closed {
 		a.mux.Unlock()
 		return ErrAgentClosed
 	}
-	t, ok := a.transactions[id]
-	delete(a.transactions, id)
+	t, ok := a.transactions[m.TransactionID]
+	delete(a.transactions, m.TransactionID)
 	a.mux.Unlock()
 	if ok {
 		t.f(e)
@@ -206,11 +201,16 @@ func (a *Agent) Close() error {
 		Error: ErrAgentClosed,
 	}
 	a.mux.Lock()
+	if a.closed {
+		a.mux.Unlock()
+		return ErrAgentClosed
+	}
 	for _, t := range a.transactions {
 		t.f(e)
 	}
 	a.transactions = nil
 	a.closed = true
+	a.zeroHandler = nil
 	a.mux.Unlock()
 	return nil
 }
