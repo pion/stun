@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+// Dial connects to the address on the named network and then
+// initializes Client on that connection, returning error if any.
 func Dial(network, address string) (*Client, error) {
 	conn, err := net.Dial(network, address)
 	if err != nil {
@@ -19,14 +21,19 @@ func Dial(network, address string) (*Client, error) {
 	}), nil
 }
 
+// ClientOptions are used to initialize Client.
 type ClientOptions struct {
 	AgentOptions
 	Connection  Connection
-	TimeoutRate time.Duration
+	TimeoutRate time.Duration // defaults to 100 ms
 }
 
 const defaultTimeoutRate = time.Millisecond * 100
 
+// NewClient initializes new Client from provided options,
+// starting internal goroutines and using default options fields
+// if necessary. Call Close method after using Client to release
+// resources.
 func NewClient(options ClientOptions) *Client {
 	a := NewAgent(options.AgentOptions)
 	c := &Client{
@@ -44,6 +51,7 @@ func NewClient(options ClientOptions) *Client {
 	return c
 }
 
+// Connection wraps Reader, Writer and Closer interfaces.
 type Connection interface {
 	io.Reader
 	io.Writer
