@@ -60,6 +60,8 @@ type Connection interface {
 	io.Closer
 }
 
+// ClientAgent is Agent implementation that is used by Client to
+// process transactions.
 type ClientAgent interface {
 	Process(*Message) error
 	Close() error
