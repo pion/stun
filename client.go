@@ -160,7 +160,8 @@ func (c *Client) Indicate(m *Message) error {
 	return c.Do(m, time.Time{}, nil)
 }
 
-// Do starts transaction (if f set) and writes message to server.
+// Do starts transaction (if f set) and writes message to server, callback
+// is called asynchronously.
 func (c *Client) Do(m *Message, d time.Time, f func(AgentEvent)) error {
 	if f != nil {
 		// Starting transaction only if f is set. Useful for indications.
