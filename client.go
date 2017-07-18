@@ -154,6 +154,12 @@ func (c *Client) Close() error {
 	}
 }
 
+// Indicate sends indication m to server. Shorthand to Do call
+// with zero deadline and callback.
+func (c *Client) Indicate(m *Message) error {
+	return c.Do(m, time.Time{}, nil)
+}
+
 // Do starts transaction (if f set) and writes message to server.
 func (c *Client) Do(m *Message, d time.Time, f func(AgentEvent)) error {
 	if f != nil {
