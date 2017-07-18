@@ -23,7 +23,7 @@ func Dial(network, address string) (*Client, error) {
 
 // ClientOptions are used to initialize Client.
 type ClientOptions struct {
-	AgentOptions
+	Agent       ClientAgent
 	Connection  Connection
 	TimeoutRate time.Duration // defaults to 100 ms
 }
@@ -35,12 +35,14 @@ const defaultTimeoutRate = time.Millisecond * 100
 // if necessary. Call Close method after using Client to release
 // resources.
 func NewClient(options ClientOptions) *Client {
-	a := NewAgent(options.AgentOptions)
 	c := &Client{
 		close:  make(chan struct{}),
 		c:      options.Connection,
-		a:      a,
+		a:      options.Agent,
 		gcRate: options.TimeoutRate,
+	}
+	if c.a == nil {
+		c.a = NewAgent(AgentOptions{})
 	}
 	if c.gcRate == 0 {
 		c.gcRate = defaultTimeoutRate
@@ -58,9 +60,17 @@ type Connection interface {
 	io.Closer
 }
 
+type ClientAgent interface {
+	Process(*Message) error
+	Close() error
+	Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn) error
+	Stop(id [TransactionIDSize]byte) error
+	Collect(time.Time) error
+}
+
 // Client simulates "connection" to STUN server.
 type Client struct {
-	a         *Agent
+	a         ClientAgent
 	c         Connection
 	close     chan struct{}
 	closed    bool
@@ -114,10 +124,7 @@ func (c *Client) readUntilClosed() {
 }
 
 func closedOrPanic(err error) {
-	if err == nil {
-		return
-	}
-	if err == ErrAgentClosed {
+	if err == nil || err == ErrAgentClosed {
 		return
 	}
 	panic(err)
@@ -162,15 +169,44 @@ func (c *Client) Close() error {
 	}
 }
 
-// Indicate sends indication m to server. Shorthand to Do call
+// Indicate sends indication m to server. Shorthand to Start call
 // with zero deadline and callback.
 func (c *Client) Indicate(m *Message) error {
-	return c.Do(m, time.Time{}, nil)
+	return c.Start(m, time.Time{}, nil)
 }
 
-// Do starts transaction (if f set) and writes message to server, callback
-// is called asynchronously.
+// Do is Start wrapper that waits until callback is called. If no callback
+// provided, Indicate is called instead.
+//
+// Do has memory allocation overhead due to blocking, see BenchmarkClient_Do.
+// Use Start for zero overhead.
 func (c *Client) Do(m *Message, d time.Time, f func(AgentEvent)) error {
+	if f == nil {
+		return c.Indicate(m)
+	}
+	cond := sync.NewCond(new(sync.Mutex))
+	processed := false
+	wrapper := func(e AgentEvent) {
+		f(e)
+		cond.L.Lock()
+		processed = true
+		cond.Broadcast()
+		cond.L.Unlock()
+	}
+	if err := c.Start(m, d, wrapper); err != nil {
+		return err
+	}
+	cond.L.Lock()
+	for !processed {
+		cond.Wait()
+	}
+	cond.L.Unlock()
+	return nil
+}
+
+// Start starts transaction (if f set) and writes message to server, callback
+// is called asynchronously.
+func (c *Client) Start(m *Message, d time.Time, f func(AgentEvent)) error {
 	if f != nil {
 		// Starting transaction only if f is set. Useful for indications.
 		if err := c.a.Start(m.TransactionID, d, f); err != nil {
@@ -179,7 +215,7 @@ func (c *Client) Do(m *Message, d time.Time, f func(AgentEvent)) error {
 		}
 	}
 	_, err := m.WriteTo(c.c)
-	if err != nil {
+	if err != nil && f != nil {
 		// Stopping transaction instead of waiting until deadline.
 		if stopErr := c.a.Stop(m.TransactionID); stopErr != nil {
 			return StopErr{
