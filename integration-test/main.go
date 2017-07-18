@@ -44,7 +44,6 @@ func main() {
 	}
 	timeout := time.Second
 	deadline := time.Now().Add(timeout)
-	processed := make(chan struct{})
 	if err := client.Do(request, deadline, func(event stun.AgentEvent) {
 		if event.Error != nil {
 			log.Fatalln("got event with error:", event.Error)
@@ -61,15 +60,8 @@ func main() {
 			log.Fatalln(laddr, "!=", xorMapped)
 		}
 		fmt.Println("OK", response, "GOT", xorMapped)
-		processed <- struct{}{}
 	}); err != nil {
 		log.Fatalln("failed to Do:", err)
-	}
-	select {
-	case <-processed:
-		log.Println("PROCESSED")
-	case <-time.After(timeout * 3):
-		log.Fatalln("CALLBACK IS NOT CALLED")
 	}
 	if err := client.Close(); err != nil {
 		log.Fatalln("failed to close client:", err)
