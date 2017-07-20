@@ -61,7 +61,7 @@ func (FingerprintAttr) AddTo(m *Message) error {
 }
 
 // Check reads fingerprint value from m and checks it, returning error if any.
-// Can return *DecodeErr, ErrAttributeNotFound, and *CRCMismatch.
+// Can return *AttrLengthErr, ErrAttributeNotFound, and *CRCMismatch.
 func (FingerprintAttr) Check(m *Message) error {
 	b, err := m.Get(AttrFingerprint)
 	if err != nil {
