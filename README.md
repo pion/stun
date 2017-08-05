@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-    // Creating a "connection" to STUN server.
+	// Creating a "connection" to STUN server.
 	c, err := stun.Dial("udp", "stun.l.google.com:19302")
 	if err != nil {
 		panic(err)
