@@ -33,7 +33,7 @@ func main() {
 	deadline := time.Now().Add(time.Second * 5)
 	// Bulding binding request with random transaction id.
 	message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
-	// Sending request to STUN server, waiting to response message.
+	// Sending request to STUN server, waiting for response message.
 	if err := c.Do(message, deadline, func(res stun.AgentEvent) {
 		if res.Error != nil {
 			panic(res.Error)
