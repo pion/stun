@@ -2,29 +2,30 @@ package stun
 
 import (
 	"io"
+	"sync"
 	"testing"
 	"time"
 )
 
-type NoopAgent struct {
+type TestAgent struct {
 	f chan AgentFn
 }
 
-func (n *NoopAgent) Close() error {
+func (n *TestAgent) Close() error {
 	close(n.f)
 	return nil
 }
 
-func (NoopAgent) Collect(time.Time) error { return nil }
+func (TestAgent) Collect(time.Time) error { return nil }
 
-func (NoopAgent) Process(m *Message) error { return nil }
+func (TestAgent) Process(m *Message) error { return nil }
 
-func (n *NoopAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn) error {
+func (n *TestAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn) error {
 	n.f <- f
 	return nil
 }
 
-func (n *NoopAgent) Stop([TransactionIDSize]byte) error {
+func (n *TestAgent) Stop([TransactionIDSize]byte) error {
 	return nil
 }
 
@@ -45,7 +46,7 @@ func (noopConnection) Close() error {
 
 func BenchmarkClient_Do(b *testing.B) {
 	b.ReportAllocs()
-	agent := &NoopAgent{
+	agent := &TestAgent{
 		f: make(chan AgentFn),
 	}
 	client := NewClient(ClientOptions{
@@ -71,5 +72,79 @@ func BenchmarkClient_Do(b *testing.B) {
 		if err := client.Do(m, time.Time{}, noopF); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+type testConnection struct {
+	write   func([]byte) (int, error)
+	b       []byte
+	l       sync.Mutex
+	stopped bool
+}
+
+func (t *testConnection) Write(b []byte) (int, error) {
+	t.l.Unlock()
+	return t.write(b)
+}
+
+func (t *testConnection) Close() error {
+	t.stopped = true
+	t.l.Unlock()
+	return nil
+}
+
+func (t *testConnection) Read(b []byte) (int, error) {
+	t.l.Lock()
+	if t.stopped {
+		return 0, io.EOF
+	}
+	return copy(b, t.b), nil
+}
+
+func TestClosedOrPanic(t *testing.T) {
+	closedOrPanic(nil)
+	closedOrPanic(ErrAgentClosed)
+	func() {
+		defer func() {
+			r := recover()
+			if r != io.EOF {
+				t.Error(r)
+			}
+		}()
+		closedOrPanic(io.EOF)
+	}()
+}
+
+func TestClient_Do(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	conn := &testConnection{
+		b: response.Raw,
+		write: func(bytes []byte) (int, error) {
+			return len(bytes), nil
+		},
+	}
+	conn.l.Lock()
+	c := NewClient(ClientOptions{
+		Connection: conn,
+	})
+	defer func() {
+		if err := c.Close(); err != nil {
+			t.Error(err)
+		}
+		if err := c.Close(); err == nil {
+			t.Error("second close should fail")
+		}
+	}()
+	m := new(Message)
+	m.TransactionID = response.TransactionID
+	m.Encode()
+	d := time.Now().Add(time.Second)
+	if err := c.Do(m, d, func(event AgentEvent) {
+		if event.Error != nil {
+			t.Error(event.Error)
+		}
+	}); err != nil {
+		t.Error(err)
 	}
 }
