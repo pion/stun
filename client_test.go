@@ -170,3 +170,24 @@ func TestCloseErr_Error(t *testing.T) {
 		}
 	}
 }
+
+func TestStopErr_Error(t *testing.T) {
+	for id, c := range []struct {
+		Err StopErr
+		Out string
+	}{
+		{StopErr{}, "error while stopping due to <nil>: <nil>"},
+		{StopErr{
+			Err: io.ErrUnexpectedEOF,
+		}, "error while stopping due to <nil>: unexpected EOF"},
+		{StopErr{
+			Cause: io.ErrUnexpectedEOF,
+		}, "error while stopping due to unexpected EOF: <nil>"},
+	}{
+		if out := c.Err.Error(); out != c.Out {
+			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
+				id, c.Err, out, c.Out,
+			)
+		}
+	}
+}

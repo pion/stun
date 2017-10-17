@@ -90,7 +90,7 @@ type StopErr struct {
 
 func (e StopErr) Error() string {
 	return fmt.Sprintf("error while stopping due to %s: %s",
-		e.Cause, e.Err,
+		sprintErr(e.Cause), sprintErr(e.Err),
 	)
 }
 
