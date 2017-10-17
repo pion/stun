@@ -100,9 +100,16 @@ type CloseErr struct {
 	ConnectionErr error
 }
 
+func sprintErr(err error) string {
+	if err == nil {
+		return "<nil>"
+	}
+	return err.Error()
+}
+
 func (c CloseErr) Error() string {
 	return fmt.Sprintf("failed to close: %s (connection), %s (agent)",
-		c.ConnectionErr, c.AgentErr,
+		sprintErr(c.ConnectionErr), sprintErr(c.AgentErr),
 	)
 }
 

@@ -148,3 +148,25 @@ func TestClient_Do(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+
+func TestCloseErr_Error(t *testing.T) {
+	for id, c := range []struct {
+		Err CloseErr
+		Out string
+	}{
+		{CloseErr{}, "failed to close: <nil> (connection), <nil> (agent)"},
+		{CloseErr{
+			AgentErr: io.ErrUnexpectedEOF,
+		}, "failed to close: <nil> (connection), unexpected EOF (agent)"},
+		{CloseErr{
+			ConnectionErr: io.ErrUnexpectedEOF,
+		}, "failed to close: unexpected EOF (connection), <nil> (agent)"},
+	}{
+		if out := c.Err.Error(); out != c.Out {
+			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
+				id, c.Err, out, c.Out,
+			)
+		}
+	}
+}
