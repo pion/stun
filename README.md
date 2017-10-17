@@ -62,7 +62,7 @@ RFC 5389 obseletes RFC 3489, so implementation was ignored by purpose, however,
 RFC 3489 can be easily implemented as separate package.
 
 # requirements
-Go 1.8 is currently supported and tested in CI. Should work on 1.7 and tip.
+Go 1.9.1 is currently supported and tested in CI. Should work on 1.8, 1.7, and tip.
 
 # benchmarks
 
