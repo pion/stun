@@ -58,7 +58,7 @@ Additional attributes are unlikely to be implemented in scope of stun package,
 the only exception is constants for attribute or message types.
 
 # RFC 3489 notes
-RFC 5389 obseletes RFC 3489, so implementation was ignored by purpose, however,
+RFC 5389 obsoletes RFC 3489, so implementation was ignored by purpose, however,
 RFC 3489 can be easily implemented as separate package.
 
 # requirements
