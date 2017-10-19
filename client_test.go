@@ -149,7 +149,6 @@ func TestClient_Do(t *testing.T) {
 	}
 }
 
-
 func TestCloseErr_Error(t *testing.T) {
 	for id, c := range []struct {
 		Err CloseErr
@@ -162,7 +161,7 @@ func TestCloseErr_Error(t *testing.T) {
 		{CloseErr{
 			ConnectionErr: io.ErrUnexpectedEOF,
 		}, "failed to close: unexpected EOF (connection), <nil> (agent)"},
-	}{
+	} {
 		if out := c.Err.Error(); out != c.Out {
 			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
 				id, c.Err, out, c.Out,
@@ -183,7 +182,7 @@ func TestStopErr_Error(t *testing.T) {
 		{StopErr{
 			Cause: io.ErrUnexpectedEOF,
 		}, "error while stopping due to unexpected EOF: <nil>"},
-	}{
+	} {
 		if out := c.Err.Error(); out != c.Out {
 			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
 				id, c.Err, out, c.Out,
