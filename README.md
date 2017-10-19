@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/ernado/stun.svg)](https://travis-ci.org/ernado/stun)
-[![Build status](https://ci.appveyor.com/api/projects/status/92mfv3vxlc8t8jjp/branch/master?svg=true)](https://ci.appveyor.com/project/ernado/stun/branch/master)
+[![Build Status](https://travis-ci.org/go-rtc/stun.svg)](https://travis-ci.org/go-rtc/stun)
+[![Build status](https://ci.appveyor.com/api/projects/status/92mfv3vxlc8t8jjp/branch/master?svg=true)](https://ci.appveyor.com/project/go-rtc/stun/branch/master)
 [![GoDoc](https://godoc.org/github.com/go-rtc/stun?status.svg)](http://godoc.org/github.com/go-rtc/stun)
-[![Coverage Status](https://coveralls.io/repos/github/ernado/stun/badge.svg?branch=master)](https://coveralls.io/github/ernado/stun?branch=master)
-[![Go Report](https://goreportcard.com/badge/github.com/go-rtc/stun?camo=retarded)](http://goreportcard.com/report/ernado/stun)
+[![Coverage Status](https://coveralls.io/repos/github/go-rtc/stun/badge.svg?branch=master)](https://coveralls.io/github/go-rtc/stun?branch=master)
+[![Go Report](https://goreportcard.com/badge/github.com/go-rtc/stun?camo=retarded)](http://goreportcard.com/report/go-rtc/stun)
 [![RFC 5389](https://img.shields.io/badge/RFC-5389-blue.svg)](https://tools.ietf.org/html/rfc5389)
 
 # stun
