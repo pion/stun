@@ -662,14 +662,14 @@ func ExampleMessage() {
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
-		NewSoftware("go-rtc/stun"),
+		NewSoftware("ernado/stun"),
 		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
 	)
 	// Instead of calling Build, use AddTo(m) directly for all setters
 	// to reduce allocations.
 	// For example:
-	//	software := NewSoftware("go-rtc/stun")
+	//	software := NewSoftware("ernado/stun")
 	//	software.AddTo(m)  // no allocations
 	// Or pass software as follows:
 	//	m.Build(&software) // no allocations
@@ -720,7 +720,7 @@ func ExampleMessage() {
 	// wrote 68 err <nil>
 	// has software: true
 	// has nonce: false
-	// software: go-rtc/stun
+	// software: ernado/stun
 	// fingerprint is correct
 	// integrity ok
 	// for corrupted message:
