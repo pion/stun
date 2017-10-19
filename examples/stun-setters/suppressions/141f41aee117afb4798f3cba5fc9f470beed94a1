@@ -1,8 +1,8 @@
 panic: runtime error: index out of range
-github.com/ernado/stun.fastXORBytes
-github.com/ernado/stun.xorBytes
-github.com/ernado/stun.(*XORMappedAddress).GetFromAs
-github.com/ernado/stun.(*XORMappedAddress).GetFrom
-github.com/ernado/stun.FuzzSetters
+github.com/go-rtc/stun.fastXORBytes
+github.com/go-rtc/stun.xorBytes
+github.com/go-rtc/stun.(*XORMappedAddress).GetFromAs
+github.com/go-rtc/stun.(*XORMappedAddress).GetFrom
+github.com/go-rtc/stun.FuzzSetters
 go-fuzz-dep.Main
 main.main

@@ -1,4 +1,4 @@
 panic: BadFormat for message/cookie: 0 is invalid magic cookie (should be 2112a442)
-github.com/ernado/stun.FuzzMessage
+github.com/go-rtc/stun.FuzzMessage
 go-fuzz-dep.Main
 main.main

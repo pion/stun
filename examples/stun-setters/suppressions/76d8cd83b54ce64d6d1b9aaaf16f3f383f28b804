@@ -1,4 +1,4 @@
 panic: not equal
-github.com/ernado/stun.FuzzSetters
+github.com/go-rtc/stun.FuzzSetters
 go-fuzz-dep.Main
 main.main

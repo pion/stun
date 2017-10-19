@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/ernado/stun"
+	"github.com/go-rtc/stun"
 )
 
 func main() {
