@@ -1,6 +1,6 @@
 FROM golang:1.9.1
 
-COPY . /go/src/github.com/go-rtc/stun
+COPY . /go/src/github.com/gortc/stun
 
-RUN go test github.com/go-rtc/stun
+RUN go test github.com/gortc/stun
 

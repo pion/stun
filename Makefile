@@ -12,11 +12,11 @@ bench:
 bench-record:
 	$(GO) test -bench . > "benchmarks/stun-go-$(GO_VERSION).txt"
 fuzz-prepare-msg:
-	go-fuzz-build -func FuzzMessage -o stun-msg-fuzz.zip github.com/go-rtc/stun
+	go-fuzz-build -func FuzzMessage -o stun-msg-fuzz.zip github.com/gortc/stun
 fuzz-prepare-typ:
-	go-fuzz-build -func FuzzType -o stun-typ-fuzz.zip github.com/go-rtc/stun
+	go-fuzz-build -func FuzzType -o stun-typ-fuzz.zip github.com/gortc/stun
 fuzz-prepare-setters:
-	go-fuzz-build -func FuzzSetters -o stun-setters-fuzz.zip github.com/go-rtc/stun
+	go-fuzz-build -func FuzzSetters -o stun-setters-fuzz.zip github.com/gortc/stun
 fuzz-msg:
 	go-fuzz -bin=./stun-msg-fuzz.zip -workdir=examples/stun-msg
 fuzz-typ:

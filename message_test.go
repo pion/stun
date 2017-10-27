@@ -813,7 +813,7 @@ func TestMessageFullSize(t *testing.T) {
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
-		NewSoftware("go-rtc/stun"),
+		NewSoftware("gortc/stun"),
 		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
 	); err != nil {

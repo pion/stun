@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-rtc/stun"
+	"github.com/gortc/stun"
 )
 
 func main() {

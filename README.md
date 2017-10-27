@@ -1,15 +1,15 @@
-[![Build Status](https://travis-ci.org/go-rtc/stun.svg)](https://travis-ci.org/go-rtc/stun)
-[![Build status](https://ci.appveyor.com/api/projects/status/92mfv3vxlc8t8jjp/branch/master?svg=true)](https://ci.appveyor.com/project/go-rtc/stun/branch/master)
-[![GoDoc](https://godoc.org/github.com/go-rtc/stun?status.svg)](http://godoc.org/github.com/go-rtc/stun)
-[![Coverage Status](https://coveralls.io/repos/github/go-rtc/stun/badge.svg?branch=master)](https://coveralls.io/github/go-rtc/stun?branch=master)
-[![Go Report](https://goreportcard.com/badge/github.com/go-rtc/stun?camo=retarded)](http://goreportcard.com/report/go-rtc/stun)
+[![Build Status](https://travis-ci.org/gortc/stun.svg)](https://travis-ci.org/gortc/stun)
+[![Build status](https://ci.appveyor.com/api/projects/status/92mfv3vxlc8t8jjp/branch/master?svg=true)](https://ci.appveyor.com/project/gortc/stun/branch/master)
+[![GoDoc](https://godoc.org/github.com/gortc/stun?status.svg)](http://godoc.org/github.com/gortc/stun)
+[![Coverage Status](https://coveralls.io/repos/github/gortc/stun/badge.svg?branch=master)](https://coveralls.io/github/gortc/stun?branch=master)
+[![Go Report](https://goreportcard.com/badge/github.com/gortc/stun?camo=retarded)](http://goreportcard.com/report/gortc/stun)
 [![RFC 5389](https://img.shields.io/badge/RFC-5389-blue.svg)](https://tools.ietf.org/html/rfc5389)
 
 # stun
 Package stun implements Session Traversal Utilities for
 NAT (STUN) [RFC 5389](https://tools.ietf.org/html/rfc5389) with no external dependencies and focuses on speed.
-See [example](https://godoc.org/github.com/go-rtc/stun#example-Message)
-or [stun server](https://github.com/go-rtc/stund) for usage.
+See [example](https://godoc.org/github.com/gortc/stun#example-Message)
+or [stun server](https://github.com/gortc/stund) for usage.
 
 # example
 You can get your current IP address from any STUN server by sending
@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-rtc/stun"
+	"github.com/gortc/stun"
 )
 
 func main() {
