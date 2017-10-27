@@ -55,8 +55,8 @@ install:
 	go get -u sourcegraph.com/sqs/goreturns
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install --update
-	go get -u github.com/cydev/go-fuzz/go-fuzz-build
-	go get -u github.com/dvyukov/go-fuzz/go-fuzz
+	go get -u github.com/dvyukov/go-fuzz/go-fuzz-build
+	go get github.com/dvyukov/go-fuzz/go-fuzz
 docker-build:
 	docker build -t gortc/stun .
 test-integration:
