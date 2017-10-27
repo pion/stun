@@ -2,14 +2,14 @@ language: go
 
 go:
   - 1.8
-  - 1.9.1
+  - 1.9.2
   
 env:
   - TEST_EXTERNAL=1
 
 matrix:
   allow_failures:
-    - go: tip
+    - go: 1.8
   fast_finish: true  
 
 before_install:
