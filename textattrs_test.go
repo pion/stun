@@ -71,8 +71,9 @@ func BenchmarkUsername_GetFrom(b *testing.B) {
 	b.ReportAllocs()
 	m := new(Message)
 	Username("test").AddTo(m)
+	var u Username
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var u Username
 		if err := u.GetFrom(m); err != nil {
 			b.Fatal(err)
 		}
