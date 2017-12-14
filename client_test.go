@@ -47,7 +47,7 @@ func (noopConnection) Close() error {
 func BenchmarkClient_Do(b *testing.B) {
 	b.ReportAllocs()
 	agent := &TestAgent{
-		f: make(chan AgentFn),
+		f: make(chan AgentFn, 1000),
 	}
 	client := NewClient(ClientOptions{
 		Agent:      agent,

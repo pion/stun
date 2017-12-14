@@ -184,6 +184,56 @@ func (c *Client) Indicate(m *Message) error {
 	return c.Start(m, time.Time{}, nil)
 }
 
+type clientCallState struct {
+	callback  func(event AgentEvent)
+	cond      *sync.Cond
+	processed bool
+}
+
+func (s *clientCallState) wait() {
+	s.cond.L.Lock()
+	for !s.processed {
+		s.cond.Wait()
+	}
+	s.cond.L.Unlock()
+}
+
+func (s *clientCallState) wrapper(e AgentEvent) {
+	if s.callback == nil {
+		panic("s.callback is nil")
+	}
+	s.callback(e)
+	s.cond.L.Lock()
+	s.processed = true
+	s.cond.Broadcast()
+	s.cond.L.Unlock()
+}
+
+func (s *clientCallState) setCallback(f func(event AgentEvent)) {
+	if f == nil {
+		panic("f is nil")
+	}
+	s.callback = f
+}
+
+func (s *clientCallState) reset() {
+	s.processed = false
+	s.callback = nil
+}
+
+func newClientCallState(f func(event AgentEvent)) *clientCallState {
+	return &clientCallState{
+		cond:     sync.NewCond(new(sync.Mutex)),
+		callback: f,
+	}
+}
+
+var clientCallStatePool = sync.Pool{
+	New: func() interface{} {
+		return newClientCallState(nil)
+	},
+}
+
 // Do is Start wrapper that waits until callback is called. If no callback
 // provided, Indicate is called instead.
 //
@@ -193,24 +243,13 @@ func (c *Client) Do(m *Message, d time.Time, f func(AgentEvent)) error {
 	if f == nil {
 		return c.Indicate(m)
 	}
-	cond := sync.NewCond(new(sync.Mutex))
-	processed := false
-	wrapper := func(e AgentEvent) {
-		f(e)
-		cond.L.Lock()
-		processed = true
-		cond.Broadcast()
-		cond.L.Unlock()
-	}
-	if err := c.Start(m, d, wrapper); err != nil {
-		return err
-	}
-	cond.L.Lock()
-	for !processed {
-		cond.Wait()
-	}
-	cond.L.Unlock()
-	return nil
+	state := clientCallStatePool.Get().(*clientCallState)
+	state.setCallback(f)
+	err := c.Start(m, d, state.wrapper)
+	state.wait()
+	state.reset()
+	clientCallStatePool.Put(state)
+	return err
 }
 
 // Start starts transaction (if f set) and writes message to server, callback
