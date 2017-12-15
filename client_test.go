@@ -353,3 +353,10 @@ func TestDial(t *testing.T) {
 		}
 	}()
 }
+
+func TestDialError(t *testing.T) {
+	_, err := Dial("bad?network", "?????")
+	if err == nil {
+		t.Fatal("error expected")
+	}
+}
