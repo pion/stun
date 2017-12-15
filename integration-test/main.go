@@ -32,9 +32,12 @@ func main() {
 	if err != nil {
 		log.Fatalln("failed to dial:", err)
 	}
-	client := stun.NewClient(stun.ClientOptions{
+	client, err := stun.NewClient(stun.ClientOptions{
 		Connection: conn,
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	laddr := conn.LocalAddr()
 	fmt.Println("LISTEN ON", laddr)
 

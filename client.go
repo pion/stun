@@ -18,7 +18,7 @@ func Dial(network, address string) (*Client, error) {
 	}
 	return NewClient(ClientOptions{
 		Connection: conn,
-	}), nil
+	})
 }
 
 // ClientOptions are used to initialize Client.
@@ -30,16 +30,22 @@ type ClientOptions struct {
 
 const defaultTimeoutRate = time.Millisecond * 100
 
+// ErrNoConnection means that ClientOptions.Connection is nil.
+var ErrNoConnection = errors.New("no connection provided")
+
 // NewClient initializes new Client from provided options,
 // starting internal goroutines and using default options fields
 // if necessary. Call Close method after using Client to release
 // resources.
-func NewClient(options ClientOptions) *Client {
+func NewClient(options ClientOptions) (*Client, error) {
 	c := &Client{
 		close:  make(chan struct{}),
 		c:      options.Connection,
 		a:      options.Agent,
 		gcRate: options.TimeoutRate,
+	}
+	if c.c == nil {
+		return nil, ErrNoConnection
 	}
 	if c.a == nil {
 		c.a = NewAgent(AgentOptions{})
@@ -50,7 +56,7 @@ func NewClient(options ClientOptions) *Client {
 	c.wg.Add(2)
 	go c.readUntilClosed()
 	go c.collectUntilClosed()
-	return c
+	return c, nil
 }
 
 // Connection wraps Reader, Writer and Closer interfaces.
