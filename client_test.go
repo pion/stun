@@ -341,3 +341,15 @@ func TestNewClientNoConnection(t *testing.T) {
 		t.Error("bad error")
 	}
 }
+
+func TestDial(t *testing.T) {
+	c, err := Dial("udp4", "localhost:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err = c.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+}
