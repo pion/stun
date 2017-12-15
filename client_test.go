@@ -1,8 +1,8 @@
 package stun
 
 import (
+	"errors"
 	"io"
-	"sync"
 	"testing"
 	"time"
 )
@@ -78,23 +78,22 @@ func BenchmarkClient_Do(b *testing.B) {
 type testConnection struct {
 	write   func([]byte) (int, error)
 	b       []byte
-	l       sync.Mutex
 	stopped bool
 }
 
 func (t *testConnection) Write(b []byte) (int, error) {
-	t.l.Unlock()
 	return t.write(b)
 }
 
 func (t *testConnection) Close() error {
+	if t.stopped {
+		return errors.New("already stopped")
+	}
 	t.stopped = true
-	t.l.Unlock()
 	return nil
 }
 
 func (t *testConnection) Read(b []byte) (int, error) {
-	t.l.Lock()
 	if t.stopped {
 		return 0, io.EOF
 	}
@@ -124,7 +123,6 @@ func TestClient_Do(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	conn.l.Lock()
 	c := NewClient(ClientOptions{
 		Connection: conn,
 	})
@@ -136,15 +134,19 @@ func TestClient_Do(t *testing.T) {
 			t.Error("second close should fail")
 		}
 	}()
-	m := new(Message)
-	m.TransactionID = response.TransactionID
-	m.Encode()
+	m := MustBuild(
+		NewTransactionIDSetter(response.TransactionID),
+	)
 	d := time.Now().Add(time.Second)
 	if err := c.Do(m, d, func(event Event) {
 		if event.Error != nil {
 			t.Error(event.Error)
 		}
 	}); err != nil {
+		t.Error(err)
+	}
+	m = MustBuild(TransactionID)
+	if err := c.Do(m, d, nil); err != nil {
 		t.Error(err)
 	}
 }
