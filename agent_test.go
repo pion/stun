@@ -113,6 +113,9 @@ func TestAgent_Stop(t *testing.T) {
 	if err := a.Close(); err != nil {
 		t.Fatal(err)
 	}
+	if err := a.Close(); err != ErrAgentClosed {
+		t.Fatalf("a.Close returned %s instead of %s", err, ErrAgentClosed)
+	}
 	if err := a.Stop(transactionID{}); err != ErrAgentClosed {
 		t.Fatalf("unexpected error: %s, should be %s", err, ErrAgentClosed)
 	}
