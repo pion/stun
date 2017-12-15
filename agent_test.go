@@ -8,22 +8,21 @@ import (
 func TestAgent_ProcessInTransaction(t *testing.T) {
 	m := New()
 	a := NewAgent(AgentOptions{
-		Handler: func(e AgentEvent) {
+		Handler: HandlerFunc(func(e Event) {
 			t.Error("should not be called")
-		},
+		}),
 	})
 	if err := m.NewTransactionID(); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Start(m.TransactionID, time.Time{}, func(e AgentEvent) {
+	if err := a.Start(m.TransactionID, time.Time{}, HandlerFunc(func(e Event) {
 		if e.Error != nil {
 			t.Errorf("got error: %s", e.Error)
 		}
 		if !e.Message.Equal(m) {
 			t.Errorf("%s (got) != %s (expected)", e.Message, m)
 		}
-
-	}); err != nil {
+	})); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.Process(m); err != nil {
@@ -37,14 +36,14 @@ func TestAgent_ProcessInTransaction(t *testing.T) {
 func TestAgent_Process(t *testing.T) {
 	m := New()
 	a := NewAgent(AgentOptions{
-		Handler: func(e AgentEvent) {
+		Handler: HandlerFunc(func(e Event) {
 			if e.Error != nil {
 				t.Errorf("got error: %s", e.Error)
 			}
 			if !e.Message.Equal(m) {
 				t.Errorf("%s (got) != %s (expected)", e.Message, m)
 			}
-		},
+		}),
 	})
 	if err := m.NewTransactionID(); err != nil {
 		t.Fatal(err)
@@ -91,11 +90,11 @@ func TestAgent_Stop(t *testing.T) {
 		t.Fatalf("unexpected error: %s, should be %s", err, ErrTransactionNotExists)
 	}
 	id := NewTransactionID()
-	called := make(chan AgentEvent, 1)
+	called := make(chan Event, 1)
 	timeout := time.Millisecond * 200
-	if err := a.Start(id, time.Now().Add(timeout), func(e AgentEvent) {
+	if err := a.Start(id, time.Now().Add(timeout), HandlerFunc(func(e Event) {
 		called <- e
-	}); err != nil {
+	})); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.Stop(id); err != nil {
@@ -119,18 +118,18 @@ func TestAgent_Stop(t *testing.T) {
 	}
 }
 
-var noopHandler = func(e AgentEvent) {}
+var noopHandler HandlerFunc = func(e Event) {}
 
 func TestAgent_GC(t *testing.T) {
 	a := NewAgent(AgentOptions{
 		Handler: noopHandler,
 	})
-	shouldTimeOut := func(e AgentEvent) {
+	var shouldTimeOut HandlerFunc = func(e Event) {
 		if e.Error != ErrTransactionTimeOut {
 			t.Errorf("should time out, but got <%s>", e.Error)
 		}
 	}
-	shouldNotTimeOut := func(e AgentEvent) {
+	var shouldNotTimeOut HandlerFunc = func(e Event) {
 		if e.Error == ErrTransactionTimeOut {
 			t.Error("should not time out")
 		}

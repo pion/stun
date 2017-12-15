@@ -8,7 +8,7 @@ import (
 )
 
 type TestAgent struct {
-	f chan AgentFn
+	f chan Handler
 }
 
 func (n *TestAgent) Close() error {
@@ -20,7 +20,7 @@ func (TestAgent) Collect(time.Time) error { return nil }
 
 func (TestAgent) Process(m *Message) error { return nil }
 
-func (n *TestAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn) error {
+func (n *TestAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f Handler) error {
 	n.f <- f
 	return nil
 }
@@ -47,7 +47,7 @@ func (noopConnection) Close() error {
 func BenchmarkClient_Do(b *testing.B) {
 	b.ReportAllocs()
 	agent := &TestAgent{
-		f: make(chan AgentFn, 1000),
+		f: make(chan Handler, 1000),
 	}
 	client := NewClient(ClientOptions{
 		Agent:      agent,
@@ -55,17 +55,17 @@ func BenchmarkClient_Do(b *testing.B) {
 	})
 	defer client.Close()
 	go func() {
-		e := AgentEvent{
+		e := Event{
 			Error:   nil,
 			Message: nil,
 		}
 		for f := range agent.f {
-			f(e)
+			f.HandleEvent(e)
 		}
 	}()
 	m := new(Message)
 	m.Encode()
-	noopF := func(event AgentEvent) {
+	noopF := func(event Event) {
 		// pass
 	}
 	for i := 0; i < b.N; i++ {
@@ -140,7 +140,7 @@ func TestClient_Do(t *testing.T) {
 	m.TransactionID = response.TransactionID
 	m.Encode()
 	d := time.Now().Add(time.Second)
-	if err := c.Do(m, d, func(event AgentEvent) {
+	if err := c.Do(m, d, func(event Event) {
 		if event.Error != nil {
 			t.Error(event.Error)
 		}

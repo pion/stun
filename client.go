@@ -65,7 +65,7 @@ type Connection interface {
 type ClientAgent interface {
 	Process(*Message) error
 	Close() error
-	Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn) error
+	Start(id [TransactionIDSize]byte, deadline time.Time, f Handler) error
 	Stop(id [TransactionIDSize]byte) error
 	Collect(time.Time) error
 }
@@ -184,21 +184,14 @@ func (c *Client) Indicate(m *Message) error {
 	return c.Start(m, time.Time{}, nil)
 }
 
-type clientCallState struct {
-	callback  func(event AgentEvent)
+// callbackWaitHandler blocks on wait() call until callback is called.
+type callbackWaitHandler struct {
+	callback  func(event Event)
 	cond      *sync.Cond
 	processed bool
 }
 
-func (s *clientCallState) wait() {
-	s.cond.L.Lock()
-	for !s.processed {
-		s.cond.Wait()
-	}
-	s.cond.L.Unlock()
-}
-
-func (s *clientCallState) wrapper(e AgentEvent) {
+func (s *callbackWaitHandler) HandleEvent(e Event) {
 	if s.callback == nil {
 		panic("s.callback is nil")
 	}
@@ -209,66 +202,73 @@ func (s *clientCallState) wrapper(e AgentEvent) {
 	s.cond.L.Unlock()
 }
 
-func (s *clientCallState) setCallback(f func(event AgentEvent)) {
+func (s *callbackWaitHandler) wait() {
+	s.cond.L.Lock()
+	for !s.processed {
+		s.cond.Wait()
+	}
+	s.cond.L.Unlock()
+}
+
+func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 	if f == nil {
 		panic("f is nil")
 	}
 	s.callback = f
 }
 
-func (s *clientCallState) reset() {
+func (s *callbackWaitHandler) reset() {
 	s.processed = false
 	s.callback = nil
 }
 
-func newClientCallState(f func(event AgentEvent)) *clientCallState {
-	return &clientCallState{
-		cond:     sync.NewCond(new(sync.Mutex)),
-		callback: f,
-	}
-}
-
-var clientCallStatePool = sync.Pool{
+var callbackWaitHandlerPool = sync.Pool{
 	New: func() interface{} {
-		return newClientCallState(nil)
+		return &callbackWaitHandler{
+			cond: sync.NewCond(new(sync.Mutex)),
+		}
 	},
 }
 
 // Do is Start wrapper that waits until callback is called. If no callback
 // provided, Indicate is called instead.
 //
-// Do has memory allocation overhead due to blocking, see BenchmarkClient_Do.
-// Use Start for zero overhead.
-func (c *Client) Do(m *Message, d time.Time, f func(AgentEvent)) error {
+// Do has cpu overhead due to blocking, see BenchmarkClient_Do.
+// Use Start method for less overhead.
+func (c *Client) Do(m *Message, d time.Time, f func(Event)) error {
 	if f == nil {
 		return c.Indicate(m)
 	}
-	state := clientCallStatePool.Get().(*clientCallState)
-	state.setCallback(f)
-	err := c.Start(m, d, state.wrapper)
-	state.wait()
-	state.reset()
-	clientCallStatePool.Put(state)
-	return err
+	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler)
+	h.setCallback(f)
+	defer func() {
+		h.reset()
+		callbackWaitHandlerPool.Put(h)
+	}()
+	if err := c.Start(m, d, h); err != nil {
+		return err
+	}
+	h.wait()
+	return nil
 }
 
-// Start starts transaction (if f set) and writes message to server, callback
+// Start starts transaction (if f set) and writes message to server, handler
 // is called asynchronously.
-func (c *Client) Start(m *Message, d time.Time, f func(AgentEvent)) error {
+func (c *Client) Start(m *Message, d time.Time, h Handler) error {
 	c.closedMux.RLock()
 	closed := c.closed
 	c.closedMux.RUnlock()
 	if closed {
 		return ErrClientClosed
 	}
-	if f != nil {
-		// Starting transaction only if f is set. Useful for indications.
-		if err := c.a.Start(m.TransactionID, d, f); err != nil {
+	if h != nil {
+		// Starting transaction only if h is set. Useful for indications.
+		if err := c.a.Start(m.TransactionID, d, h); err != nil {
 			return err
 		}
 	}
 	_, err := m.WriteTo(c.c)
-	if err != nil && f != nil {
+	if err != nil && h != nil {
 		// Stopping transaction instead of waiting until deadline.
 		if stopErr := c.a.Stop(m.TransactionID); stopErr != nil {
 			return StopErr{

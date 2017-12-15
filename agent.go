@@ -8,7 +8,7 @@ import (
 
 // AgentOptions are required to initialize Agent.
 type AgentOptions struct {
-	Handler AgentFn // Default handler, can be nil.
+	Handler Handler // Default handler, can be nil.
 }
 
 // NewAgent initializes and returns new Agent from options.
@@ -32,17 +32,28 @@ type Agent struct {
 	transactions map[transactionID]agentTransaction
 	closed       bool       // all calls are invalid if true
 	mux          sync.Mutex // protects transactions and closed
-	zeroHandler  AgentFn    // handles non-registered transactions if set
+	zeroHandler  Handler    // handles non-registered transactions if set
 }
 
-// AgentFn is called on transaction state change.
-// Usage of e is valid only during call, user must
-// copy needed fields explicitly.
-type AgentFn func(e AgentEvent)
+// Handler handles state changes of transaction.
+type Handler interface {
+	// HandleEvent is called on transaction state change.
+	// Usage of e is valid only during call, user must
+	// copy needed fields explicitly.
+	HandleEvent(e Event)
+}
 
-// AgentEvent is set of arguments passed to AgentFn, describing
+// HandlerFunc is function that implements Handler interface.
+type HandlerFunc func(e Event)
+
+// HandleEvent implements Handler.
+func (f HandlerFunc) HandleEvent(e Event) {
+	f(e)
+}
+
+// Event is set of arguments passed to AgentFn, describing
 // an transaction event. Do not reuse outside AgentFn.
-type AgentEvent struct {
+type Event struct {
 	Message *Message
 	Error   error
 }
@@ -54,7 +65,7 @@ type AgentEvent struct {
 type agentTransaction struct {
 	id       transactionID
 	deadline time.Time
-	f        AgentFn
+	h        Handler
 }
 
 var (
@@ -81,7 +92,7 @@ func (a *Agent) StopWithError(id [TransactionIDSize]byte, err error) error {
 	if !exists {
 		return ErrTransactionNotExists
 	}
-	t.f(AgentEvent{
+	t.h.HandleEvent(Event{
 		Error: err,
 	})
 	return nil
@@ -101,7 +112,7 @@ var ErrAgentClosed = errors.New("agent is closed")
 // Could return ErrAgentClosed, ErrTransactionExists.
 // Callback f is guaranteed to be eventually called. See AgentFn for
 // callback processing constraints.
-func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn) error {
+func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, h Handler) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	if a.closed {
@@ -113,7 +124,7 @@ func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, f AgentFn)
 	}
 	a.transactions[id] = agentTransaction{
 		id:       id,
-		f:        f,
+		h:        h,
 		deadline: deadline,
 	}
 	return nil
@@ -132,7 +143,7 @@ var ErrTransactionTimeOut = errors.New("transaction is timed out")
 //
 // It is safe to call Collect concurrently but makes no sense.
 func (a *Agent) Collect(gcTime time.Time) error {
-	toCall := make([]AgentFn, 0, agentCollectCap)
+	toCall := make([]Handler, 0, agentCollectCap)
 	toRemove := make([]transactionID, 0, agentCollectCap)
 	a.mux.Lock()
 	if a.closed {
@@ -149,7 +160,7 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	for id, t := range a.transactions {
 		if t.deadline.Before(gcTime) {
 			toRemove = append(toRemove, id)
-			toCall = append(toCall, t.f)
+			toCall = append(toCall, t.h)
 		}
 	}
 	// Un-registering timed out transactions.
@@ -161,11 +172,11 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	a.mux.Unlock()
 	// Sending ErrTransactionTimeOut to all callbacks, blocking
 	// Collect until last one.
-	event := AgentEvent{
+	event := Event{
 		Error: ErrTransactionTimeOut,
 	}
-	for _, f := range toCall {
-		f(event)
+	for _, handler := range toCall {
+		handler.HandleEvent(event)
 	}
 	return nil
 }
@@ -175,7 +186,7 @@ func (a *Agent) Collect(gcTime time.Time) error {
 // handle is not provided, message is silently ignored.
 // Call blocks until handler returns.
 func (a *Agent) Process(m *Message) error {
-	e := AgentEvent{
+	e := Event{
 		Message: m,
 	}
 	a.mux.Lock()
@@ -187,9 +198,9 @@ func (a *Agent) Process(m *Message) error {
 	delete(a.transactions, m.TransactionID)
 	a.mux.Unlock()
 	if ok {
-		t.f(e)
+		t.h.HandleEvent(e)
 	} else if a.zeroHandler != nil {
-		a.zeroHandler(e)
+		a.zeroHandler.HandleEvent(e)
 	}
 	return nil
 }
@@ -197,7 +208,7 @@ func (a *Agent) Process(m *Message) error {
 // Close terminates all transactions with ErrAgentClosed and renders Agent to
 // closed state.
 func (a *Agent) Close() error {
-	e := AgentEvent{
+	e := Event{
 		Error: ErrAgentClosed,
 	}
 	a.mux.Lock()
@@ -206,7 +217,7 @@ func (a *Agent) Close() error {
 		return ErrAgentClosed
 	}
 	for _, t := range a.transactions {
-		t.f(e)
+		t.h.HandleEvent(e)
 	}
 	a.transactions = nil
 	a.closed = true

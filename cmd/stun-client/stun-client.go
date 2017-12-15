@@ -25,7 +25,7 @@ func main() {
 		log.Fatal("dial:", err)
 	}
 	deadline := time.Now().Add(time.Second * 5)
-	if err := c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), deadline, func(res stun.AgentEvent) {
+	if err := c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), deadline, func(res stun.Event) {
 		if res.Error != nil {
 			log.Fatalln(err)
 		}
