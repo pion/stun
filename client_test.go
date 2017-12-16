@@ -206,9 +206,10 @@ func TestStopErr_Error(t *testing.T) {
 type errorAgent struct {
 	startErr error
 	stopErr  error
+	closeErr error
 }
 
-func (errorAgent) Close() error { return nil }
+func (a errorAgent) Close() error { return a.closeErr }
 
 func (errorAgent) Collect(time.Time) error { return nil }
 
@@ -359,4 +360,28 @@ func TestDialError(t *testing.T) {
 	if err == nil {
 		t.Fatal("error expected")
 	}
+}
+func TestClientCloseErr(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	conn := &testConnection{
+		b: response.Raw,
+		write: func(bytes []byte) (int, error) {
+			return len(bytes), nil
+		},
+	}
+	c, err := NewClient(ClientOptions{
+		Agent: errorAgent{
+			closeErr: io.ErrUnexpectedEOF,
+		},
+		Connection: conn,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err, ok := c.Close().(CloseErr); !ok || err.AgentErr != io.ErrUnexpectedEOF {
+			t.Error("unexpected close err")
+		}
+	}()
 }
