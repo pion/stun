@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/gortc/stun.svg)](https://travis-ci.org/gortc/stun)
 [![Build status](https://ci.appveyor.com/api/projects/status/fw3drn3k52mf5ghw/branch/master?svg=true)](https://ci.appveyor.com/project/ernado/stun-j08g0/branch/master)
 [![GoDoc](https://godoc.org/github.com/gortc/stun?status.svg)](http://godoc.org/github.com/gortc/stun)
-[![Coverage Status](https://coveralls.io/repos/github/gortc/stun/badge.svg?branch=master)](https://coveralls.io/github/gortc/stun?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/gortc/stun/badge.svg?branch=master&v=1)](https://coveralls.io/github/gortc/stun?branch=master)
 [![Go Report](https://goreportcard.com/badge/github.com/gortc/stun?camo=retarded)](http://goreportcard.com/report/gortc/stun)
 [![RFC 5389](https://img.shields.io/badge/RFC-5389-blue.svg)](https://tools.ietf.org/html/rfc5389)
 
