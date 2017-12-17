@@ -385,3 +385,61 @@ func TestClientCloseErr(t *testing.T) {
 		}
 	}()
 }
+
+type gcWaitAgent struct {
+	gc chan struct{}
+}
+
+func (a *gcWaitAgent) Stop(id [TransactionIDSize]byte) error {
+	return nil
+}
+
+func (a *gcWaitAgent) Close() error {
+	close(a.gc)
+	return nil
+}
+
+func (a *gcWaitAgent) Collect(time.Time) error {
+	a.gc <- struct{}{}
+	return nil
+}
+
+func (a *gcWaitAgent) Process(m *Message) error {
+	return nil
+}
+
+func (a *gcWaitAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f Handler) error {
+	return nil
+}
+
+func TestClientGC(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	conn := &testConnection{
+		b: response.Raw,
+		write: func(bytes []byte) (int, error) {
+			return len(bytes), nil
+		},
+	}
+	agent := &gcWaitAgent{
+		gc: make(chan struct{}),
+	}
+	c, err := NewClient(ClientOptions{
+		Agent:       agent,
+		Connection:  conn,
+		TimeoutRate: time.Millisecond * 1,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err = c.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	select {
+	case <-agent.gc:
+	case <-time.After(time.Millisecond * 200):
+		t.Error("timed out")
+	}
+}
