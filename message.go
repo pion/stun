@@ -358,6 +358,13 @@ func (m *Message) Write(tBuf []byte) (int, error) {
 	return len(tBuf), m.Decode()
 }
 
+// CloneTo clones m to b securing any further m mutations.
+func (m *Message) CloneTo(b *Message) {
+	// TODO(ar): implement low-level copy.
+	b.Raw = append(b.Raw[:], m.Raw...)
+	b.Decode()
+}
+
 // MessageClass is 8-bit representation of 2-bit class of STUN Message Class.
 type MessageClass byte
 

@@ -827,3 +827,53 @@ func TestMessageFullSize(t *testing.T) {
 		t.Error("decode on truncated buffer should error")
 	}
 }
+
+func TestMessage_CloneTo(t *testing.T) {
+	m := new(Message)
+	if err := m.Build(BindingRequest,
+		NewTransactionIDSetter([TransactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+		}),
+		NewSoftware("gortc/stun"),
+		NewLongTermIntegrity("username", "realm", "password"),
+		Fingerprint,
+	); err != nil {
+		t.Fatal(err)
+	}
+	m.Encode()
+	b := new(Message)
+	m.CloneTo(b)
+	if !b.Equal(m) {
+		t.Fatal("not equal")
+	}
+	// Corrupting m and checking that b is not corrupted.
+	s, ok := b.Attributes.Get(AttrSoftware)
+	if !ok {
+		t.Fatal("no software attribute")
+	}
+	s.Value[0] = 'k'
+	if b.Equal(m) {
+		t.Fatal("should not be equal")
+	}
+}
+
+func BenchmarkMessage_CloneTo(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	if err := m.Build(BindingRequest,
+		NewTransactionIDSetter([TransactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+		}),
+		NewSoftware("gortc/stun"),
+		NewLongTermIntegrity("username", "realm", "password"),
+		Fingerprint,
+	); err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(m.Raw)))
+	a := new(Message)
+	m.CloneTo(a)
+	for i := 0; i < b.N; i++ {
+		m.CloneTo(a)
+	}
+}
