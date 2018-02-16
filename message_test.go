@@ -842,7 +842,9 @@ func TestMessage_CloneTo(t *testing.T) {
 	}
 	m.Encode()
 	b := new(Message)
-	m.CloneTo(b)
+	if err := m.CloneTo(b); err != nil {
+		t.Fatal(err)
+	}
 	if !b.Equal(m) {
 		t.Fatal("not equal")
 	}
@@ -874,6 +876,8 @@ func BenchmarkMessage_CloneTo(b *testing.B) {
 	a := new(Message)
 	m.CloneTo(a)
 	for i := 0; i < b.N; i++ {
-		m.CloneTo(a)
+		if err := m.CloneTo(a); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
