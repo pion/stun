@@ -4,15 +4,15 @@ sudo: false
 
 go:
   - master
-  - 1.8.x
   - 1.9.x
+  - 1.10.x
   
 env:
   - TEST_EXTERNAL=1
 
 matrix:
   allow_failures:
-    - go: 1.8.x
+    - go: 1.9.x
     - go: master
   fast_finish: true
 
