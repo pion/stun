@@ -2,7 +2,6 @@ package stun
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/pions/pion/pkg/go/stun"
 )
 
 type MessageBuilder struct {
@@ -23,7 +22,7 @@ func Build(class MessageClass, method Method, transactionID []byte, attrs ...Att
 
 	copy(m.Raw[transactionIDStart:], m.TransactionID)
 
-	attrs = append(attrs, &stun.Software{
+	attrs = append(attrs, &Software{
 		Software: "Pion",
 	})
 	for _, v := range attrs {
