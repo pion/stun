@@ -22,12 +22,14 @@ type ErrorCode struct {
 }
 
 var (
-	Err300TryAlternate      = ErrorCode{3, 0, []byte("Try Alternate: The client should contact an alternate server for this request.")}
-	Err400BadRequest        = ErrorCode{4, 0, []byte("Bad Request: The request was malformed.")}
-	Err401Unauthorized      = ErrorCode{4, 1, []byte("Unauthorized: The request did not contain the correct credentials to proceed.")}
-	Err420UnknownAttributes = ErrorCode{4, 20, []byte("Unknown Attribute: The server received a STUN packet containing a comprehension-required attribute that it did not understand.")}
-	Err438StaleNonce        = ErrorCode{4, 38, []byte("Stale Nonce: The NONCE used by the client was no longer valid.")}
-	Err500ServerRrror       = ErrorCode{5, 0, []byte("Server Error: The server has suffered a temporary error.")}
+	Err300TryAlternate                 = ErrorCode{3, 0, []byte("Try Alternate: The client should contact an alternate server for this request.")}
+	Err400BadRequest                   = ErrorCode{4, 0, []byte("Bad Request: The request was malformed.")}
+	Err401Unauthorized                 = ErrorCode{4, 1, []byte("Unauthorized: The request did not contain the correct credentials to proceed.")}
+	Err420UnknownAttributes            = ErrorCode{4, 20, []byte("Unknown Attribute: The server received a STUN packet containing a comprehension-required attribute that it did not understand.")}
+	Err437AllocationMismatch           = ErrorCode{4, 37, []byte("AllocationMismatch: 5-TUPLE didn't match, or conflicted with existing state.")}
+	Err438StaleNonce                   = ErrorCode{4, 38, []byte("Stale Nonce: The NONCE used by the client was no longer valid.")}
+	Err442UnsupportedTransportProtocol = ErrorCode{4, 42, []byte("Unsupported Transport Protocol: UDP is the only supported transport protocol.")}
+	Err500ServerRrror                  = ErrorCode{5, 0, []byte("Server Error: The server has suffered a temporary error.")}
 )
 
 const (
