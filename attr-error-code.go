@@ -29,7 +29,8 @@ var (
 	Err437AllocationMismatch           = ErrorCode{4, 37, []byte("AllocationMismatch: 5-TUPLE didn't match, or conflicted with existing state.")}
 	Err438StaleNonce                   = ErrorCode{4, 38, []byte("Stale Nonce: The NONCE used by the client was no longer valid.")}
 	Err442UnsupportedTransportProtocol = ErrorCode{4, 42, []byte("Unsupported Transport Protocol: UDP is the only supported transport protocol.")}
-	Err500ServerRrror                  = ErrorCode{5, 0, []byte("Server Error: The server has suffered a temporary error.")}
+	Err500ServerError                  = ErrorCode{5, 0, []byte("Server Error: The server has suffered a temporary error.")}
+	Err508InsufficentCapacity          = ErrorCode{5, 8, []byte("Insufficent Capacity: The server doesn't have the capacity to fulfill this request.")}
 )
 
 const (

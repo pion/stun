@@ -10,17 +10,11 @@ type Lifetime struct {
 	Duration uint32
 }
 
-func (x *Lifetime) Pack(message *Message) (*RawAttribute, error) {
-	ra := RawAttribute{
-		Type:   AttrLifetime,
-		Length: 4,
-		Pad:    0,
-	}
+func (x *Lifetime) Pack(message *Message) error {
 	v := make([]byte, 4)
-
 	binary.BigEndian.PutUint32(v, x.Duration)
-
-	return &ra, nil
+	message.AddAttribute(AttrLifetime, v)
+	return nil
 }
 
 func (x *Lifetime) Unpack(message *Message, rawAttribute *RawAttribute) error {
