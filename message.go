@@ -3,8 +3,10 @@ package stun
 import (
 	"encoding/binary"
 	"fmt"
+	"net"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/ipv4"
 )
 
 // MessageClass of 0b00 is a request, a class of 0b01 is an
@@ -304,4 +306,23 @@ func (m *Message) Pack() []byte {
 	copy(m.Raw[transactionIDStart:], m.TransactionID)
 
 	return m.Raw
+}
+
+func BuildAndSend(conn *ipv4.PacketConn, addr net.Addr, class MessageClass, method Method, transactionID []byte, attrs ...Attribute) error {
+	rsp, err := Build(class, method, transactionID, attrs...)
+	if err != nil {
+		return err
+	}
+
+	b := rsp.Pack()
+	l, err := conn.WriteTo(b, nil, addr)
+	if err != nil {
+		return errors.Wrap(err, "failed writing to socket")
+	}
+
+	if l != len(b) {
+		return errors.Errorf("packet write smaller than packet %d != %d (expected)", l, len(b))
+	}
+
+	return nil
 }
