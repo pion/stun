@@ -21,11 +21,12 @@ import (
 // https://tools.ietf.org/html/rfc7635#appendix-B
 
 const (
-	messageIntegrityLength = 20
+	messageIntegrityLength    = 20
+	messageIntegrityKeyLength = 16
 )
 
 type MessageIntegrity struct {
-	MessageIntegrity [messageIntegrityLength]byte
+	Key [messageIntegrityKeyLength]byte
 }
 
 func calculateHMAC(key, message []byte) []byte {
@@ -41,10 +42,10 @@ func (m *MessageIntegrity) Pack(message *Message) error {
 	prevLen := message.Length
 	message.Length += attrHeaderLength + messageIntegrityLength
 	message.CommitLength()
-	v := calculateHMAC(m.MessageIntegrity[:], message.Raw)
+	v := calculateHMAC(m.Key[:], message.Raw)
 	message.Length = prevLen
 
-	message.AddAttribute(AttrSoftware, v)
+	message.AddAttribute(AttrMessageIntegrity, v)
 	return nil
 }
 
