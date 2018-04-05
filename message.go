@@ -262,7 +262,7 @@ func NewMessage(packet []byte) (*Message, error) {
 	return &m, nil
 }
 
-func (m *Message) GetAttribute(attrType AttrType) (*RawAttribute, bool) {
+func (m *Message) GetOneAttribute(attrType AttrType) (*RawAttribute, bool) {
 	for _, v := range m.Attributes {
 		if v.Type == attrType {
 			return v, true
@@ -270,6 +270,17 @@ func (m *Message) GetAttribute(attrType AttrType) (*RawAttribute, bool) {
 	}
 
 	return nil, false
+}
+
+func (m *Message) GetAllAttributes(attrType AttrType) ([]*RawAttribute, bool) {
+	var attrs []*RawAttribute
+	for _, v := range m.Attributes {
+		if v.Type == attrType {
+			attrs = append(attrs, v)
+		}
+	}
+
+	return attrs, len(attrs) > 0
 }
 
 func (m *Message) CommitLength() {
