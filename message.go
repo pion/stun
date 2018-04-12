@@ -112,8 +112,7 @@ type Message struct {
 // when STUN is multiplexed with other protocols on the same port.
 // https://tools.ietf.org/html/rfc5389#section-6
 func verifyStunHeaderMostSignificant2Bits(header []byte) bool {
-	val := header[0]
-	return (val >> 6) == 0
+	return (header[0] >> 6) == 0
 }
 
 func verifyMagicCookie(header []byte) error {
