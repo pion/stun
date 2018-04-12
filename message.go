@@ -111,13 +111,9 @@ type Message struct {
 // This can be used to differentiate STUN packets from other protocols
 // when STUN is multiplexed with other protocols on the same port.
 // https://tools.ietf.org/html/rfc5389#section-6
-func verifyHeaderMostSignificant2Bits(header []byte) bool {
-	const (
-		mostSig2BitsMask   uint = 0x3 // 0b11
-		mostSig2BitsShiftR uint = 6   // R 0b11000000 -> 0b00000011
-	)
-
-	return ((uint(header[messageHeaderStart]) & mostSig2BitsMask) >> mostSig2BitsShiftR) == 0
+func verifyStunHeaderMostSignificant2Bits(header []byte) bool {
+	val := header[0]
+	return (val >> 6) == 0
 }
 
 func verifyMagicCookie(header []byte) error {
@@ -220,7 +216,7 @@ func NewMessage(packet []byte) (*Message, error) {
 
 	header := packet[messageHeaderStart : messageHeaderStart+messageHeaderLength]
 
-	if !verifyHeaderMostSignificant2Bits(header) {
+	if !verifyStunHeaderMostSignificant2Bits(header) {
 		return nil, errors.New("stun header most significant 2 bits must equal 0b00")
 	}
 
