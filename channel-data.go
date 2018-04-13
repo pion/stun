@@ -19,7 +19,7 @@ func NewChannelData(packet []byte) (*ChannelData, error) {
 
 	return &ChannelData{
 		ChannelNumber: cn,
-		Data:          packet[2:],
+		Data:          packet,
 	}, nil
 }
 
