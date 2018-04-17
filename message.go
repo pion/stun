@@ -3,7 +3,6 @@ package stun
 import (
 	"encoding/binary"
 	"fmt"
-	"net"
 
 	"github.com/pkg/errors"
 	"golang.org/x/net/ipv4"
@@ -316,18 +315,13 @@ func (m *Message) Pack() []byte {
 
 func BuildAndSend(conn *ipv4.PacketConn, addr *TransportAddr, class MessageClass, method Method, transactionID []byte, attrs ...Attribute) error {
 
-	dst := &net.UDPAddr{
-		IP:   addr.IP,
-		Port: addr.Port,
-	}
-
 	rsp, err := Build(class, method, transactionID, attrs...)
 	if err != nil {
 		return err
 	}
 
 	b := rsp.Pack()
-	l, err := conn.WriteTo(b, nil, dst)
+	l, err := conn.WriteTo(b, nil, addr.Addr())
 	if err != nil {
 		return errors.Wrap(err, "failed writing to socket")
 	}
