@@ -5,7 +5,7 @@ import (
 	"net"
 	"strconv"
 
-	"gitlab.com/pions/pion/vendor.orig/github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 type TransportAddr struct {
