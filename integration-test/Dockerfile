@@ -1,4 +1,4 @@
-FROM golang:1.9.2
+FROM golang:1.10
 
 ADD . /go/src/github.com/gortc/stun
 
