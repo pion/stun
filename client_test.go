@@ -456,12 +456,20 @@ func TestClientCheckInit(t *testing.T) {
 	}
 }
 
-func TestClientFinalizer(t *testing.T) {
+func captureLog() (*bytes.Buffer, func()) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
-	defer func() {
+	f := log.Flags()
+	log.SetFlags(0)
+	return &buf, func() {
+		log.SetFlags(f)
 		log.SetOutput(os.Stderr)
-	}()
+	}
+}
+
+func TestClientFinalizer(t *testing.T) {
+	buf, stopCapture := captureLog()
+	defer stopCapture()
 	clientFinalizer(nil) // should not panic
 	clientFinalizer(&Client{})
 	conn := &testConnection{
@@ -495,11 +503,18 @@ func TestClientFinalizer(t *testing.T) {
 		log.Fatal(err)
 	}
 	clientFinalizer(c)
-	reader := bufio.NewScanner(&buf)
+	reader := bufio.NewScanner(buf)
 	var lines int
+	var expectedLines = []string{
+		"client: called finalizer on non-closed client: client not initialized",
+		"client: called finalizer on non-closed client",
+		"client: called finalizer on non-closed client: failed to close: <nil> (connection), unexpected EOF (agent)",
+	}
 	for reader.Scan() {
+		if reader.Text() != expectedLines[lines] {
+			t.Error(reader.Text(), "!=", expectedLines[lines])
+		}
 		lines += 1
-		t.Log(reader.Text())
 	}
 	if reader.Err() != nil {
 		t.Error(err)
