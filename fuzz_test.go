@@ -24,6 +24,9 @@ func corpus(t *testing.T, function, typ string) [][]byte {
 	p := filepath.Join("examples", function, typ)
 	f, err := os.Open(p)
 	if err != nil {
+		if os.IsNotExist(err) {
+			t.Skip("does not exist")
+		}
 		t.Fatal(err)
 	}
 	list, err := f.Readdir(-1)
