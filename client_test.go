@@ -508,13 +508,14 @@ func TestClientFinalizer(t *testing.T) {
 	var expectedLines = []string{
 		"client: called finalizer on non-closed client: client not initialized",
 		"client: called finalizer on non-closed client",
-		"client: called finalizer on non-closed client: failed to close: <nil> (connection), unexpected EOF (agent)",
+		"client: called finalizer on non-closed client: failed to close: " +
+			"<nil> (connection), unexpected EOF (agent)",
 	}
 	for reader.Scan() {
 		if reader.Text() != expectedLines[lines] {
 			t.Error(reader.Text(), "!=", expectedLines[lines])
 		}
-		lines += 1
+		lines++
 	}
 	if reader.Err() != nil {
 		t.Error(err)

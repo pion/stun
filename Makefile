@@ -31,9 +31,9 @@ lint:
 		-e "_test.go.+(gocyclo|errcheck|dupl)" \
 		-e "attributes\.go.+credentials,.+,LOW.+\(gas\)" \
                 -e "Message.+\(aligncheck\)" \
+        -e "arg .+ for .+ verb %. of wrong type" \
 		--enable="lll" --line-length=100 \
 		--enable="gofmt" \
-		--disable="gotype" \
 		--enable="goimports" \
 		--enable="misspell" \
 		--enable="unused" \
