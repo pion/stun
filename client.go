@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -56,7 +58,23 @@ func NewClient(options ClientOptions) (*Client, error) {
 	c.wg.Add(2)
 	go c.readUntilClosed()
 	go c.collectUntilClosed()
+	runtime.SetFinalizer(c, clientFinalizer)
 	return c, nil
+}
+
+func clientFinalizer(c *Client) {
+	if c == nil {
+		return
+	}
+	err := c.Close()
+	if err == ErrClientClosed {
+		return
+	}
+	if err == nil {
+		log.Println("client: called finalizer on non-closed client")
+		return
+	}
+	log.Println("client: called finalizer on non-closed client:", err)
 }
 
 // Connection wraps Reader, Writer and Closer interfaces.
@@ -171,9 +189,18 @@ func (c *Client) Close() error {
 	}
 	c.closed = true
 	c.closedMux.Unlock()
-	agentErr := c.a.Close()
-	connErr := c.c.Close()
-	close(c.close)
+	var (
+		agentErr, connErr error
+	)
+	if c.a != nil {
+		agentErr = c.a.Close()
+	}
+	if c.c != nil {
+		connErr = c.c.Close()
+	}
+	if c.close != nil {
+		close(c.close)
+	}
 	c.wg.Wait()
 	if agentErr == nil && connErr == nil {
 		return nil

@@ -1,9 +1,12 @@
 package stun
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"io"
 	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -441,5 +444,60 @@ func TestClientGC(t *testing.T) {
 	case <-agent.gc:
 	case <-time.After(time.Millisecond * 200):
 		t.Error("timed out")
+	}
+}
+
+func TestClientFinalizer(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer func() {
+		log.SetOutput(os.Stderr)
+	}()
+	clientFinalizer(nil) // should not panic
+	clientFinalizer(&Client{})
+	conn := &testConnection{
+		write: func(bytes []byte) (int, error) {
+			return 0, io.ErrClosedPipe
+		},
+	}
+	c, err := NewClient(ClientOptions{
+		Connection: conn,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := c.Close(); err != nil {
+		t.Error(err)
+	}
+	clientFinalizer(c)
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	conn = &testConnection{
+		b: response.Raw,
+		write: func(bytes []byte) (int, error) {
+			return len(bytes), nil
+		},
+	}
+	c, err = NewClient(ClientOptions{
+		Agent: errorAgent{
+			closeErr: io.ErrUnexpectedEOF,
+		},
+		Connection: conn,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	clientFinalizer(c)
+	reader := bufio.NewScanner(&buf)
+	var lines int
+	for reader.Scan() {
+		lines += 1
+		t.Log(reader.Text())
+	}
+	if reader.Err() != nil {
+		t.Error(err)
+	}
+	if lines != 2 {
+		t.Error("incorrect count of log lines:", lines)
 	}
 }
