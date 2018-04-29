@@ -447,6 +447,15 @@ func TestClientGC(t *testing.T) {
 	}
 }
 
+func TestClientCheckInit(t *testing.T) {
+	if err := (&Client{}).Indicate(nil); err != ErrClientNotInitialized {
+		t.Error("unexpected error")
+	}
+	if err := (&Client{}).Do(nil, time.Time{}, nil); err != ErrClientNotInitialized {
+		t.Error("unexpected error")
+	}
+}
+
 func TestClientFinalizer(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -466,9 +475,7 @@ func TestClientFinalizer(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := c.Close(); err != nil {
-		t.Error(err)
-	}
+	clientFinalizer(c)
 	clientFinalizer(c)
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
@@ -497,7 +504,7 @@ func TestClientFinalizer(t *testing.T) {
 	if reader.Err() != nil {
 		t.Error(err)
 	}
-	if lines != 2 {
+	if lines != 3 {
 		t.Error("incorrect count of log lines:", lines)
 	}
 }
