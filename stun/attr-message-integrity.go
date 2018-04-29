@@ -29,20 +29,23 @@ type MessageIntegrity struct {
 	Key [messageIntegrityKeyLength]byte
 }
 
-func calculateHMAC(key, message []byte) []byte {
+func MessageIntegrityCalculateHMAC(key, message []byte) ([]byte, error) {
 	mac := hmac.New(sha1.New, key)
 	if _, err := mac.Write(message); err != nil {
 		// Can we recover from this failure?
-		panic(errors.Wrap(err, "unable to create message integrity HMAC"))
+		return nil, errors.Wrap(err, "unable to create message integrity HMAC")
 	}
-	return mac.Sum(nil)
+	return mac.Sum(nil), nil
 }
 
 func (m *MessageIntegrity) Pack(message *Message) error {
 	prevLen := message.Length
 	message.Length += attrHeaderLength + messageIntegrityLength
 	message.CommitLength()
-	v := calculateHMAC(m.Key[:], message.Raw)
+	v, err := MessageIntegrityCalculateHMAC(m.Key[:], message.Raw)
+	if err != nil {
+		return err
+	}
 	message.Length = prevLen
 
 	message.AddAttribute(AttrMessageIntegrity, v)
@@ -50,5 +53,9 @@ func (m *MessageIntegrity) Pack(message *Message) error {
 }
 
 func (m *MessageIntegrity) Unpack(message *Message, rawAttribute *RawAttribute) error {
-	return errors.New("MessageIntegirty Unpack() unimplemented")
+	if len(rawAttribute.Value) != messageIntegrityLength {
+		return errors.Errorf("MessageIntegrity bad key length %d", len(rawAttribute.Value))
+	}
+	copy(m.Key[:], rawAttribute.Value[:])
+	return nil
 }
