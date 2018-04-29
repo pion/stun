@@ -1,6 +1,5 @@
 panic: runtime error: slice bounds out of range
-github.com/gortc/stun.(*XORMappedAddress).GetFromAs
-github.com/gortc/stun.(*XORMappedAddress).GetFrom
+github.com/gortc/stun.ErrorCodeAttribute.AddTo
 github.com/gortc/stun.FuzzSetters
 go-fuzz-dep.Main
 main.main

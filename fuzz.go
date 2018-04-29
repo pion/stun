@@ -93,6 +93,8 @@ func FuzzSetters(data []byte) int {
 		{new(ErrorCodeAttribute), AttrErrorCode},
 		{new(UnknownAttributes), AttrUnknownAttributes},
 		{new(Username), AttrUsername},
+		{new(MappedAddress), AttrMappedAddress},
+		{new(Realm), AttrRealm},
 	}
 	var firstByte = byte(0)
 	if len(data) > 0 {

@@ -1,4 +1,0 @@
-panic: Length of USERNAME attribute 537 exceeds maximum 513
-github.com/gortc/stun.FuzzSetters
-go-fuzz-dep.Main
-main.main

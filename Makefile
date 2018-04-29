@@ -25,6 +25,8 @@ fuzz-setters:
 	go-fuzz -bin=./stun-setters-fuzz.zip -workdir=examples/stun-setters
 fuzz-test:
 	go test -tags gofuzz -run TestFuzz -v .
+fuzz-reset-setters:
+	rm -f -v -r stun-setters-fuzz.zip examples/stun-setters
 lint:
 	@echo "linting on $(PROCS) cores"
 	@gometalinter \
