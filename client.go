@@ -99,9 +99,9 @@ type Client struct {
 	a         ClientAgent
 	c         Connection
 	close     chan struct{}
+	gcRate    time.Duration
 	closed    bool
 	closedMux sync.RWMutex
-	gcRate    time.Duration
 	wg        sync.WaitGroup
 }
 
