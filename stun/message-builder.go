@@ -5,7 +5,6 @@ import (
 )
 
 type MessageBuilder struct {
-	attributes []*Attribute
 }
 
 func Build(class MessageClass, method Method, transactionID []byte, attrs ...Attribute) (*Message, error) {

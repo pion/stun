@@ -181,8 +181,7 @@ func getMessageType(header []byte) (MessageClass, Method) {
 
 	class := MessageClass(c1 | c0)
 
-	var m uint16
-	m = (uint16(mByte0) & m7Mask) << m7ShiftL
+	m := (uint16(mByte0) & m7Mask) << m7ShiftL
 	m |= uint16(mByte1 & m0Mask)
 	m |= uint16((mByte1 & m4Mask) >> m4ShiftR)
 

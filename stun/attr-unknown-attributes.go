@@ -51,6 +51,5 @@ func (u *UnknownAttributes) Pack(message *Message) error {
 }
 
 func (u *UnknownAttributes) Unpack(message *Message, rawAttribute *RawAttribute) error {
-	panic("*UnknownAttributes Unpack not implemented")
-	return nil
+	return errors.Errorf("stun.UnknownAttributes Unpack not implemented")
 }

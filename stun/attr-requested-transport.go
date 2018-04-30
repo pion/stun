@@ -32,8 +32,7 @@ type RequestedTransport struct {
 }
 
 func (r *RequestedTransport) Pack(message *Message) error {
-	panic("*RequestedTransport Pack not implemented")
-	return nil
+	return errors.Errorf("stun.RequestedTransport Pack not implemented")
 }
 
 func (r *RequestedTransport) Unpack(message *Message, rawAttribute *RawAttribute) error {

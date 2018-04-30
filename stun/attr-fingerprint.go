@@ -16,7 +16,7 @@ type Fingerprint struct {
 
 const (
 	fingerprintXOR    uint32 = 0x5354554e
-	fingerprintLength        = 4
+	fingerprintLength uint16 = 4
 )
 
 func calculateFingerprint(b []byte) uint32 {
