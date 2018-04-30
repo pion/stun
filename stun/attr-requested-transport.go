@@ -2,8 +2,13 @@ package stun
 
 import "github.com/pkg/errors"
 
-// https://tools.ietf.org/html/rfc5766#section-14.7
-// This attribute is used by the client to request a specific transport
+type protocolNumber byte
+
+const (
+	ProtocolUDP protocolNumber = 0x11
+)
+
+// A RequestedTransport is used by the client to request a specific transport
 // protocol for the allocated transport address.  The value of this
 // attribute is 4 bytes with the following format:
 //    0                   1                   2                   3
@@ -20,15 +25,9 @@ import "github.com/pkg/errors"
 //
 // The RFFU field MUST be set to zero on transmission and MUST be
 // ignored on reception.  It is reserved for future uses.
-
-type ProtocolNumber byte
-
-const (
-	ProtocolUDP ProtocolNumber = 0x11
-)
-
+// https://tools.ietf.org/html/rfc5766#section-14.7
 type RequestedTransport struct {
-	Protocol ProtocolNumber
+	Protocol protocolNumber
 }
 
 func (r *RequestedTransport) Pack(message *Message) error {
@@ -36,7 +35,7 @@ func (r *RequestedTransport) Pack(message *Message) error {
 }
 
 func (r *RequestedTransport) Unpack(message *Message, rawAttribute *RawAttribute) error {
-	r.Protocol = ProtocolNumber(rawAttribute.Value[0])
+	r.Protocol = protocolNumber(rawAttribute.Value[0])
 	if r.Protocol != ProtocolUDP {
 		return errors.Errorf("UDP is the only supported protocol for RequestedTransport")
 	}

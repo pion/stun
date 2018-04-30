@@ -7,9 +7,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// https://tools.ietf.org/html/rfc5389#section-15.10
-// The SOFTWARE attribute contains a textual description of the software
-//  being used by the agent sending the message
+// A Fingerprint attribute MAY be present in all STUN messages.  The
+// value of the attribute is computed as the CRC-32 of the STUN message
+// up to (but excluding) the FINGERPRINT attribute itself, XOR'ed with
+// the 32-bit value 0x5354554e (the XOR helps in cases where an
+// application packet is also using CRC-32 in it)
 type Fingerprint struct {
 	Fingerprint uint32
 }

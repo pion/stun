@@ -285,7 +285,7 @@ func (m *Message) AddAttribute(attrType AttrType, v []byte) {
 	ra := RawAttribute{
 		Type:   attrType,
 		Value:  v,
-		Pad:    uint16(GetAttrPadding(len(v))),
+		Pad:    uint16(getAttrPadding(len(v))),
 		Length: uint16(len(v)),
 		Offset: int(m.Length),
 	}

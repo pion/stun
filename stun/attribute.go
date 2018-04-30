@@ -98,7 +98,7 @@ const (
 	attrLengthMultiple = 4
 )
 
-func GetAttrPadding(len int) int {
+func getAttrPadding(len int) int {
 	return (attrLengthMultiple - (len % attrLengthMultiple)) % attrLengthMultiple
 }
 
