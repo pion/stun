@@ -8,6 +8,7 @@ import (
 
 type ChannelData struct {
 	ChannelNumber uint16
+	Length        uint16
 	Data          []byte
 }
 
@@ -19,7 +20,8 @@ func NewChannelData(packet []byte) (*ChannelData, error) {
 
 	return &ChannelData{
 		ChannelNumber: cn,
-		Data:          packet,
+		Length:        getChannelLength(packet),
+		Data:          packet[4:],
 	}, nil
 }
 
@@ -32,4 +34,8 @@ func getChannelNumber(header []byte) (uint16, error) {
 		return 0, errors.Errorf("ChannelNumber is out of range: %d", cn)
 	}
 	return cn, nil
+}
+
+func getChannelLength(header []byte) uint16 {
+	return binary.BigEndian.Uint16(header[2:])
 }
