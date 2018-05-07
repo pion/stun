@@ -3,6 +3,7 @@ package stun
 import (
 	"encoding/binary"
 	"fmt"
+	"math/rand"
 
 	"github.com/pkg/errors"
 	"golang.org/x/net/ipv4"
@@ -330,4 +331,22 @@ func BuildAndSend(conn *ipv4.PacketConn, addr *TransportAddr, class MessageClass
 	}
 
 	return nil
+}
+
+func GenerateTransactionId() []byte {
+	randSeq := func(n int) string {
+		letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		b := make([]rune, n)
+		for i := range b {
+			b[i] = letters[rand.Intn(len(letters))]
+		}
+		return string(b)
+	}
+
+	transactionID := []byte(randSeq(16))
+	transactionID[0] = 33
+	transactionID[1] = 18
+	transactionID[2] = 164
+	transactionID[3] = 66
+	return transactionID
 }
