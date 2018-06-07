@@ -21,12 +21,11 @@ import (
 // https://tools.ietf.org/html/rfc7635#appendix-B
 
 const (
-	messageIntegrityLength    = 20
-	messageIntegrityKeyLength = 16
+	messageIntegrityLength = 20
 )
 
 type MessageIntegrity struct {
-	Key [messageIntegrityKeyLength]byte
+	Key []byte
 }
 
 func MessageIntegrityCalculateHMAC(key, message []byte) ([]byte, error) {

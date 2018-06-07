@@ -21,9 +21,6 @@ func Build(class MessageClass, method Method, transactionID []byte, attrs ...Att
 
 	copy(m.Raw[transactionIDStart:], m.TransactionID)
 
-	attrs = append(attrs, &Software{
-		Software: "Pion",
-	})
 	for _, v := range attrs {
 		err := v.Pack(m)
 		if err != nil {
