@@ -881,3 +881,50 @@ func BenchmarkMessage_CloneTo(b *testing.B) {
 		}
 	}
 }
+
+func TestMessage_AddTo(t *testing.T) {
+	m := new(Message)
+	if err := m.Build(BindingRequest,
+		NewTransactionIDSetter([TransactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+		}),
+		Fingerprint,
+	); err != nil {
+		t.Fatal(err)
+	}
+	m.Encode()
+	b := new(Message)
+	if err := m.CloneTo(b); err != nil {
+		t.Fatal(err)
+	}
+	m.TransactionID = [TransactionIDSize]byte{
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 2,
+	}
+	if b.Equal(m) {
+		t.Fatal("should not be equal")
+	}
+	m.AddTo(b)
+	if b.Equal(m) {
+		t.Fatal("should be equal")
+	}
+}
+
+func BenchmarkMessage_AddTo(b *testing.B) {
+	b.ReportAllocs()
+	m := new(Message)
+	if err := m.Build(BindingRequest,
+		NewTransactionIDSetter([TransactionIDSize]byte{
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+		}),
+		Fingerprint,
+	); err != nil {
+		b.Fatal(err)
+	}
+	a := new(Message)
+	m.CloneTo(a)
+	for i := 0; i < b.N; i++ {
+		if err := m.AddTo(a); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

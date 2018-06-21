@@ -61,6 +61,15 @@ type Message struct {
 	Raw           []byte
 }
 
+// AddTo sets b.TransactionID to m.TransactionID.
+//
+// Implements Setter to aid in crafting responses.
+func (m *Message) AddTo(b *Message) error {
+	b.TransactionID = m.TransactionID
+	b.WriteTransactionID()
+	return nil
+}
+
 // NewTransactionID sets m.TransactionID to random value from crypto/rand
 // and returns error if any.
 func (m *Message) NewTransactionID() error {
