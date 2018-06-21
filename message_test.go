@@ -904,7 +904,7 @@ func TestMessage_AddTo(t *testing.T) {
 		t.Fatal("should not be equal")
 	}
 	m.AddTo(b)
-	if b.Equal(m) {
+	if !b.Equal(m) {
 		t.Fatal("should be equal")
 	}
 }
