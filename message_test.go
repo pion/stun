@@ -944,4 +944,7 @@ func TestDecode(t *testing.T) {
 	if err := Decode(m.Raw, mDecoded); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
+	if !mDecoded.Equal(m) {
+		t.Error("decoded result is not equal to encoded message")
+	}
 }
