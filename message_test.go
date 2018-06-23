@@ -948,3 +948,21 @@ func TestDecode(t *testing.T) {
 		t.Error("decoded result is not equal to encoded message")
 	}
 }
+
+func BenchmarkDecode(b *testing.B) {
+	m := New()
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.WriteHeader()
+	mDecoded := New()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		mDecoded.Reset()
+		if err := Decode(m.Raw, mDecoded); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
