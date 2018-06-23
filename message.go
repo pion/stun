@@ -47,6 +47,18 @@ func New() *Message {
 	}
 }
 
+// ErrDecodeToNil occurs on Decode(data, nil) call.
+var ErrDecodeToNil = errors.New("attempt to decode to nil message")
+
+// Decode decodes Message from data to m, returning error if any.
+func Decode(data []byte, m *Message) error {
+	if m == nil {
+		return ErrDecodeToNil
+	}
+	m.Raw = data
+	return m.Decode()
+}
+
 // Message represents a single STUN packet. It uses aggressive internal
 // buffering to enable zero-allocation encoding and decoding,
 // so there are some usage constraints:

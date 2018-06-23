@@ -928,3 +928,20 @@ func BenchmarkMessage_AddTo(b *testing.B) {
 		}
 	}
 }
+
+func TestDecode(t *testing.T) {
+	t.Run("Nil", func(t *testing.T) {
+		if err := Decode(nil, nil); err != ErrDecodeToNil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+	m := New()
+	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	m.TransactionID = NewTransactionID()
+	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	m.WriteHeader()
+	mDecoded := New()
+	if err := Decode(m.Raw, mDecoded); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
