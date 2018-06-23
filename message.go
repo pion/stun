@@ -55,7 +55,7 @@ func Decode(data []byte, m *Message) error {
 	if m == nil {
 		return ErrDecodeToNil
 	}
-	m.Raw = data
+	m.Raw = append(m.Raw[:0], data...)
 	return m.Decode()
 }
 
