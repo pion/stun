@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 
+export CURRENT_GO_VERSION=$(echo -n "$(go version)" | grep -o 'go1\.[0-9|\.]*' || true)
+CURRENT_GO_VERSION=${CURRENT_GO_VERSION#go}
+GO_VERSION=${GO_VERSION:-$CURRENT_GO_VERSION}
+
+# set golang version from env
+export CI_GO_VERSION="${GO_VERSION:-latest}"
+
 # define some colors to use for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
+
+printf "${GREEN}Go version \"${CI_GO_VERSION}\"${NC}\n"
 
 # kill and remove any running containers
 cleanup () {

@@ -9,6 +9,8 @@ services:
     build:
       context: ..
       dockerfile: integration-test/Dockerfile
+      args:
+        CI_GO_VERSION: ${CI_GO_VERSION}
   stun-server:
     image: bprodoehl/turnserver
     ports:

@@ -1,4 +1,5 @@
-FROM golang:1.10
+ARG CI_GO_VERSION
+FROM golang:${CI_GO_VERSION}
 
 ADD . /go/src/github.com/gortc/stun
 
