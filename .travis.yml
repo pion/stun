@@ -1,6 +1,9 @@
 language: go
 
-sudo: false
+sudo: required
+
+services:
+  - docker
 
 go:
   - master
