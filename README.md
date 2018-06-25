@@ -4,8 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/gortc/stun/badge.svg?branch=master&v=1)](https://coveralls.io/github/gortc/stun?branch=master)
 [![Go Report](https://goreportcard.com/badge/github.com/gortc/stun?camo=retarded)](http://goreportcard.com/report/gortc/stun)
 
-# stun
-Package stun implements Session Traversal Utilities for NAT (STUN) with no external dependencies and focuses on speed.
+# STUN
+Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC 5389](https://tools.ietf.org/html/rfc5389)] with no external dependencies and focuses on speed.
 See [example](https://godoc.org/github.com/gortc/stun#example-Message) or [stun server](https://github.com/gortc/stund) for usage.
 
 ## RFCs
@@ -19,7 +19,7 @@ IPv6 | ![status](https://img.shields.io/badge/status-research-orange.svg) | [![s
 [(TLS-over-)TCP](https://tools.ietf.org/html/rfc5389#section-7.2.2) | ![status](https://img.shields.io/badge/status-research-orange.svg) | [![status](https://img.shields.io/badge/requirement-MUST-green.svg)](https://tools.ietf.org/html/rfc2119) | Sending over TCP or TLS-over-TCP
 [ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) | ![status](https://img.shields.io/badge/status-dev-blue.svg) | [![status](https://img.shields.io/badge/requirement-MUST-green.svg)](https://tools.ietf.org/html/rfc2119) | ALTERNATE-SERVER Mechanism
 
-# example
+# Example
 You can get your current IP address from any STUN server by sending
 binding request. See more idiomatic example at `cmd/stun-client`.
 ```go
@@ -58,7 +58,7 @@ func main() {
 }
 ```
 
-# stability
+# Stability
 Package is currently approaching beta stage, API should be fairly stable
 and implementation is almost complete. Bug reports are welcome.
 
@@ -69,10 +69,10 @@ the only exception is constants for attribute or message types.
 RFC 5389 obsoletes RFC 3489, so implementation was ignored by purpose, however,
 RFC 3489 can be easily implemented as separate package.
 
-# requirements
+# Requirements
 Go 1.9.2 is currently supported and tested in CI. Should work on 1.8, 1.7, and tip.
 
-# benchmarks
+# Benchmarks
 
 Intel(R) Core(TM) i7-8700K:
 
@@ -124,7 +124,7 @@ BenchmarkXORMappedAddress_GetFrom-12         1000000000     22.30 ns/op         
 ok  	github.com/gortc/stun	698.712s
 ```
 
-# development
+# Development goals
 
 stun package is low-level core gortc module, so security, efficiency (both memory and cpu), simplicity,
 code quality, and low dependencies are paramount goals.
