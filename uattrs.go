@@ -4,7 +4,7 @@ import "errors"
 
 // UnknownAttributes represents UNKNOWN-ATTRIBUTES attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.9
+// RFC 5389 Section 15.9
 type UnknownAttributes []AttrType
 
 func (a UnknownAttributes) String() string {

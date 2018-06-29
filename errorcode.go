@@ -8,7 +8,7 @@ import (
 
 // ErrorCodeAttribute represents ERROR-CODE attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.6
+// RFC 5389 Section 15.6
 type ErrorCodeAttribute struct {
 	Code   ErrorCode
 	Reason []byte
@@ -100,7 +100,7 @@ const (
 
 // Error codes from RFC 5766.
 //
-// https://trac.tools.ietf.org/html/rfc5766#section-15
+// RFC 5766 Section 15
 const (
 	CodeForbidden             ErrorCode = 403 // Forbidden
 	CodeAllocMismatch         ErrorCode = 437 // Allocation Mismatch

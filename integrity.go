@@ -40,7 +40,7 @@ func NewShortTermIntegrity(password string) MessageIntegrity {
 // version of MessageIntegrity is not implemented. Implementation and changes
 // to it is subject to security review.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.4
+// RFC 5389 Section 15.4
 type MessageIntegrity []byte
 
 // ErrFingerprintBeforeIntegrity means that FINGEPRINT attribute is already in

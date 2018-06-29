@@ -7,7 +7,7 @@ func NewUsername(username string) Username {
 
 // Username represents USERNAME attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.3
+// RFC 5389 Section 15.3
 type Username []byte
 
 func (u Username) String() string {
@@ -34,7 +34,7 @@ func NewRealm(realm string) Realm {
 
 // Realm represents REALM attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.7
+// RFC 5389 Section 15.7
 type Realm []byte
 
 func (n Realm) String() string {
@@ -57,7 +57,7 @@ const softwareRawMaxB = 763
 
 // Software is SOFTWARE attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.10
+// RFC 5389 Section 15.10
 type Software []byte
 
 func (s Software) String() string {
@@ -81,7 +81,7 @@ func (s *Software) GetFrom(m *Message) error {
 
 // Nonce represents NONCE attribute.
 //
-// https://tools.ietf.org/html/rfc5389#section-15.8
+// RFC 5389 Section 15.8
 type Nonce []byte
 
 // NewNonce returns new Nonce from string.
