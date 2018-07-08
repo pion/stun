@@ -1,7 +1,6 @@
 package stun
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/rand"
 
@@ -118,8 +117,8 @@ func verifyStunHeaderMostSignificant2Bits(header []byte) bool {
 func verifyMagicCookie(header []byte) error {
 	const magicCookie = 0x2112A442
 	c := header[magicCookieStart : magicCookieStart+magicCookieLength]
-	if binary.BigEndian.Uint32(c) != magicCookie {
-		return errors.Errorf("stun header magic cookie invalid; %v != %v (expected)", binary.BigEndian.Uint32(c), magicCookie)
+	if enc.Uint32(c) != magicCookie {
+		return errors.Errorf("stun header magic cookie invalid; %v != %v (expected)", enc.Uint32(c), magicCookie)
 	}
 	return nil
 }
@@ -131,7 +130,7 @@ func verifyMagicCookie(header []byte) error {
 // from packets of other protocols.
 // https://tools.ietf.org/html/rfc5389#section-6
 func getMessageLength(header []byte) (uint16, error) {
-	messageLength := binary.BigEndian.Uint16(header[messageLengthStart : messageLengthStart+messageLengthLength])
+	messageLength := enc.Uint16(header[messageLengthStart : messageLengthStart+messageLengthLength])
 	if messageLength%4 != 0 {
 		return 0, errors.Errorf("stun header message length must be a factor of 4 (%d)", messageLength)
 	}
@@ -170,7 +169,7 @@ func setMessageType(header []byte, class MessageClass, method Method) {
 	mt |= (c & 0x1) << 4
 	mt |= (c >> 1) << 8
 
-	binary.BigEndian.PutUint16(header[messageHeaderStart:], mt)
+	enc.PutUint16(header[messageHeaderStart:], mt)
 }
 
 func getMessageType(header []byte) (MessageClass, Method) {
@@ -199,8 +198,8 @@ func getMessageType(header []byte) (MessageClass, Method) {
 // |                         Value (variable)                ....
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 func getAttribute(attribute []byte, offset int) *RawAttribute {
-	typ := AttrType(binary.BigEndian.Uint16(attribute))
-	len := binary.BigEndian.Uint16(attribute[attrLengthStart : attrLengthStart+attrLengthLength])
+	typ := AttrType(enc.Uint16(attribute))
+	len := enc.Uint16(attribute[attrLengthStart : attrLengthStart+attrLengthLength])
 	pad := (attrLengthMultiple - (len % attrLengthMultiple)) % attrLengthMultiple
 	return &RawAttribute{typ, len, attribute[attrValueStart : attrValueStart+len], pad, offset}
 }
@@ -278,7 +277,7 @@ func (m *Message) GetAllAttributes(attrType AttrType) ([]*RawAttribute, bool) {
 }
 
 func (m *Message) CommitLength() {
-	binary.BigEndian.PutUint16(m.Raw[messageLengthStart:], uint16(m.Length))
+	enc.PutUint16(m.Raw[messageLengthStart:], uint16(m.Length))
 }
 
 func (m *Message) AddAttribute(attrType AttrType, v []byte) {
@@ -293,8 +292,8 @@ func (m *Message) AddAttribute(attrType AttrType, v []byte) {
 
 	a := make([]byte, attrHeaderLength+ra.Length+ra.Pad)
 
-	binary.BigEndian.PutUint16(a, uint16(ra.Type))
-	binary.BigEndian.PutUint16(a[attrLengthStart:attrLengthStart+attrLengthLength], ra.Length)
+	enc.PutUint16(a, uint16(ra.Type))
+	enc.PutUint16(a[attrLengthStart:attrLengthStart+attrLengthLength], ra.Length)
 
 	copy(a[attrValueStart:], ra.Value)
 

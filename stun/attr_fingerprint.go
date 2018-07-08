@@ -1,7 +1,6 @@
 package stun
 
 import (
-	"encoding/binary"
 	"hash/crc32"
 
 	"github.com/pkg/errors"
@@ -30,7 +29,7 @@ func (s *Fingerprint) Pack(message *Message) error {
 	message.Length += attrHeaderLength + fingerprintLength
 	message.CommitLength()
 	v := make([]byte, fingerprintLength)
-	binary.BigEndian.PutUint32(v, calculateFingerprint(message.Raw))
+	enc.PutUint32(v, calculateFingerprint(message.Raw))
 	message.Length = prevLen
 
 	message.AddAttribute(AttrFingerprint, v)
@@ -39,7 +38,7 @@ func (s *Fingerprint) Pack(message *Message) error {
 
 func (s *Fingerprint) Unpack(message *Message, rawAttribute *RawAttribute) error {
 
-	s.Fingerprint = binary.BigEndian.Uint32(rawAttribute.Value)
+	s.Fingerprint = enc.Uint32(rawAttribute.Value)
 
 	expected := calculateFingerprint(message.Raw[:rawAttribute.Offset])
 

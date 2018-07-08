@@ -1,7 +1,6 @@
 package stun
 
 import (
-	"encoding/binary"
 	"io"
 	"net"
 
@@ -97,9 +96,9 @@ func (x *XorAddress) packInner(message *Message) ([]byte, error) {
 	v := make([]byte, len)
 
 	// Family
-	binary.BigEndian.PutUint16(v[familyStart:familyStart+familyLength], family)
+	enc.PutUint16(v[familyStart:familyStart+familyLength], family)
 	// Port
-	binary.BigEndian.PutUint16(v[portStart:portStart+portLength], uint16(x.Port))
+	enc.PutUint16(v[portStart:portStart+portLength], uint16(x.Port))
 	xor(v[portStart:portStart+portLength], v[portStart:portStart+portLength], message.TransactionID[0:2])
 	// Address
 	copy(v[addressStart:], ip)
@@ -115,7 +114,7 @@ func (x *XorAddress) Unpack(message *Message, rawAttribute *RawAttribute) error 
 		return io.ErrUnexpectedEOF
 	}
 
-	family := binary.BigEndian.Uint16(v[familyStart : familyStart+familyLength])
+	family := enc.Uint16(v[familyStart : familyStart+familyLength])
 
 	if family != familyIPv4 && family != familyIPv6 {
 		return errors.Errorf("invalid family %d (expected IPv4(%d) or IPv6(%d)", family, familyIPv4, familyIPv6)
@@ -129,7 +128,7 @@ func (x *XorAddress) Unpack(message *Message, rawAttribute *RawAttribute) error 
 	// Transaction ID [0,2] is top half of magic cookie
 	xor(p[:], v[portStart:portStart+portLength], message.TransactionID[0:2])
 
-	x.Port = int(binary.BigEndian.Uint16(p[:]))
+	x.Port = int(enc.Uint16(p[:]))
 
 	al := net.IPv4len
 	if family == familyIPv6 {

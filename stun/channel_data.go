@@ -1,8 +1,6 @@
 package stun
 
 import (
-	"encoding/binary"
-
 	"github.com/pkg/errors"
 )
 
@@ -29,7 +27,7 @@ func NewChannelData(packet []byte) (*ChannelData, error) {
 //  field in the ChannelData message and channel numbers fall in the
 //  range 0x4000 - 0x7FFF).
 func getChannelNumber(header []byte) (uint16, error) {
-	cn := binary.BigEndian.Uint16(header)
+	cn := enc.Uint16(header)
 	if cn < 0x4000 || cn > 0x7FFF {
 		return 0, errors.Errorf("ChannelNumber is out of range: %d", cn)
 	}
@@ -37,5 +35,5 @@ func getChannelNumber(header []byte) (uint16, error) {
 }
 
 func getChannelLength(header []byte) uint16 {
-	return binary.BigEndian.Uint16(header[2:])
+	return enc.Uint16(header[2:])
 }

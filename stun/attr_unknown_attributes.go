@@ -1,8 +1,6 @@
 package stun
 
 import (
-	"encoding/binary"
-
 	"github.com/pkg/errors"
 )
 
@@ -43,7 +41,7 @@ func (u *UnknownAttributes) Pack(message *Message) error {
 
 	var v [8]byte
 	for i, attr := range u.Attributes {
-		binary.BigEndian.PutUint16(v[i*2:], uint16(attr))
+		enc.PutUint16(v[i*2:], uint16(attr))
 	}
 
 	message.AddAttribute(AttrUnknownAttributes, v[0:])
