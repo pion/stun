@@ -95,6 +95,9 @@ const (
 	magicCookieLength   int = 4
 	transactionIDStart  int = 4
 	transactionIDLength int = 16
+
+	// TransactionIDSize is the size of the transaction according to RFC 5389: 96 bits
+	TransactionIDSize = 96 / 8
 )
 
 type Message struct {
