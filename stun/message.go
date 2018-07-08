@@ -204,6 +204,7 @@ func getAttribute(attribute []byte, offset int) *RawAttribute {
 	return &RawAttribute{typ, len, attribute[attrValueStart : attrValueStart+len], pad, offset}
 }
 
+// NewMessage parses a binary STUN message into a Message struct
 // TODO Break this apart, too big
 func NewMessage(packet []byte) (*Message, error) {
 

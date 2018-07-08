@@ -4,9 +4,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type MessageBuilder struct {
-}
-
 func Build(class MessageClass, method Method, transactionID []byte, attrs ...Attribute) (*Message, error) {
 
 	m := &Message{

@@ -13,6 +13,7 @@ type XorMappedAddress struct {
 	XorAddress
 }
 
+// Pack writes an XorMappedAddress into a message
 func (x *XorMappedAddress) Pack(message *Message) error {
 	v, err := x.packInner(message)
 	if err != nil {
