@@ -36,6 +36,10 @@ func NewClient(protocol, server string, deadline time.Duration) (*Client, error)
 	}, nil
 }
 
+func (c *Client) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
 // Close disconnects the client
 func (c *Client) Close() error {
 	return c.conn.Close()
