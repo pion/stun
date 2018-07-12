@@ -382,7 +382,7 @@ func (m *Message) Write(tBuf []byte) (int, error) {
 // CloneTo clones m to b securing any further m mutations.
 func (m *Message) CloneTo(b *Message) error {
 	// TODO(ar): implement low-level copy.
-	b.Raw = append(b.Raw[:], m.Raw...)
+	b.Raw = append(b.Raw[:0], m.Raw...)
 	return b.Decode()
 }
 
