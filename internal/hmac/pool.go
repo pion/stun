@@ -7,7 +7,7 @@ import (
 )
 
 func resetBytes(b []byte) {
-	for i := 0; i < len(b); i++ {
+	for i := range b {
 		b[i] = 0
 	}
 }
