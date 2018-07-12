@@ -81,47 +81,50 @@ goos: linux
 goarch: amd64
 pkg: github.com/gortc/stun
 PASS
-benchmark                                          iter       time/iter      throughput   bytes alloc        allocs
----------                                          ----       ---------      ----------   -----------        ------
-BenchmarkMappedAddress_AddTo-12              1000000000     22.90 ns/op                        0 B/op   0 allocs/op
-BenchmarkAlternateServer_AddTo-12            1000000000     23.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkAgent_GC-12                           10000000   2217.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkAgent_Process-12                     300000000     52.80 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_GetNotFound-12              3000000000      4.13 ns/op                        0 B/op   0 allocs/op
-BenchmarkClient_Do-12                          30000000    495.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkErrorCode_AddTo-12                   300000000     41.10 ns/op                        0 B/op   0 allocs/op
-BenchmarkErrorCodeAttribute_AddTo-12          500000000     30.90 ns/op                        0 B/op   0 allocs/op
-BenchmarkErrorCodeAttribute_GetFrom-12       2000000000      7.84 ns/op                        0 B/op   0 allocs/op
-BenchmarkFingerprint_AddTo-12                 300000000     46.60 ns/op     944.52 MB/s        0 B/op   0 allocs/op
-BenchmarkFingerprint_Check-12                 500000000     37.20 ns/op    1397.50 MB/s        0 B/op   0 allocs/op
-BenchmarkBuildOverhead/Build-12               100000000    133.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkBuildOverhead/BuildNonPointer-12     100000000    262.00 ns/op                      100 B/op   4 allocs/op
-BenchmarkBuildOverhead/Raw-12                 100000000    119.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessageIntegrity_AddTo-12             20000000   1058.00 ns/op      18.89 MB/s      480 B/op   6 allocs/op
-BenchmarkMessageIntegrity_Check-12             20000000   1023.00 ns/op      31.27 MB/s      480 B/op   6 allocs/op
-BenchmarkMessage_Write-12                    1000000000     16.10 ns/op    1734.19 MB/s        0 B/op   0 allocs/op
-BenchmarkMessageType_Value-12               10000000000      0.23 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_WriteTo-12                  2000000000      8.19 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_ReadFrom-12                 1000000000     18.00 ns/op    1108.32 MB/s        0 B/op   0 allocs/op
-BenchmarkMessage_ReadBytes-12                2000000000     10.50 ns/op    1896.39 MB/s        0 B/op   0 allocs/op
-BenchmarkIsMessage-12                       10000000000      0.64 ns/op   31241.13 MB/s        0 B/op   0 allocs/op
-BenchmarkMessage_NewTransactionID-12           50000000    385.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessageFull-12                       100000000    134.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessageFullHardcore-12               300000000     52.70 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_WriteHeader-12              3000000000      5.21 ns/op                        0 B/op   0 allocs/op
-BenchmarkUsername_AddTo-12                   1000000000     14.60 ns/op                        0 B/op   0 allocs/op
-BenchmarkUsername_GetFrom-12                 2000000000     11.70 ns/op                        0 B/op   0 allocs/op
-BenchmarkNonce_AddTo-12                      1000000000     20.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkNonce_AddTo_BadLength-12             300000000     49.40 ns/op                       32 B/op   1 allocs/op
-BenchmarkNonce_GetFrom-12                    2000000000     11.80 ns/op                        0 B/op   0 allocs/op
-BenchmarkUnknownAttributes/AddTo-12          1000000000     18.50 ns/op                        0 B/op   0 allocs/op
-BenchmarkUnknownAttributes/GetFrom-12        1000000000     13.40 ns/op                        0 B/op   0 allocs/op
-BenchmarkXOR-12                              1000000000     14.00 ns/op   73071.52 MB/s        0 B/op   0 allocs/op
-BenchmarkXORSafe-12                           100000000    102.00 ns/op    9945.44 MB/s        0 B/op   0 allocs/op
-BenchmarkXORFast-12                          1000000000     13.60 ns/op   75332.68 MB/s        0 B/op   0 allocs/op
-BenchmarkXORMappedAddress_AddTo-12            500000000     35.20 ns/op                        0 B/op   0 allocs/op
-BenchmarkXORMappedAddress_GetFrom-12         1000000000     22.30 ns/op                        0 B/op   0 allocs/op
-ok  	github.com/gortc/stun	698.712s
+benchmark                                         iter       time/iter      throughput   bytes alloc        allocs
+---------                                         ----       ---------      ----------   -----------        ------
+BenchmarkMappedAddress_AddTo-12              100000000     22.80 ns/op                        0 B/op   0 allocs/op
+BenchmarkAlternateServer_AddTo-12            100000000     22.80 ns/op                        0 B/op   0 allocs/op
+BenchmarkAgent_GC-12                           1000000   1943.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkAgent_Process-12                     30000000     50.60 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_GetNotFound-12              300000000      4.21 ns/op                        0 B/op   0 allocs/op
+BenchmarkClient_Do-12                          3000000    710.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCode_AddTo-12                   30000000     41.30 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCodeAttribute_AddTo-12          50000000     31.10 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCodeAttribute_GetFrom-12       200000000      7.77 ns/op                        0 B/op   0 allocs/op
+BenchmarkFingerprint_AddTo-12                 30000000     43.60 ns/op    1008.12 MB/s        0 B/op   0 allocs/op
+BenchmarkFingerprint_Check-12                 50000000     36.60 ns/op    1422.45 MB/s        0 B/op   0 allocs/op
+BenchmarkBuildOverhead/Build-12               10000000    134.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkBuildOverhead/BuildNonPointer-12      5000000    301.00 ns/op                      100 B/op   4 allocs/op
+BenchmarkBuildOverhead/Raw-12                 20000000    112.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageIntegrity_AddTo-12             2000000    695.00 ns/op      28.77 MB/s        0 B/op   0 allocs/op
+BenchmarkMessageIntegrity_Check-12             2000000    692.00 ns/op      46.20 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_Write-12                    100000000     16.60 ns/op    1691.61 MB/s        0 B/op   0 allocs/op
+BenchmarkMessageType_Value-12               2000000000      0.23 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_WriteTo-12                  200000000      8.40 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_ReadFrom-12                 100000000     16.00 ns/op    1248.26 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_ReadBytes-12                100000000     10.50 ns/op    1906.19 MB/s        0 B/op   0 allocs/op
+BenchmarkIsMessage-12                       2000000000      0.66 ns/op   30498.98 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_NewTransactionID-12           3000000    529.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageFull-12                       10000000    134.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageFullHardcore-12               30000000     54.50 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_WriteHeader-12              300000000      5.48 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_CloneTo-12                   50000000     24.00 ns/op    2835.42 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_AddTo-12                    300000000      4.19 ns/op                        0 B/op   0 allocs/op
+BenchmarkDecode-12                           100000000     14.80 ns/op                        0 B/op   0 allocs/op
+BenchmarkUsername_AddTo-12                   100000000     14.90 ns/op                        0 B/op   0 allocs/op
+BenchmarkUsername_GetFrom-12                 100000000     11.60 ns/op                        0 B/op   0 allocs/op
+BenchmarkNonce_AddTo-12                      100000000     20.30 ns/op                        0 B/op   0 allocs/op
+BenchmarkNonce_AddTo_BadLength-12            100000000     59.30 ns/op                       32 B/op   1 allocs/op
+BenchmarkNonce_GetFrom-12                    100000000     11.70 ns/op                        0 B/op   0 allocs/op
+BenchmarkUnknownAttributes/AddTo-12          100000000     18.70 ns/op                        0 B/op   0 allocs/op
+BenchmarkUnknownAttributes/GetFrom-12        100000000     13.80 ns/op                        0 B/op   0 allocs/op
+BenchmarkXOR-12                              100000000     13.20 ns/op   77486.83 MB/s
+BenchmarkXORSafe-12                           20000000     90.50 ns/op   11313.32 MB/s
+BenchmarkXORFast-12                          100000000     12.80 ns/op   79780.04 MB/s
+BenchmarkXORMappedAddress_AddTo-12            50000000     33.60 ns/op                        0 B/op   0 allocs/op
+BenchmarkXORMappedAddress_GetFrom-12         100000000     23.10 ns/op                        0 B/op   0 allocs/op
+ok  	github.com/gortc/stun	75.241s
 ```
 
 # Development goals
