@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-func resetBytes(b []byte) {
+func setZeroes(b []byte) {
 	for i := range b {
 		b[i] = 0
 	}
@@ -15,8 +15,8 @@ func resetBytes(b []byte) {
 func (h *hmac) resetTo(key []byte) {
 	h.outer.Reset()
 	h.inner.Reset()
-	resetBytes(h.ipad)
-	resetBytes(h.opad)
+	setZeroes(h.ipad)
+	setZeroes(h.opad)
 	if len(key) > h.blocksize {
 		// If key is too big, hash it.
 		h.outer.Write(key)
