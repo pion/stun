@@ -1,12 +1,13 @@
 package stun
 
 import (
-	"crypto/hmac"
 	"crypto/md5" // #nosec
 	"crypto/sha1"
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/gortc/stun/internal/hmac"
 )
 
 // separator for credentials.
