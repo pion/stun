@@ -65,11 +65,17 @@ func (h *hmac) Reset() {
 	h.inner.Write(h.ipad)
 }
 
+func resetBytes(b []byte) {
+	for i := 0; i < len(b); i++ {
+		b[i] = 0
+	}
+}
+
 func (h *hmac) resetTo(key []byte) {
 	h.outer.Reset()
 	h.inner.Reset()
-	h.size = h.inner.Size()
-	h.blocksize = h.inner.BlockSize()
+	resetBytes(h.ipad)
+	resetBytes(h.opad)
 	if len(key) > h.blocksize {
 		// If key is too big, hash it.
 		h.outer.Write(key)
