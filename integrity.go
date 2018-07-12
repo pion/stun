@@ -2,7 +2,6 @@ package stun
 
 import (
 	"crypto/md5" // #nosec
-	"crypto/sha1"
 	"errors"
 	"fmt"
 	"strings"
@@ -93,8 +92,9 @@ func (i *IntegrityErr) Error() string {
 }
 
 func newHMAC(key, message []byte) []byte {
-	mac := hmac.New(sha1.New, key)
+	mac := hmac.AcquireSHA1(key)
 	writeOrPanic(mac, message)
+	defer hmac.PutSHA1(mac)
 	return mac.Sum(nil)
 }
 
