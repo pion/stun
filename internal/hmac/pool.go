@@ -6,6 +6,9 @@ import (
 	"sync"
 )
 
+// setZeroes sets all bytes from b to zeroes.
+//
+// See https://github.com/golang/go/issues/5373
 func setZeroes(b []byte) {
 	for i := range b {
 		b[i] = 0
