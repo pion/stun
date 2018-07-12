@@ -639,6 +639,7 @@ func BenchmarkMessage_WriteHeader(b *testing.B) {
 			Method: MethodBinding,
 		},
 	}
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		m.WriteHeader()
 	}
