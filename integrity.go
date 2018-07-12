@@ -2,11 +2,10 @@ package stun
 
 import (
 	"crypto/md5" // #nosec
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"strings"
-
-	"crypto/sha1"
 
 	"github.com/gortc/stun/internal/hmac"
 )
