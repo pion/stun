@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"crypto/sha1"
+
 	"github.com/gortc/stun/internal/hmac"
 )
 
@@ -71,10 +73,16 @@ func (i MessageIntegrity) AddTo(m *Message) error {
 	length := m.Length
 	// Adjusting m.Length to contain MESSAGE-INTEGRITY TLV.
 	m.Length += messageIntegritySize + attributeHeaderSize
-	m.WriteLength()        // writing length to m.Raw
-	v := newHMAC(i, m.Raw) // calculating HMAC for adjusted m.Raw
-	m.Length = length      // changing m.Length back
-	m.Add(AttrMessageIntegrity, v)
+	m.WriteLength()                            // writing length to m.Raw
+	v := newHMAC(i, m.Raw, m.Raw[len(m.Raw):]) // calculating HMAC for adjusted m.Raw
+	m.Length = length                          // changing m.Length back
+
+	// Copy hmac value to temporary variable to protect it from resetting
+	// while processing m.Add call.
+	vBuf := make([]byte, sha1.Size)
+	copy(vBuf, v)
+
+	m.Add(AttrMessageIntegrity, vBuf)
 	return nil
 }
 
@@ -91,11 +99,11 @@ func (i *IntegrityErr) Error() string {
 	)
 }
 
-func newHMAC(key, message []byte) []byte {
+func newHMAC(key, message, buf []byte) []byte {
 	mac := hmac.AcquireSHA1(key)
 	writeOrPanic(mac, message)
 	defer hmac.PutSHA1(mac)
-	return mac.Sum(nil)
+	return mac.Sum(buf)
 }
 
 // Check checks MESSAGE-INTEGRITY attribute. Be advised, CPU and allocations
@@ -127,7 +135,7 @@ func (i MessageIntegrity) Check(m *Message) error {
 	// startOfHMAC should be first byte of integrity attribute.
 	startOfHMAC := messageHeaderSize + m.Length - (attributeHeaderSize + messageIntegritySize)
 	b := m.Raw[:startOfHMAC] // data before integrity attribute
-	expected := newHMAC(i, b)
+	expected := newHMAC(i, b, m.Raw[len(m.Raw):])
 	m.Length = length
 	m.WriteLength() // writing length back
 	if !hmac.Equal(v, expected) {
