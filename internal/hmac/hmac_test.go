@@ -523,6 +523,7 @@ var hmacTests = []hmacTest{
 func TestHMAC(t *testing.T) {
 	for i, tt := range hmacTests {
 		h := New(tt.hash, tt.key)
+		h.(*hmac).resetTo(tt.key)
 		if s := h.Size(); s != tt.size {
 			t.Errorf("Size: got %v, want %v", s, tt.size)
 		}
