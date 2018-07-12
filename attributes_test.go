@@ -12,6 +12,15 @@ func BenchmarkMessage_GetNotFound(b *testing.B) {
 	}
 }
 
+func BenchmarkMessage_Get(b *testing.B) {
+	m := New()
+	m.Add(AttrUsername, []byte{1, 2, 3, 4, 5, 6, 7})
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		m.Get(AttrUsername)
+	}
+}
+
 func TestMessage_GetNoAllocs(t *testing.T) {
 	m := New()
 	NewSoftware("c").AddTo(m)
