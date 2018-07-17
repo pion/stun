@@ -8,7 +8,7 @@ import (
 // FingerprintAttr represents FINGERPRINT attribute.
 //
 // RFC 5389 Section 15.5
-type FingerprintAttr byte
+type FingerprintAttr struct{}
 
 // CRCMismatch represents CRC check error.
 type CRCMismatch struct {
