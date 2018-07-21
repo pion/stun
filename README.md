@@ -7,7 +7,7 @@
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC 5389](https://tools.ietf.org/html/rfc5389)]
 with no external dependencies and zero allocations in hot paths.
-Complies to [gortc principles](https://github.com/gortc/dev#principles) as core package.
+Complies to [gortc principles](https://github.com/gortc/dev/blob/master/README.md#principles) as core package.
 
 See [example](https://godoc.org/github.com/gortc/stun#example-Message) and [stun server](https://github.com/gortc/stund) for simple usage,
 or [gortcd](https://github.com/gortc/gortcd) for advanced one.
