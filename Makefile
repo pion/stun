@@ -34,7 +34,7 @@ lint:
 		-e "_test.go.+(gocyclo|errcheck|dupl)" \
 		-e "attributes\.go.+credentials,.+,LOW.+\(gas\)" \
                 -e "Message.+\(aligncheck\)" \
-        -e "arg .+ for .+ verb %. of wrong type" \
+		-e "arg .+ for .+ verb %. of wrong type" \
 		-e "error return value not checked \(fmt.Fprint\(h, k\)\) " \
 		-e " parameter result 0 \(int\) is never used " \
 		--enable="lll" --line-length=100 \
