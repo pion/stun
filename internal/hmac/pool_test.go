@@ -69,7 +69,7 @@ func TestHMACReset(t *testing.T) {
 
 func TestHMACPool(t *testing.T) {
 	for i, tt := range hmacTests {
-		if tt.blocksize != sha1.BlockSize {
+		if tt.blocksize != sha1.BlockSize || tt.size != sha1.Size {
 			continue
 		}
 		h := AcquireSHA1(tt.key)
