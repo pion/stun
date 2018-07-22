@@ -2,6 +2,7 @@ package hmac
 
 import (
 	"crypto/sha1"
+	"crypto/sha256"
 	"hash"
 	"sync"
 )
@@ -54,4 +55,24 @@ func AcquireSHA1(key []byte) hash.Hash {
 func PutSHA1(h hash.Hash) {
 	hm := h.(*hmac)
 	hmacSHA1Pool.Put(hm)
+}
+
+var hmacSHA256Pool = &sync.Pool{
+	New: func() interface{} {
+		h := New(sha256.New, make([]byte, sha256.BlockSize))
+		return h
+	},
+}
+
+// AcquireSHA256 returns new HMAC from SHA256 pool.
+func AcquireSHA256(key []byte) hash.Hash {
+	h := hmacSHA256Pool.Get().(*hmac)
+	h.resetTo(key)
+	return h
+}
+
+// PutSHA256 puts h to SHA256 pool.
+func PutSHA256(h hash.Hash) {
+	hm := h.(*hmac)
+	hmacSHA256Pool.Put(hm)
 }
