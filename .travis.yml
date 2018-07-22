@@ -30,5 +30,5 @@ script:
  - cd integration-test && ./test.sh && cd -
  - make lint
 
- after_success:
+after_success:
  - bash <(curl -s https://codecov.io/bash)
