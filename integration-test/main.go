@@ -47,7 +47,7 @@ func main() {
 	}
 	timeout := time.Second
 	deadline := time.Now().Add(timeout)
-	if err := client.Do(request, deadline, func(event stun.Event) {
+	if err = client.Do(request, deadline, func(event stun.Event) {
 		if event.Error != nil {
 			log.Fatalln("got event with error:", event.Error)
 		}
