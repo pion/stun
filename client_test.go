@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
@@ -83,9 +84,10 @@ func BenchmarkClient_Do(b *testing.B) {
 }
 
 type testConnection struct {
-	write   func([]byte) (int, error)
-	b       []byte
-	stopped bool
+	write      func([]byte) (int, error)
+	b          []byte
+	stopped    bool
+	stoppedMux sync.Mutex
 }
 
 func (t *testConnection) Write(b []byte) (int, error) {
@@ -93,6 +95,8 @@ func (t *testConnection) Write(b []byte) (int, error) {
 }
 
 func (t *testConnection) Close() error {
+	t.stoppedMux.Lock()
+	defer t.stoppedMux.Unlock()
 	if t.stopped {
 		return errors.New("already stopped")
 	}
@@ -101,6 +105,8 @@ func (t *testConnection) Close() error {
 }
 
 func (t *testConnection) Read(b []byte) (int, error) {
+	t.stoppedMux.Lock()
+	defer t.stoppedMux.Unlock()
 	if t.stopped {
 		return 0, io.EOF
 	}

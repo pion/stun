@@ -196,11 +196,12 @@ func (a *Agent) Process(m *Message) error {
 	}
 	t, ok := a.transactions[m.TransactionID]
 	delete(a.transactions, m.TransactionID)
+	handler := a.zeroHandler
 	a.mux.Unlock()
 	if ok {
 		t.h.HandleEvent(e)
-	} else if a.zeroHandler != nil {
-		a.zeroHandler.HandleEvent(e)
+	} else if handler != nil {
+		handler.HandleEvent(e)
 	}
 	return nil
 }
