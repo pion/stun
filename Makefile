@@ -40,7 +40,8 @@ lint:
 		-e "cmd\/" \
 		-e "integration-test\/.+(gocyclo|errcheck|dupl)" \
 		-e "internal\/hmac\/hmac_test.+(lll)" \
-		-e "internal\/hmac\/hmac.+Errors unhandled" \
+		-e "internal\/hmac\/.+Errors unhandled" \
+		-e "internal\/hmac\/.+parameter blocksize always receives 64" \
 		--enable="lll" --line-length=100 \
 		--enable="gofmt" \
 		--enable="goimports" \
