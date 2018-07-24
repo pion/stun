@@ -27,7 +27,7 @@ install: true
 
 script:
  - ./go.test.sh
- - cd integration-test && ./test.sh && cd -
+ - make test-integration
  - make lint
 
 after_success:

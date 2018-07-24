@@ -71,5 +71,5 @@ install:
 docker-build:
 	docker build -t gortc/stun .
 test-integration:
-	cd integration-test && bash ./test.sh
+	@cd integration-test && bash ./test.sh
 prepush: test lint test-integration
