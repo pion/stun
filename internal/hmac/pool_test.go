@@ -135,3 +135,19 @@ func TestHMACPool_SHA256(t *testing.T) {
 		PutSHA256(h)
 	}
 }
+
+func TestAssertBlockSize(t *testing.T) {
+	t.Run("Positive", func(t *testing.T) {
+		h := AcquireSHA1(make([]byte, 0, 1024))
+		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize)
+	})
+	t.Run("Negative", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("should panic")
+			}
+		}()
+		h := AcquireSHA256(make([]byte, 0, 1024))
+		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize)
+	})
+}
