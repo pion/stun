@@ -33,20 +33,16 @@ lint:
 		--enable-all \
 		-e "_test.go.+(gocyclo|errcheck|dupl)" \
 		-e "attributes\.go.+credentials,.+,LOW.+\(gas\)" \
-                -e "Message.+\(aligncheck\)" \
+		-e "Message.+\(aligncheck\)" \
 		-e "arg .+ for .+ verb %. of wrong type" \
 		-e "error return value not checked \(fmt.Fprint\(h, k\)\) " \
-		-e " parameter result 0 \(int\) is never used " \
+		-e "parameter result 0 \(int\) is never used" \
 		-e "cmd\/" \
 		-e "integration-test\/.+(gocyclo|errcheck|dupl)" \
 		-e "internal\/hmac\/hmac_test.+(lll)" \
 		-e "internal\/hmac\/.+Errors unhandled" \
 		-e "internal\/hmac\/.+parameter blocksize always receives 64" \
 		--enable="lll" --line-length=100 \
-		--enable="gofmt" \
-		--enable="goimports" \
-		--enable="misspell" \
-		--enable="unused" \
 		--disable="gochecknoglobals" \
 		--deadline=300s \
 		-j $(PROCS) \
