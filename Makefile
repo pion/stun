@@ -70,3 +70,5 @@ docker-build:
 test-integration:
 	@cd integration-test && bash ./test.sh
 prepush: test lint test-integration
+check-api:
+	api -c api/stun1.txt github.com/gortc/stun

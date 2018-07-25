@@ -22,10 +22,12 @@ matrix:
 before_install:
   - go get github.com/alecthomas/gometalinter
   - gometalinter --install
+  - go get github.com/gortc/api
 
 install: true
 
 script:
+ - make check-api
  - ./go.test.sh
  - make test-integration
  - make lint
