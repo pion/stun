@@ -7,7 +7,6 @@ services:
 
 os:
   - linux
-  - osx
 
 go:
   - master
