@@ -5,6 +5,10 @@ sudo: required
 services:
   - docker
 
+os:
+  - linux
+  - osx
+
 go:
   - master
   - 1.9.x
