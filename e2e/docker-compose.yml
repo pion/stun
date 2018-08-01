@@ -8,7 +8,7 @@ services:
       - stun-server
     build:
       context: ..
-      dockerfile: integration-test/Dockerfile
+      dockerfile: e2e/Dockerfile
       args:
         CI_GO_VERSION: ${CI_GO_VERSION}
   stun-server:

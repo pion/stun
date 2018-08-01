@@ -3,9 +3,9 @@ FROM golang:${CI_GO_VERSION}
 
 ADD . /go/src/github.com/gortc/stun
 
-WORKDIR /go/src/github.com/gortc/stun/integration-test
+WORKDIR /go/src/github.com/gortc/stun/e2e
 
 RUN go install .
 
-CMD ["integration-test"]
+CMD ["e2e"]
 
