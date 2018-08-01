@@ -38,7 +38,7 @@ lint:
 		-e "error return value not checked \(fmt.Fprint\(h, k\)\) " \
 		-e "parameter result 0 \(int\) is never used" \
 		-e "cmd\/" \
-		-e "integration-test\/.+(gocyclo|errcheck|dupl)" \
+		-e "e2e\/.+(gocyclo|errcheck|dupl)" \
 		-e "internal\/hmac\/hmac_test.+(lll)" \
 		-e "internal\/hmac\/.+Errors unhandled" \
 		-e "internal\/hmac\/.+parameter blocksize always receives 64" \
