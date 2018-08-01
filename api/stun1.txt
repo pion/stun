@@ -175,7 +175,6 @@ pkg github.com/gortc/stun, method (AttrType) Required() bool
 pkg github.com/gortc/stun, method (AttrType) String() string
 pkg github.com/gortc/stun, method (AttrType) Value() uint16
 pkg github.com/gortc/stun, method (Attributes) Get(AttrType) (RawAttribute, bool)
-pkg github.com/gortc/stun, method (CRCMismatch) Error() string
 pkg github.com/gortc/stun, method (CloseErr) Error() string
 pkg github.com/gortc/stun, method (DecodeErr) Error() string
 pkg github.com/gortc/stun, method (DecodeErr) IsInvalidCookie() bool
@@ -231,9 +230,6 @@ pkg github.com/gortc/stun, type AttrOverflowErr struct, Max int
 pkg github.com/gortc/stun, type AttrOverflowErr struct, Type AttrType
 pkg github.com/gortc/stun, type AttrType uint16
 pkg github.com/gortc/stun, type Attributes []RawAttribute
-pkg github.com/gortc/stun, type CRCMismatch struct
-pkg github.com/gortc/stun, type CRCMismatch struct, Actual uint32
-pkg github.com/gortc/stun, type CRCMismatch struct, Expected uint32
 pkg github.com/gortc/stun, type Checker interface { Check }
 pkg github.com/gortc/stun, type Checker interface, Check(*Message) error
 pkg github.com/gortc/stun, type Client struct
@@ -318,6 +314,7 @@ pkg github.com/gortc/stun, var ErrClientClosed error
 pkg github.com/gortc/stun, var ErrClientNotInitialized error
 pkg github.com/gortc/stun, var ErrDecodeToNil error
 pkg github.com/gortc/stun, var ErrFingerprintBeforeIntegrity error
+pkg github.com/gortc/stun, var ErrFingerprintMismatch error
 pkg github.com/gortc/stun, var ErrIntegrityMismatch error
 pkg github.com/gortc/stun, var ErrNoConnection error
 pkg github.com/gortc/stun, var ErrNoDefaultReason error

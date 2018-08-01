@@ -706,7 +706,11 @@ func ExampleMessage() {
 	}
 	fmt.Println("for corrupted message:")
 	decoded.Raw[22] = 33
-	fmt.Println("fingerprint:", Fingerprint.Check(decoded))
+	if Fingerprint.Check(decoded) == nil {
+		fmt.Println("fingerprint: ok")
+	} else {
+		fmt.Println("fingerprint: failed")
+	}
 
 	// Output:
 	// binding request l=48 attrs=3 id=AQIDBAUGBwgJAAEA buff length: 68
@@ -717,7 +721,7 @@ func ExampleMessage() {
 	// fingerprint is correct
 	// integrity ok
 	// for corrupted message:
-	// fingerprint: CRC mismatch: b36d2c38 (expected) != 8ef13141 (actual)
+	// fingerprint: failed
 }
 
 func TestAllocations(t *testing.T) {

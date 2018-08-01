@@ -34,8 +34,8 @@ func TestFingerprint_Check(t *testing.T) {
 		t.Error(err)
 	}
 	m.Raw[3] = m.Raw[3] + 1
-	if err, ok := Fingerprint.Check(m).(*CRCMismatch); !ok {
-		t.Error(err, "should be *CRCMissmatch")
+	if err := Fingerprint.Check(m); err == nil {
+		t.Error("should error")
 	}
 }
 

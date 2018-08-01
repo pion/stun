@@ -25,3 +25,13 @@ func checkHMAC(got, expected []byte) error {
 		Actual:   got,
 	}
 }
+
+func checkFingerprint(got, expected uint32) error {
+	if got == expected {
+		return nil
+	}
+	return &CRCMismatch{
+		Actual:   got,
+		Expected: expected,
+	}
+}

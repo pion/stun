@@ -18,3 +18,10 @@ func checkHMAC(got, expected []byte) error {
 	}
 	return ErrIntegrityMismatch
 }
+
+func checkFingerprint(got, expected uint32) error {
+	if got == expected {
+		return nil
+	}
+	return ErrFingerprintMismatch
+}
