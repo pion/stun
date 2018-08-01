@@ -134,7 +134,6 @@ pkg github.com/gortc/stun, method (*Client) Do(*Message, time.Time, func(Event))
 pkg github.com/gortc/stun, method (*Client) Indicate(*Message) error
 pkg github.com/gortc/stun, method (*Client) Start(*Message, time.Time, Handler) error
 pkg github.com/gortc/stun, method (*ErrorCodeAttribute) GetFrom(*Message) error
-pkg github.com/gortc/stun, method (*IntegrityErr) Error() string
 pkg github.com/gortc/stun, method (*MappedAddress) AddTo(*Message) error
 pkg github.com/gortc/stun, method (*MappedAddress) GetFrom(*Message) error
 pkg github.com/gortc/stun, method (*Message) Add(AttrType, []uint8)
@@ -274,9 +273,6 @@ pkg github.com/gortc/stun, type Getter interface, GetFrom(*Message) error
 pkg github.com/gortc/stun, type Handler interface { HandleEvent }
 pkg github.com/gortc/stun, type Handler interface, HandleEvent(Event)
 pkg github.com/gortc/stun, type HandlerFunc func(Event)
-pkg github.com/gortc/stun, type IntegrityErr struct
-pkg github.com/gortc/stun, type IntegrityErr struct, Actual []uint8
-pkg github.com/gortc/stun, type IntegrityErr struct, Expected []uint8
 pkg github.com/gortc/stun, type MappedAddress struct
 pkg github.com/gortc/stun, type MappedAddress struct, IP net.IP
 pkg github.com/gortc/stun, type MappedAddress struct, Port int
@@ -322,6 +318,7 @@ pkg github.com/gortc/stun, var ErrClientClosed error
 pkg github.com/gortc/stun, var ErrClientNotInitialized error
 pkg github.com/gortc/stun, var ErrDecodeToNil error
 pkg github.com/gortc/stun, var ErrFingerprintBeforeIntegrity error
+pkg github.com/gortc/stun, var ErrIntegrityMismatch error
 pkg github.com/gortc/stun, var ErrNoConnection error
 pkg github.com/gortc/stun, var ErrNoDefaultReason error
 pkg github.com/gortc/stun, var ErrTransactionExists error

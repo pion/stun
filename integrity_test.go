@@ -3,7 +3,6 @@ package stun
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"testing"
 )
 
@@ -14,10 +13,7 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(expected, i) {
-		t.Error(&IntegrityErr{
-			Expected: expected,
-			Actual:   i,
-		})
+		t.Error(ErrIntegrityMismatch)
 	}
 	t.Run("Check", func(t *testing.T) {
 		m := new(Message)
@@ -36,8 +32,8 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 			t.Error(err)
 		}
 		dM.Raw[24] += 12 // HMAC now invalid
-		if err, ok := i.Check(dM).(*IntegrityErr); !ok {
-			t.Error(err, "should be *IntegrityErr")
+		if i.Check(dM) == nil {
+			t.Error("should be invalid")
 		}
 	})
 }
@@ -64,12 +60,8 @@ func TestMessageIntegrityWithFingerprint(t *testing.T) {
 		t.Fatal(err)
 	}
 	m.Raw[24] = 33
-	errStr := fmt.Sprintf("Integrity check failed: 0x%s (expected) !- 0x%s (actual)",
-		"19985afb819c098acfe1c2771881227f14c70eaf",
-		"ef9da0e0caf0b0e4ff321e7b56f1e114c802cb7e",
-	)
-	if err := i.Check(m); err.Error() != errStr {
-		t.Fatal(err, "!=", errStr)
+	if err := i.Check(m); err == nil {
+		t.Fatal("mismatch expected")
 	}
 }
 

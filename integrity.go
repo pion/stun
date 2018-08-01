@@ -85,18 +85,8 @@ func (i MessageIntegrity) AddTo(m *Message) error {
 	return nil
 }
 
-// IntegrityErr occurs when computed HMAC differs from expected.
-type IntegrityErr struct {
-	Expected []byte
-	Actual   []byte
-}
-
-func (i *IntegrityErr) Error() string {
-	return fmt.Sprintf(
-		"Integrity check failed: 0x%x (expected) !- 0x%x (actual)",
-		i.Expected, i.Actual,
-	)
-}
+// ErrIntegrityMismatch means that computed HMAC differs from expected.
+var ErrIntegrityMismatch = errors.New("integrity check failed")
 
 func newHMAC(key, message, buf []byte) []byte {
 	mac := hmac.AcquireSHA1(key)
@@ -137,11 +127,8 @@ func (i MessageIntegrity) Check(m *Message) error {
 	expected := newHMAC(i, b, m.Raw[len(m.Raw):])
 	m.Length = length
 	m.WriteLength() // writing length back
-	if !hmac.Equal(v, expected) {
-		return &IntegrityErr{
-			Expected: expected,
-			Actual:   v,
-		}
+	if err = checkHMAC(v, expected); err != nil {
+		return err
 	}
 	return nil
 }
