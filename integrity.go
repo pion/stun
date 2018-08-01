@@ -127,8 +127,5 @@ func (i MessageIntegrity) Check(m *Message) error {
 	expected := newHMAC(i, b, m.Raw[len(m.Raw):])
 	m.Length = length
 	m.WriteLength() // writing length back
-	if err = checkHMAC(v, expected); err != nil {
-		return err
-	}
-	return nil
+	return checkHMAC(v, expected)
 }
