@@ -103,6 +103,7 @@ pkg github.com/gortc/stun, const MethodSend Method
 pkg github.com/gortc/stun, const TransactionIDSize = 12
 pkg github.com/gortc/stun, const TransactionIDSize ideal-int
 pkg github.com/gortc/stun, func Build(...Setter) (*Message, error)
+pkg github.com/gortc/stun, func CheckSize(AttrType, int, int) error
 pkg github.com/gortc/stun, func Decode([]uint8, *Message) error
 pkg github.com/gortc/stun, func Dial(string, string) (*Client, error)
 pkg github.com/gortc/stun, func FingerprintValue([]uint8) uint32
@@ -313,6 +314,7 @@ pkg github.com/gortc/stun, var BindingError MessageType
 pkg github.com/gortc/stun, var BindingRequest MessageType
 pkg github.com/gortc/stun, var BindingSuccess MessageType
 pkg github.com/gortc/stun, var ErrAgentClosed error
+pkg github.com/gortc/stun, var ErrAttrSizeInvalid error
 pkg github.com/gortc/stun, var ErrAttributeNotFound error
 pkg github.com/gortc/stun, var ErrBadIPLength error
 pkg github.com/gortc/stun, var ErrBadUnknownAttrsSize error

@@ -67,12 +67,8 @@ func (FingerprintAttr) Check(m *Message) error {
 	if err != nil {
 		return err
 	}
-	if len(b) != fingerprintSize {
-		return &AttrLengthErr{
-			Expected: fingerprintSize,
-			Got:      len(b),
-			Attr:     AttrFingerprint,
-		}
+	if err = CheckSize(AttrFingerprint, len(b), fingerprintSize); err != nil {
+		return err
 	}
 	val := bin.Uint32(b)
 	attrStart := len(m.Raw) - (fingerprintSize + attributeHeaderSize)
