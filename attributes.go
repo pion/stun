@@ -24,6 +24,16 @@ func (a Attributes) Get(t AttrType) (RawAttribute, bool) {
 // AttrType is attribute type.
 type AttrType uint16
 
+// Required returns true if type is from comprehension-required range (0x0000-0x7FFF).
+func (t AttrType) Required() bool {
+	return t <= 0x7FFF
+}
+
+// Optional returns true if type is from comprehension-optional range (0x8000-0xFFFF).
+func (t AttrType) Optional() bool {
+	return t >= 0x8000
+}
+
 // Attributes from comprehension-required range (0x0000-0x7FFF).
 const (
 	AttrMappedAddress     AttrType = 0x0001 // MAPPED-ADDRESS

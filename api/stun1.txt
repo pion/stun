@@ -170,6 +170,8 @@ pkg github.com/gortc/stun, method (*XORMappedAddress) GetFrom(*Message) error
 pkg github.com/gortc/stun, method (*XORMappedAddress) GetFromAs(*Message, AttrType) error
 pkg github.com/gortc/stun, method (AttrLengthErr) Error() string
 pkg github.com/gortc/stun, method (AttrOverflowErr) Error() string
+pkg github.com/gortc/stun, method (AttrType) Optional() bool
+pkg github.com/gortc/stun, method (AttrType) Required() bool
 pkg github.com/gortc/stun, method (AttrType) String() string
 pkg github.com/gortc/stun, method (AttrType) Value() uint16
 pkg github.com/gortc/stun, method (Attributes) Get(AttrType) (RawAttribute, bool)

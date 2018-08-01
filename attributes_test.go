@@ -90,3 +90,29 @@ func TestAttrLengthErr_Error(t *testing.T) {
 		t.Errorf("bad error string: %s", err)
 	}
 }
+
+func TestAttrTypeRange(t *testing.T) {
+	for _, a := range []AttrType{
+		AttrPriority,
+		AttrErrorCode,
+		AttrUseCandidate,
+		AttrEvenPort,
+	} {
+		t.Run(a.String(), func(t *testing.T) {
+			if a.Optional() || !a.Required() {
+				t.Error("should be required")
+			}
+		})
+	}
+	for _, a := range []AttrType{
+		AttrSoftware,
+		AttrICEControlled,
+		AttrOrigin,
+	} {
+		t.Run(a.String(), func(t *testing.T) {
+			if a.Required() || !a.Optional() {
+				t.Error("should be optional")
+			}
+		})
+	}
+}
