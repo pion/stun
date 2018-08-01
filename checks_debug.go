@@ -35,3 +35,9 @@ func checkFingerprint(got, expected uint32) error {
 		Expected: expected,
 	}
 }
+
+// IsAttrSizeInvalid returns true if error means that attribute size is invalid.
+func IsAttrSizeInvalid(err error) bool {
+	_, ok := err.(*AttrLengthErr)
+	return ok
+}

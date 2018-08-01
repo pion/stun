@@ -47,8 +47,8 @@ func TestFingerprint_CheckBad(t *testing.T) {
 		t.Error("should error")
 	}
 	m.Add(AttrFingerprint, []byte{1, 2, 3})
-	if err := Fingerprint.Check(m); err == nil {
-		t.Error("should error")
+	if !IsAttrSizeInvalid(Fingerprint.Check(m)) {
+		t.Error("IsAttrSizeInvalid should be true")
 	}
 }
 

@@ -107,6 +107,7 @@ pkg github.com/gortc/stun, func CheckSize(AttrType, int, int) error
 pkg github.com/gortc/stun, func Decode([]uint8, *Message) error
 pkg github.com/gortc/stun, func Dial(string, string) (*Client, error)
 pkg github.com/gortc/stun, func FingerprintValue([]uint8) uint32
+pkg github.com/gortc/stun, func IsAttrSizeInvalid(error) bool
 pkg github.com/gortc/stun, func IsMessage([]uint8) bool
 pkg github.com/gortc/stun, func MustBuild(...Setter) *Message
 pkg github.com/gortc/stun, func New() *Message
