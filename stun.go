@@ -7,7 +7,7 @@
 // low-level methods are available. On other hand, there are helpers that
 // reduce code repeat.
 //
-// See examples for Message for basic usage, or https://github.com/ernado/turn
+// See examples for Message for basic usage, or https://github.com/gortc/turn
 // package for example of stun extension implementation.
 package stun
 
