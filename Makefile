@@ -18,15 +18,15 @@ fuzz-prepare-typ:
 fuzz-prepare-setters:
 	go-fuzz-build -func FuzzSetters -o stun-setters-fuzz.zip github.com/gortc/stun
 fuzz-msg:
-	go-fuzz -bin=./stun-msg-fuzz.zip -workdir=examples/stun-msg
+	go-fuzz -bin=./stun-msg-fuzz.zip -workdir=fuzz/stun-msg
 fuzz-typ:
-	go-fuzz -bin=./stun-typ-fuzz.zip -workdir=examples/stun-typ
+	go-fuzz -bin=./stun-typ-fuzz.zip -workdir=fuzz/stun-typ
 fuzz-setters:
-	go-fuzz -bin=./stun-setters-fuzz.zip -workdir=examples/stun-setters
+	go-fuzz -bin=./stun-setters-fuzz.zip -workdir=fuzz/stun-setters
 fuzz-test:
 	go test -tags gofuzz -run TestFuzz -v .
 fuzz-reset-setters:
-	rm -f -v -r stun-setters-fuzz.zip examples/stun-setters
+	rm -f -v -r stun-setters-fuzz.zip fuzz/stun-setters
 lint:
 	@echo "linting on $(PROCS) cores"
 	@gometalinter \
