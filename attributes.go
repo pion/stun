@@ -172,34 +172,6 @@ func (m *Message) Get(t AttrType) ([]byte, error) {
 	return v.Value, nil
 }
 
-// AttrOverflowErr occurs when len(v) > Max.
-type AttrOverflowErr struct {
-	Type AttrType
-	Max  int
-	Got  int
-}
-
-func (e AttrOverflowErr) Error() string {
-	return fmt.Sprintf("incorrect length of %s attribute: %d exceeds maximum %d",
-		e.Type, e.Got, e.Max,
-	)
-}
-
-// AttrLengthErr means that length for attribute is invalid.
-type AttrLengthErr struct {
-	Attr     AttrType
-	Got      int
-	Expected int
-}
-
-func (e AttrLengthErr) Error() string {
-	return fmt.Sprintf("incorrect length of %s attribute: got %d, expected %d",
-		e.Attr,
-		e.Got,
-		e.Expected,
-	)
-}
-
 // STUN aligns attributes on 32-bit boundaries, attributes whose content
 // is not a multiple of 4 bytes are padded with 1, 2, or 3 bytes of
 // padding so that its value contains a multiple of 4 bytes.  The

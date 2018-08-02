@@ -30,12 +30,11 @@ const (
 // AddTo adds ERROR-CODE to m.
 func (c ErrorCodeAttribute) AddTo(m *Message) error {
 	value := make([]byte, 0, errorCodeReasonMaxB)
-	if len(c.Reason) > errorCodeReasonMaxB {
-		return &AttrOverflowErr{
-			Got:  len(c.Reason) + errorCodeReasonStart,
-			Max:  errorCodeReasonMaxB + errorCodeReasonStart,
-			Type: AttrErrorCode,
-		}
+	if err := CheckOverflow(AttrErrorCode,
+		len(c.Reason)+errorCodeReasonStart,
+		errorCodeReasonMaxB+errorCodeReasonStart,
+	); err != nil {
+		return err
 	}
 	value = value[:errorCodeReasonStart+len(c.Reason)]
 	number := byte(c.Code % errorCodeModulo) // error code modulo 100

@@ -41,3 +41,21 @@ func IsAttrSizeInvalid(err error) bool {
 	_, ok := err.(*AttrLengthErr)
 	return ok
 }
+
+// CheckOverflow returns *AttrOverflowErr if got is bigger that max.
+func CheckOverflow(t AttrType, got, max int) error {
+	if got <= max {
+		return nil
+	}
+	return &AttrOverflowErr{
+		Type: t,
+		Got:  got,
+		Max:  max,
+	}
+}
+
+// IsAttrSizeOverflow returns true if error means that attribute size is too big.
+func IsAttrSizeOverflow(err error) bool {
+	_, ok := err.(*AttrOverflowErr)
+	return ok
+}

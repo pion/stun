@@ -80,11 +80,8 @@ func TestXORMappedAddress_GetFrom(t *testing.T) {
 		// {0, 1} is correct addr family.
 		m.Add(AttrXORMappedAddress, []byte{0, 1, 3, 4, 5, 6, 7, 8, 9, 1, 1, 1, 1, 1, 2, 3, 4})
 		addr := new(XORMappedAddress)
-		err := addr.GetFrom(m)
-		if _, ok := err.(*AttrOverflowErr); !ok {
-			t.Errorf("should render AttrOverflowErr error, got <%s> (%T)",
-				err, err,
-			)
+		if err := addr.GetFrom(m); !IsAttrSizeOverflow(err) {
+			t.Errorf("AddTo should return *AttrOverflowErr, got: %v", err)
 		}
 	})
 }

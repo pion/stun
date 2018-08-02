@@ -1,1 +1,0 @@
-pkg github.com/gortc/stun, method (*Message) ForEach(AttrType, func(*Message) error) error
