@@ -120,8 +120,7 @@ func FuzzSetters(data []byte) int {
 		// We allow decoding some text attributes
 		// when their length is too big, but
 		// not encoding.
-		_, ok := err.(*AttrOverflowErr)
-		if !ok {
+		if !IsAttrSizeOverflow(err) {
 			panic(err)
 		}
 		return 1
