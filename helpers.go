@@ -77,3 +77,26 @@ func Build(setters ...Setter) (*Message, error) {
 	m := new(Message)
 	return m, m.Build(setters...)
 }
+
+// ForEach is helper that iterates over message attributes allowing to call
+// Getter in f callback to get all attributes of type t and returning on first
+// f error.
+//
+// The m.Get method inside f will be returning next attribute on each f call.
+// Does not error if there are no results.
+func (m *Message) ForEach(t AttrType, f func(m *Message) error) error {
+	attrs := m.Attributes
+	defer func() {
+		m.Attributes = attrs
+	}()
+	for i, a := range attrs {
+		if a.Type != t {
+			continue
+		}
+		m.Attributes = attrs[i:]
+		if err := f(m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
