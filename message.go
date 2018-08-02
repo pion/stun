@@ -176,6 +176,25 @@ func (m *Message) Add(t AttrType, v []byte) {
 	m.WriteLength()
 }
 
+func attrSliceEqual(a, b Attributes) bool {
+	for _, attr := range a {
+		found := false
+		for _, attrB := range b {
+			if attrB.Type != attr.Type {
+				continue
+			}
+			if attrB.Equal(attr) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
 func attrEqual(a, b Attributes) bool {
 	if a == nil && b == nil {
 		return true
@@ -183,14 +202,14 @@ func attrEqual(a, b Attributes) bool {
 	if a == nil || b == nil {
 		return false
 	}
-	for _, attr := range a {
-		attrB, ok := b.Get(attr.Type)
-		if !ok {
-			return false
-		}
-		if !attrB.Equal(attr) {
-			return false
-		}
+	if len(a) != len(b) {
+		return false
+	}
+	if !attrSliceEqual(a, b) {
+		return false
+	}
+	if !attrSliceEqual(b, a) {
+		return false
 	}
 	return true
 }
