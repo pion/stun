@@ -85,7 +85,7 @@ func PutSHA256(h hash.Hash) {
 //
 // Put and Acquire functions are internal functions to project, so
 // checking it via such assert is optimal.
-func assertHMACSize(h *hmac, size int, blocksize int) {
+func assertHMACSize(h *hmac, size, blocksize int) {
 	if h.size != size || h.blocksize != blocksize {
 		panic("BUG: hmac size invalid")
 	}
