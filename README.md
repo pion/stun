@@ -135,8 +135,3 @@ BenchmarkXORMappedAddress_AddTo-12            50000000     35.10 ns/op          
 BenchmarkXORMappedAddress_GetFrom-12          50000000     24.00 ns/op                        0 B/op   0 allocs/op
 ok  	github.com/gortc/stun	71.692s
 ```
-
-# Development goals
-
-stun package is low-level core gortc module, so security, efficiency (both memory and cpu), simplicity,
-code quality, and low dependencies are paramount goals.
