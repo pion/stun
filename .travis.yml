@@ -22,18 +22,14 @@ matrix:
     - go: master
   fast_finish: true
 
-before_install:
-  - go get github.com/alecthomas/gometalinter
-  - gometalinter --install
-  - go get github.com/gortc/api
-
-install: true
+install:
+  - make install
 
 script:
- - make check-api
- - ./go.test.sh
- - make test-integration
- - make lint
+  - make check-api
+  - make test
+  - make test-integration
+  - make lint
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)
