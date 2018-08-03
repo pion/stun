@@ -33,7 +33,7 @@ func main() {
 		panic(err)
 	}
 	deadline := time.Now().Add(time.Second * 5)
-	// Bulding binding request with random transaction id.
+	// Building binding request with random transaction id.
 	message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
 	// Sending request to STUN server, waiting for response message.
 	if err := c.Do(message, deadline, func(res stun.Event) {
@@ -54,7 +54,7 @@ func main() {
 
 ## RFCs
 
-The package aims to implement the follwing RFCs. Note that the requirement status is based on the [WebRTC spec](https://tools.ietf.org/html/draft-ietf-rtcweb-overview), focusing on data channels for now.
+The package aims to implement the following RFCs. Note that the requirement status is based on the [WebRTC spec](https://tools.ietf.org/html/draft-ietf-rtcweb-overview), focusing on data channels for now.
 
 rfc | status | requirement | description
 ----|--------|-------------|----
