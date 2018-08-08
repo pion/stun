@@ -530,3 +530,16 @@ func TestClientFinalizer(t *testing.T) {
 		t.Error("incorrect count of log lines:", lines)
 	}
 }
+
+func TestCallbackWaitHandler(t *testing.T) {
+	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler)
+	for i := 0; i < 100; i++ {
+		h.setCallback(func(event Event) {})
+		go func() {
+			time.Sleep(time.Microsecond * 100)
+			h.HandleEvent(Event{})
+		}()
+		h.wait()
+		h.reset()
+	}
+}
