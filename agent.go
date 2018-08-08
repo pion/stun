@@ -8,14 +8,14 @@ import (
 
 // AgentOptions are required to initialize Agent.
 type AgentOptions struct {
-	Handler Handler // Default handler, can be nil.
+	Handler Handler // Handler for transaction state changes.
 }
 
 // NewAgent initializes and returns new Agent from options.
 func NewAgent(o AgentOptions) *Agent {
 	a := &Agent{
 		transactions: make(map[transactionID]agentTransaction),
-		zeroHandler:  o.Handler,
+		handler:      o.Handler,
 	}
 	return a
 }
@@ -32,7 +32,7 @@ type Agent struct {
 	transactions map[transactionID]agentTransaction
 	closed       bool       // all calls are invalid if true
 	mux          sync.Mutex // protects transactions and closed
-	zeroHandler  Handler    // handles non-registered transactions if set
+	handler      Handler    // handles transactions
 }
 
 // Handler handles state changes of transaction.
@@ -57,7 +57,6 @@ type Event struct {
 type agentTransaction struct {
 	id       transactionID
 	deadline time.Time
-	h        Handler
 }
 
 var (
@@ -84,8 +83,9 @@ func (a *Agent) StopWithError(id [TransactionIDSize]byte, err error) error {
 	if !exists {
 		return ErrTransactionNotExists
 	}
-	t.h(Event{
-		Error: err,
+	a.handler(Event{
+		TransactionID: t.id,
+		Error:         err,
 	})
 	return nil
 }
@@ -104,7 +104,7 @@ var ErrAgentClosed = errors.New("agent is closed")
 // Could return ErrAgentClosed, ErrTransactionExists.
 // Callback f is guaranteed to be eventually called. See AgentFn for
 // callback processing constraints.
-func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, h Handler) error {
+func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	if a.closed {
@@ -116,7 +116,6 @@ func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time, h Handler)
 	}
 	a.transactions[id] = agentTransaction{
 		id:       id,
-		h:        h,
 		deadline: deadline,
 	}
 	return nil
@@ -135,7 +134,6 @@ var ErrTransactionTimeOut = errors.New("transaction is timed out")
 //
 // It is safe to call Collect concurrently but makes no sense.
 func (a *Agent) Collect(gcTime time.Time) error {
-	toCall := make([]Handler, 0, agentCollectCap)
 	toRemove := make([]transactionID, 0, agentCollectCap)
 	a.mux.Lock()
 	if a.closed {
@@ -152,7 +150,6 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	for id, t := range a.transactions {
 		if t.deadline.Before(gcTime) {
 			toRemove = append(toRemove, id)
-			toCall = append(toCall, t.h)
 		}
 	}
 	// Un-registering timed out transactions.
@@ -167,9 +164,9 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	event := Event{
 		Error: ErrTransactionTimeOut,
 	}
-	for i, handler := range toCall {
-		event.TransactionID = toRemove[i]
-		handler(event)
+	for _, id := range toRemove {
+		event.TransactionID = id
+		a.handler(event)
 	}
 	return nil
 }
@@ -188,15 +185,16 @@ func (a *Agent) Process(m *Message) error {
 		a.mux.Unlock()
 		return ErrAgentClosed
 	}
-	t, ok := a.transactions[m.TransactionID]
 	delete(a.transactions, m.TransactionID)
-	handler := a.zeroHandler
 	a.mux.Unlock()
-	if ok {
-		t.h(e)
-	} else if handler != nil {
-		handler(e)
-	}
+	a.handler(e)
+	return nil
+}
+
+func (a *Agent) SetHandler(h Handler) error {
+	a.mux.Lock()
+	a.handler = h
+	a.mux.Unlock()
 	return nil
 }
 
@@ -212,11 +210,12 @@ func (a *Agent) Close() error {
 		return ErrAgentClosed
 	}
 	for _, t := range a.transactions {
-		t.h(e)
+		e.TransactionID = t.id
+		a.handler(e)
 	}
 	a.transactions = nil
 	a.closed = true
-	a.zeroHandler = nil
+	a.handler = nil
 	a.mux.Unlock()
 	return nil
 }

@@ -13,11 +13,17 @@ import (
 )
 
 type TestAgent struct {
-	f chan Handler
+	h Handler
+	e chan Event
+}
+
+func (n *TestAgent) SetHandler(h Handler) error {
+	n.h = h
+	return nil
 }
 
 func (n *TestAgent) Close() error {
-	close(n.f)
+	close(n.e)
 	return nil
 }
 
@@ -25,8 +31,10 @@ func (TestAgent) Collect(time.Time) error { return nil }
 
 func (TestAgent) Process(m *Message) error { return nil }
 
-func (n *TestAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f Handler) error {
-	n.f <- f
+func (n *TestAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
+	n.e <- Event{
+		TransactionID: id,
+	}
 	return nil
 }
 
@@ -52,7 +60,7 @@ func (noopConnection) Close() error {
 func BenchmarkClient_Do(b *testing.B) {
 	b.ReportAllocs()
 	agent := &TestAgent{
-		f: make(chan Handler, 1000),
+		e: make(chan Event, 1000),
 	}
 	client, err := NewClient(ClientOptions{
 		Agent:      agent,
@@ -63,12 +71,8 @@ func BenchmarkClient_Do(b *testing.B) {
 	}
 	defer client.Close()
 	go func() {
-		e := Event{
-			Error:   nil,
-			Message: nil,
-		}
-		for f := range agent.f {
-			f(e)
+		for e := range agent.e {
+			agent.h(e)
 		}
 	}()
 	m := new(Message)
@@ -217,13 +221,17 @@ type errorAgent struct {
 	closeErr error
 }
 
+func (a errorAgent) SetHandler(h Handler) error {
+	return nil
+}
+
 func (a errorAgent) Close() error { return a.closeErr }
 
 func (errorAgent) Collect(time.Time) error { return nil }
 
 func (errorAgent) Process(m *Message) error { return nil }
 
-func (a errorAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f Handler) error {
+func (a errorAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
 	return a.startErr
 }
 
@@ -398,6 +406,10 @@ type gcWaitAgent struct {
 	gc chan struct{}
 }
 
+func (a *gcWaitAgent) SetHandler(h Handler) error {
+	return nil
+}
+
 func (a *gcWaitAgent) Stop(id [TransactionIDSize]byte) error {
 	return nil
 }
@@ -416,7 +428,7 @@ func (a *gcWaitAgent) Process(m *Message) error {
 	return nil
 }
 
-func (a *gcWaitAgent) Start(id [TransactionIDSize]byte, deadline time.Time, f Handler) error {
+func (a *gcWaitAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
 	return nil
 }
 

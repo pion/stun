@@ -9,20 +9,18 @@ func TestAgent_ProcessInTransaction(t *testing.T) {
 	m := New()
 	a := NewAgent(AgentOptions{
 		Handler: func(e Event) {
-			t.Error("should not be called")
+			if e.Error != nil {
+				t.Errorf("got error: %s", e.Error)
+			}
+			if !e.Message.Equal(m) {
+				t.Errorf("%s (got) != %s (expected)", e.Message, m)
+			}
 		},
 	})
 	if err := m.NewTransactionID(); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Start(m.TransactionID, time.Time{}, func(e Event) {
-		if e.Error != nil {
-			t.Errorf("got error: %s", e.Error)
-		}
-		if !e.Message.Equal(m) {
-			t.Errorf("%s (got) != %s (expected)", e.Message, m)
-		}
-	}); err != nil {
+	if err := a.Start(m.TransactionID, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.Process(m); err != nil {
@@ -62,13 +60,15 @@ func TestAgent_Process(t *testing.T) {
 }
 
 func TestAgent_Start(t *testing.T) {
-	a := NewAgent(AgentOptions{})
+	a := NewAgent(AgentOptions{
+		Handler: noopHandler,
+	})
 	id := NewTransactionID()
 	deadline := time.Now().AddDate(0, 0, 1)
-	if err := a.Start(id, deadline, noopHandler); err != nil {
+	if err := a.Start(id, deadline); err != nil {
 		t.Errorf("failed to statt transaction: %s", err)
 	}
-	if err := a.Start(id, deadline, noopHandler); err != ErrTransactionExists {
+	if err := a.Start(id, deadline); err != ErrTransactionExists {
 		t.Errorf("duplicate start should return <%s>, got <%s>",
 			ErrTransactionExists, err,
 		)
@@ -77,7 +77,7 @@ func TestAgent_Start(t *testing.T) {
 		t.Error(err)
 	}
 	id = NewTransactionID()
-	if err := a.Start(id, deadline, noopHandler); err != ErrAgentClosed {
+	if err := a.Start(id, deadline); err != ErrAgentClosed {
 		t.Errorf("start on closed agent should return <%s>, got <%s>",
 			ErrAgentClosed, err,
 		)
@@ -85,16 +85,18 @@ func TestAgent_Start(t *testing.T) {
 }
 
 func TestAgent_Stop(t *testing.T) {
-	a := NewAgent(AgentOptions{})
+	called := make(chan Event, 1)
+	a := NewAgent(AgentOptions{
+		Handler: func(e Event) {
+			called <- e
+		},
+	})
 	if err := a.Stop(transactionID{}); err != ErrTransactionNotExists {
 		t.Fatalf("unexpected error: %s, should be %s", err, ErrTransactionNotExists)
 	}
 	id := NewTransactionID()
-	called := make(chan Event, 1)
 	timeout := time.Millisecond * 200
-	if err := a.Start(id, time.Now().Add(timeout), Handler(func(e Event) {
-		called <- e
-	})); err != nil {
+	if err := a.Start(id, time.Now().Add(timeout)); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.Stop(id); err != nil {
@@ -127,29 +129,37 @@ func TestAgent_GC(t *testing.T) {
 	a := NewAgent(AgentOptions{
 		Handler: noopHandler,
 	})
-	var shouldTimeOut = func(e Event) {
-		if e.Error != ErrTransactionTimeOut {
-			t.Errorf("should time out, but got <%s>", e.Error)
-		}
-	}
-	var shouldNotTimeOut = func(e Event) {
-		if e.Error == ErrTransactionTimeOut {
-			t.Error("should not time out")
-		}
-	}
+	shouldTimeOutID := make(map[transactionID]bool)
 	deadline := time.Date(2027, time.November, 21,
-		23, 13, 34, 120021,
+		23, 0, 0, 0,
 		time.UTC,
 	)
-	gcDeadline := deadline.Add(time.Second)
-	deadlineNotGC := gcDeadline.AddDate(0, 0, 1)
+	gcDeadline := deadline.Add(-time.Second)
+	deadlineNotGC := gcDeadline.AddDate(0, 0, -1)
+	a.SetHandler(func(e Event) {
+		id := e.TransactionID
+		shouldTimeOut, found := shouldTimeOutID[id]
+		if !found {
+			t.Error("unexpected transaction ID")
+		}
+		if shouldTimeOut && e.Error != ErrTransactionTimeOut {
+			t.Errorf("%x should time out, but got %v", id, e.Error)
+		}
+		if !shouldTimeOut && e.Error == ErrTransactionTimeOut {
+			t.Errorf("%x should not time out, but got %v", id, e.Error)
+		}
+	})
 	for i := 0; i < 5; i++ {
-		if err := a.Start(NewTransactionID(), deadline, shouldTimeOut); err != nil {
+		id := NewTransactionID()
+		shouldTimeOutID[id] = false
+		if err := a.Start(id, deadline); err != nil {
 			t.Fatal(err)
 		}
 	}
 	for i := 0; i < 5; i++ {
-		if err := a.Start(NewTransactionID(), deadlineNotGC, shouldNotTimeOut); err != nil {
+		id := NewTransactionID()
+		shouldTimeOutID[id] = true
+		if err := a.Start(id, deadlineNotGC); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -170,7 +180,7 @@ func BenchmarkAgent_GC(b *testing.B) {
 	})
 	deadline := time.Now().AddDate(0, 0, 1)
 	for i := 0; i < agentCollectCap; i++ {
-		if err := a.Start(NewTransactionID(), deadline, noopHandler); err != nil {
+		if err := a.Start(NewTransactionID(), deadline); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -194,7 +204,7 @@ func BenchmarkAgent_Process(b *testing.B) {
 	})
 	deadline := time.Now().AddDate(0, 0, 1)
 	for i := 0; i < 1000; i++ {
-		if err := a.Start(NewTransactionID(), deadline, noopHandler); err != nil {
+		if err := a.Start(NewTransactionID(), deadline); err != nil {
 			b.Fatal(err)
 		}
 	}

@@ -48,8 +48,8 @@ func NewClient(options ClientOptions) (*Client, error) {
 		gcRate:      options.TimeoutRate,
 		clock:       systemClock,
 		rto:         int64(time.Millisecond * 500),
+		t:           make(map[transactionID]*clientTransaction, 100),
 		maxAttempts: 7,
-		t:           make(map[transactionID]clientTransaction, 100),
 	}
 	if c.c == nil {
 		return nil, ErrNoConnection
@@ -60,6 +60,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 	if c.gcRate == 0 {
 		c.gcRate = defaultTimeoutRate
 	}
+	c.a.SetHandler(c.handleAgentCallback)
 	c.wg.Add(2)
 	go c.readUntilClosed()
 	go c.collectUntilClosed()
@@ -94,9 +95,10 @@ type Connection interface {
 type ClientAgent interface {
 	Process(*Message) error
 	Close() error
-	Start(id [TransactionIDSize]byte, deadline time.Time, f Handler) error
+	Start(id [TransactionIDSize]byte, deadline time.Time) error
 	Stop(id [TransactionIDSize]byte) error
 	Collect(time.Time) error
+	SetHandler(h Handler) error
 }
 
 // Client simulates "connection" to STUN server.
@@ -112,7 +114,7 @@ type Client struct {
 	wg          sync.WaitGroup
 	clock       Clock
 
-	t    map[transactionID]clientTransaction
+	t    map[transactionID]*clientTransaction
 	tMux sync.RWMutex
 }
 
@@ -129,6 +131,22 @@ type clientTransaction struct {
 	raw     []byte
 }
 
+var clientTransactionPool = &sync.Pool{
+	New: func() interface{} {
+		return &clientTransaction{
+			raw: make([]byte, 1500),
+		}
+	},
+}
+
+func acquireClientTransaction() *clientTransaction {
+	return clientTransactionPool.Get().(*clientTransaction)
+}
+
+func putClientTransaction(t *clientTransaction) {
+	clientTransactionPool.Put(t)
+}
+
 func (t clientTransaction) nextTimeout(now time.Time) time.Time {
 	return now.Add(time.Duration(t.attempt) * t.rto)
 }
@@ -137,7 +155,7 @@ func (t clientTransaction) nextTimeout(now time.Time) time.Time {
 // Could return ErrAgentClosed, ErrTransactionExists.
 // Callback f is guaranteed to be eventually called. See AgentFn for
 // callback processing constraints.
-func (c *Client) start(t clientTransaction) error {
+func (c *Client) start(t *clientTransaction) error {
 	c.tMux.Lock()
 	defer c.tMux.Unlock()
 	if c.closed {
@@ -274,6 +292,7 @@ func (c *Client) Indicate(m *Message) error {
 
 // callbackWaitHandler blocks on wait() call until callback is called.
 type callbackWaitHandler struct {
+	handler   Handler
 	callback  func(event Event)
 	cond      *sync.Cond
 	processed bool
@@ -303,6 +322,9 @@ func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 		panic("f is nil")
 	}
 	s.callback = f
+	if s.handler == nil {
+		s.handler = s.HandleEvent
+	}
 }
 
 func (s *callbackWaitHandler) reset() {
@@ -346,7 +368,7 @@ func (c *Client) Do(m *Message, f func(Event)) error {
 		h.reset()
 		callbackWaitHandlerPool.Put(h)
 	}()
-	if err := c.Start(m, h.HandleEvent); err != nil {
+	if err := c.Start(m, h.handler); err != nil {
 		return err
 	}
 	h.wait()
@@ -356,6 +378,10 @@ func (c *Client) Do(m *Message, f func(Event)) error {
 func (c *Client) delete(id transactionID) {
 	c.tMux.Lock()
 	if c.t != nil {
+		t, ok := c.t[id]
+		if ok {
+			putClientTransaction(t)
+		}
 		delete(c.t, id)
 	}
 	c.tMux.Unlock()
@@ -368,34 +394,39 @@ func (c *Client) handleAgentCallback(e Event) {
 		return
 	}
 	t, found := c.t[e.TransactionID]
-	delete(c.t, t.id)
+	if found {
+		delete(c.t, t.id)
+	}
 	c.tMux.Unlock()
 	if !found {
 		// Ignoring.
 		return
 	}
+	h := t.h
 
 	if atomic.LoadInt32(&c.maxAttempts) < t.attempt || e.Error == nil {
 		// Transaction completed.
-		t.h(e)
+		putClientTransaction(t)
+		h(e)
 		return
 	}
 
 	// Doing re-transmission.
 	t.attempt++
 	if err := c.start(t); err != nil {
+		putClientTransaction(t)
 		e.Error = err
-		t.h(e)
+		h(e)
 		return
 	}
 
 	// Starting transaction in agent.
 	now := c.clock.Now()
 	d := t.nextTimeout(now)
-	if err := c.a.Start(t.id, d, c.handleAgentCallback); err != nil {
+	if err := c.a.Start(t.id, d); err != nil {
 		c.delete(t.id)
 		e.Error = err
-		t.h(e)
+		h(e)
 		return
 	}
 
@@ -412,7 +443,7 @@ func (c *Client) handleAgentCallback(e Event) {
 				Cause: err,
 			}
 		}
-		t.h(e)
+		h(e)
 		return
 	}
 
@@ -432,21 +463,18 @@ func (c *Client) Start(m *Message, h Handler) error {
 	}
 	if h != nil {
 		// Starting transaction only if h is set. Useful for indications.
-		t := clientTransaction{
-			id:      m.TransactionID,
-			start:   c.clock.Now(),
-			h:       h,
-			rto:     time.Duration(atomic.LoadInt64(&c.rto)),
-			attempt: 0,
-			raw:     make([]byte, 1500),
-		}
-		n := copy(t.raw, m.Raw)
-		t.raw = t.raw[:n]
+		t := acquireClientTransaction()
+		t.id = m.TransactionID
+		t.start = c.clock.Now()
+		t.h = h
+		t.rto = time.Duration(atomic.LoadInt64(&c.rto))
+		t.attempt = 0
+		t.raw = append(t.raw[:0], m.Raw...)
+		d := t.nextTimeout(t.start)
 		if err := c.start(t); err != nil {
 			return err
 		}
-		d := t.nextTimeout(t.start)
-		if err := c.a.Start(t.id, d, c.handleAgentCallback); err != nil {
+		if err := c.a.Start(m.TransactionID, d); err != nil {
 			return err
 		}
 	}
