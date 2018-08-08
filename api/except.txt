@@ -5,4 +5,9 @@ pkg github.com/gortc/stun, method (HandlerFunc) HandleEvent(Event)
 pkg github.com/gortc/stun, method (*Client) Do(*Message, time.Time, func(Event)) error
 pkg github.com/gortc/stun, method (*Client) Start(*Message, time.Time, Handler) error
 pkg github.com/gortc/stun, method (*Client) Start(*Message, time.Time, Handler) error
+pkg github.com/gortc/stun, type ClientAgent interface { Close, Collect, Process, Start, Stop }
+pkg github.com/gortc/stun, method (*Agent) SetHandler(Handler) error
+pkg github.com/gortc/stun, method (*Agent) Start([12]uint8, time.Time, Handler) error
+pkg github.com/gortc/stun, type ClientAgent interface, Start([12]uint8, time.Time, Handler) error
+pkg github.com/gortc/stun, var ErrAttrSizeInvalid error
 

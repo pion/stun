@@ -5,3 +5,8 @@ pkg github.com/gortc/stun, method (*Client) Start(*Message, Handler) error
 pkg github.com/gortc/stun, type Clock interface { Now }
 pkg github.com/gortc/stun, type Clock interface, Now() time.Time
 pkg github.com/gortc/stun, type Event struct, TransactionID [12]uint8
+pkg github.com/gortc/stun, method (*Agent) SetHandler(Handler) error
+pkg github.com/gortc/stun, method (*Agent) Start([12]uint8, time.Time) error
+pkg github.com/gortc/stun, type ClientAgent interface { Close, Collect, Process, SetHandler, Start, Stop }
+pkg github.com/gortc/stun, type ClientAgent interface, SetHandler(Handler) error
+pkg github.com/gortc/stun, type ClientAgent interface, Start([12]uint8, time.Time) error
