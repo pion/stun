@@ -122,10 +122,10 @@ type Client struct {
 // Concurrent access is invalid.
 type clientTransaction struct {
 	id      transactionID
-	start   time.Time
-	rto     time.Duration
 	attempt int32
 	h       Handler
+	start   time.Time
+	rto     time.Duration
 	raw     []byte
 }
 
@@ -151,6 +151,7 @@ func (c *Client) start(t clientTransaction) error {
 	return nil
 }
 
+// Clock abstracts the source of current time.
 type Clock interface {
 	Now() time.Time
 }
@@ -327,12 +328,6 @@ func (c *Client) checkInit() error {
 	return nil
 }
 
-func (c *Client) nextTimeout(t time.Time, rto time.Duration) time.Time {
-	return t.Add(
-		time.Duration(atomic.LoadInt64(&c.rto)),
-	)
-}
-
 // Do is Start wrapper that waits until callback is called. If no callback
 // provided, Indicate is called instead.
 //
@@ -355,26 +350,6 @@ func (c *Client) Do(m *Message, f func(Event)) error {
 		return err
 	}
 	h.wait()
-	return nil
-}
-
-// StopWithError removes transaction from list and calls transaction callback
-// with provided error. Can return ErrTransactionNotExists and ErrAgentClosed.
-func (c *Client) stopWithError(id [TransactionIDSize]byte, err error) error {
-	c.closedMux.Lock()
-	if c.closed {
-		c.closedMux.Unlock()
-		return ErrClientClosed
-	}
-	t, exists := c.t[id]
-	delete(c.t, id)
-	c.closedMux.Unlock()
-	if !exists {
-		return ErrTransactionNotExists
-	}
-	t.h(Event{
-		Error: err,
-	})
 	return nil
 }
 
