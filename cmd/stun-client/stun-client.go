@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/gortc/stun"
 )
@@ -24,8 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
-	deadline := time.Now().Add(time.Second * 5)
-	if err := c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), deadline, func(res stun.Event) {
+	if err := c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
 			log.Fatalln(err)
 		}

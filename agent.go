@@ -45,8 +45,9 @@ type Handler func(e Event)
 // Event is set of arguments passed to AgentFn, describing
 // an transaction event. Do not reuse outside AgentFn.
 type Event struct {
-	Message *Message
-	Error   error
+	TransactionID [TransactionIDSize]byte
+	Message       *Message
+	Error         error
 }
 
 // agentTransaction represents transaction in progress.
@@ -166,7 +167,8 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	event := Event{
 		Error: ErrTransactionTimeOut,
 	}
-	for _, handler := range toCall {
+	for i, handler := range toCall {
+		event.TransactionID = toRemove[i]
 		handler(event)
 	}
 	return nil
@@ -178,7 +180,8 @@ func (a *Agent) Collect(gcTime time.Time) error {
 // Call blocks until handler returns.
 func (a *Agent) Process(m *Message) error {
 	e := Event{
-		Message: m,
+		TransactionID: m.TransactionID,
+		Message:       m,
 	}
 	a.mux.Lock()
 	if a.closed {

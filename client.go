@@ -8,6 +8,7 @@ import (
 	"net"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -41,10 +42,14 @@ var ErrNoConnection = errors.New("no connection provided")
 // resources.
 func NewClient(options ClientOptions) (*Client, error) {
 	c := &Client{
-		close:  make(chan struct{}),
-		c:      options.Connection,
-		a:      options.Agent,
-		gcRate: options.TimeoutRate,
+		close:       make(chan struct{}),
+		c:           options.Connection,
+		a:           options.Agent,
+		gcRate:      options.TimeoutRate,
+		clock:       systemClock,
+		rto:         int64(time.Millisecond * 500),
+		maxAttempts: 7,
+		t:           make(map[transactionID]clientTransaction, 100),
 	}
 	if c.c == nil {
 		return nil, ErrNoConnection
@@ -96,13 +101,69 @@ type ClientAgent interface {
 
 // Client simulates "connection" to STUN server.
 type Client struct {
-	a         ClientAgent
-	c         Connection
-	close     chan struct{}
-	gcRate    time.Duration
-	closed    bool
-	closedMux sync.RWMutex
-	wg        sync.WaitGroup
+	a           ClientAgent
+	c           Connection
+	close       chan struct{}
+	gcRate      time.Duration
+	rto         int64 // time.Duration
+	maxAttempts int32
+	closed      bool
+	closedMux   sync.RWMutex
+	wg          sync.WaitGroup
+	clock       Clock
+
+	t    map[transactionID]clientTransaction
+	tMux sync.RWMutex
+}
+
+// clientTransaction represents transaction in progress.
+// If transaction is succeed or failed, f will be called
+// provided by event.
+// Concurrent access is invalid.
+type clientTransaction struct {
+	id      transactionID
+	start   time.Time
+	rto     time.Duration
+	attempt int32
+	h       Handler
+	raw     []byte
+}
+
+func (t clientTransaction) nextTimeout(now time.Time) time.Time {
+	return now.Add(time.Duration(t.attempt) * t.rto)
+}
+
+// Start registers transaction with provided id, deadline and callback.
+// Could return ErrAgentClosed, ErrTransactionExists.
+// Callback f is guaranteed to be eventually called. See AgentFn for
+// callback processing constraints.
+func (c *Client) start(t clientTransaction) error {
+	c.tMux.Lock()
+	defer c.tMux.Unlock()
+	if c.closed {
+		return ErrAgentClosed
+	}
+	_, exists := c.t[t.id]
+	if exists {
+		return ErrTransactionExists
+	}
+	c.t[t.id] = t
+	return nil
+}
+
+type Clock interface {
+	Now() time.Time
+}
+
+type systemClockService struct{}
+
+func (systemClockService) Now() time.Time { return time.Now() }
+
+var systemClock = systemClockService{}
+
+// SetRTO sets current RTO value.
+func (c *Client) SetRTO(rto time.Duration) {
+	atomic.StoreInt64(&c.rto, int64(rto))
 }
 
 // StopErr occurs when Client fails to stop transaction while
@@ -207,7 +268,7 @@ func (c *Client) Close() error {
 // Indicate sends indication m to server. Shorthand to Start call
 // with zero deadline and callback.
 func (c *Client) Indicate(m *Message) error {
-	return c.Start(m, time.Time{}, nil)
+	return c.Start(m, nil)
 }
 
 // callbackWaitHandler blocks on wait() call until callback is called.
@@ -266,12 +327,18 @@ func (c *Client) checkInit() error {
 	return nil
 }
 
+func (c *Client) nextTimeout(t time.Time, rto time.Duration) time.Time {
+	return t.Add(
+		time.Duration(atomic.LoadInt64(&c.rto)),
+	)
+}
+
 // Do is Start wrapper that waits until callback is called. If no callback
 // provided, Indicate is called instead.
 //
 // Do has cpu overhead due to blocking, see BenchmarkClient_Do.
 // Use Start method for less overhead.
-func (c *Client) Do(m *Message, d time.Time, f func(Event)) error {
+func (c *Client) Do(m *Message, f func(Event)) error {
 	if err := c.checkInit(); err != nil {
 		return err
 	}
@@ -284,16 +351,101 @@ func (c *Client) Do(m *Message, d time.Time, f func(Event)) error {
 		h.reset()
 		callbackWaitHandlerPool.Put(h)
 	}()
-	if err := c.Start(m, d, h.HandleEvent); err != nil {
+	if err := c.Start(m, h.HandleEvent); err != nil {
 		return err
 	}
 	h.wait()
 	return nil
 }
 
+// StopWithError removes transaction from list and calls transaction callback
+// with provided error. Can return ErrTransactionNotExists and ErrAgentClosed.
+func (c *Client) stopWithError(id [TransactionIDSize]byte, err error) error {
+	c.closedMux.Lock()
+	if c.closed {
+		c.closedMux.Unlock()
+		return ErrClientClosed
+	}
+	t, exists := c.t[id]
+	delete(c.t, id)
+	c.closedMux.Unlock()
+	if !exists {
+		return ErrTransactionNotExists
+	}
+	t.h(Event{
+		Error: err,
+	})
+	return nil
+}
+
+func (c *Client) delete(id transactionID) {
+	c.tMux.Lock()
+	if c.t != nil {
+		delete(c.t, id)
+	}
+	c.tMux.Unlock()
+}
+
+func (c *Client) handleAgentCallback(e Event) {
+	c.tMux.Lock()
+	if c.t == nil {
+		c.tMux.Unlock()
+		return
+	}
+	t, found := c.t[e.TransactionID]
+	delete(c.t, t.id)
+	c.tMux.Unlock()
+	if !found {
+		// Ignoring.
+		return
+	}
+
+	if atomic.LoadInt32(&c.maxAttempts) < t.attempt || e.Error == nil {
+		// Transaction completed.
+		t.h(e)
+		return
+	}
+
+	// Doing re-transmission.
+	t.attempt++
+	if err := c.start(t); err != nil {
+		e.Error = err
+		t.h(e)
+		return
+	}
+
+	// Starting transaction in agent.
+	now := c.clock.Now()
+	d := t.nextTimeout(now)
+	if err := c.a.Start(t.id, d, c.handleAgentCallback); err != nil {
+		c.delete(t.id)
+		e.Error = err
+		t.h(e)
+		return
+	}
+
+	// Writing message to connection again.
+	_, err := c.c.Write(t.raw)
+	if err != nil {
+		c.delete(t.id)
+		e.Error = err
+
+		// Stopping transaction instead of waiting until deadline.
+		if stopErr := c.a.Stop(t.id); stopErr != nil {
+			e.Error = StopErr{
+				Err:   stopErr,
+				Cause: err,
+			}
+		}
+		t.h(e)
+		return
+	}
+
+}
+
 // Start starts transaction (if f set) and writes message to server, handler
 // is called asynchronously.
-func (c *Client) Start(m *Message, d time.Time, h Handler) error {
+func (c *Client) Start(m *Message, h Handler) error {
 	if err := c.checkInit(); err != nil {
 		return err
 	}
@@ -305,12 +457,27 @@ func (c *Client) Start(m *Message, d time.Time, h Handler) error {
 	}
 	if h != nil {
 		// Starting transaction only if h is set. Useful for indications.
-		if err := c.a.Start(m.TransactionID, d, h); err != nil {
+		t := clientTransaction{
+			id:      m.TransactionID,
+			start:   c.clock.Now(),
+			h:       h,
+			rto:     time.Duration(atomic.LoadInt64(&c.rto)),
+			attempt: 0,
+			raw:     make([]byte, 1500),
+		}
+		n := copy(t.raw, m.Raw)
+		t.raw = t.raw[:n]
+		if err := c.start(t); err != nil {
+			return err
+		}
+		d := t.nextTimeout(t.start)
+		if err := c.a.Start(t.id, d, c.handleAgentCallback); err != nil {
 			return err
 		}
 	}
 	_, err := m.WriteTo(c.c)
 	if err != nil && h != nil {
+		c.delete(m.TransactionID)
 		// Stopping transaction instead of waiting until deadline.
 		if stopErr := c.a.Stop(m.TransactionID); stopErr != nil {
 			return StopErr{

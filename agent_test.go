@@ -8,9 +8,9 @@ import (
 func TestAgent_ProcessInTransaction(t *testing.T) {
 	m := New()
 	a := NewAgent(AgentOptions{
-		Handler: Handler(func(e Event) {
+		Handler: func(e Event) {
 			t.Error("should not be called")
-		}),
+		},
 	})
 	if err := m.NewTransactionID(); err != nil {
 		t.Fatal(err)

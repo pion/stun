@@ -77,7 +77,7 @@ func BenchmarkClient_Do(b *testing.B) {
 		// pass
 	}
 	for i := 0; i < b.N; i++ {
-		if err := client.Do(m, time.Time{}, noopF); err != nil {
+		if err := client.Do(m, noopF); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -149,15 +149,14 @@ func TestClient_Do(t *testing.T) {
 		if err := c.Close(); err == nil {
 			t.Error("second close should fail")
 		}
-		if err := c.Do(MustBuild(TransactionID), time.Time{}, nil); err == nil {
+		if err := c.Do(MustBuild(TransactionID), nil); err == nil {
 			t.Error("Do after Close should fail")
 		}
 	}()
 	m := MustBuild(
 		NewTransactionIDSetter(response.TransactionID),
 	)
-	d := time.Now().Add(time.Second)
-	if err := c.Do(m, d, func(event Event) {
+	if err := c.Do(m, func(event Event) {
 		if event.Error != nil {
 			t.Error(event.Error)
 		}
@@ -165,7 +164,7 @@ func TestClient_Do(t *testing.T) {
 		t.Error(err)
 	}
 	m = MustBuild(TransactionID)
-	if err := c.Do(m, d, nil); err != nil {
+	if err := c.Do(m, nil); err != nil {
 		t.Error(err)
 	}
 }
@@ -256,10 +255,10 @@ func TestClientAgentError(t *testing.T) {
 		}
 	}()
 	m := MustBuild(NewTransactionIDSetter(response.TransactionID))
-	if err := c.Do(m, time.Time{}, nil); err != nil {
+	if err := c.Do(m, nil); err != nil {
 		t.Error(err)
 	}
-	if err := c.Do(m, time.Time{}, func(event Event) {
+	if err := c.Do(m, func(event Event) {
 		if event.Error == nil {
 			t.Error("error expected")
 		}
@@ -286,10 +285,10 @@ func TestClientConnErr(t *testing.T) {
 		}
 	}()
 	m := MustBuild(TransactionID)
-	if err := c.Do(m, time.Time{}, nil); err == nil {
+	if err := c.Do(m, nil); err == nil {
 		t.Error("error expected")
 	}
-	if err := c.Do(m, time.Time{}, noopHandler); err == nil {
+	if err := c.Do(m, noopHandler); err == nil {
 		t.Error("error expected")
 	}
 }
@@ -315,7 +314,7 @@ func TestClientConnErrStopErr(t *testing.T) {
 		}
 	}()
 	m := MustBuild(TransactionID)
-	if err := c.Do(m, time.Time{}, noopHandler); err == nil {
+	if err := c.Do(m, noopHandler); err == nil {
 		t.Error("error expected")
 	}
 }
@@ -457,7 +456,7 @@ func TestClientCheckInit(t *testing.T) {
 	if err := (&Client{}).Indicate(nil); err != ErrClientNotInitialized {
 		t.Error("unexpected error")
 	}
-	if err := (&Client{}).Do(nil, time.Time{}, nil); err != ErrClientNotInitialized {
+	if err := (&Client{}).Do(nil, nil); err != ErrClientNotInitialized {
 		t.Error("unexpected error")
 	}
 }
