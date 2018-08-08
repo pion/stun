@@ -36,20 +36,11 @@ type Agent struct {
 }
 
 // Handler handles state changes of transaction.
-type Handler interface {
-	// HandleEvent is called on transaction state change.
-	// Usage of e is valid only during call, user must
-	// copy needed fields explicitly.
-	HandleEvent(e Event)
-}
-
-// HandlerFunc is function that implements Handler interface.
-type HandlerFunc func(e Event)
-
-// HandleEvent implements Handler.
-func (f HandlerFunc) HandleEvent(e Event) {
-	f(e)
-}
+//
+// Handler is called on transaction state change.
+// Usage of e is valid only during call, user must
+// copy needed fields explicitly.
+type Handler func(e Event)
 
 // Event is set of arguments passed to AgentFn, describing
 // an transaction event. Do not reuse outside AgentFn.
@@ -92,7 +83,7 @@ func (a *Agent) StopWithError(id [TransactionIDSize]byte, err error) error {
 	if !exists {
 		return ErrTransactionNotExists
 	}
-	t.h.HandleEvent(Event{
+	t.h(Event{
 		Error: err,
 	})
 	return nil
@@ -176,7 +167,7 @@ func (a *Agent) Collect(gcTime time.Time) error {
 		Error: ErrTransactionTimeOut,
 	}
 	for _, handler := range toCall {
-		handler.HandleEvent(event)
+		handler(event)
 	}
 	return nil
 }
@@ -199,9 +190,9 @@ func (a *Agent) Process(m *Message) error {
 	handler := a.zeroHandler
 	a.mux.Unlock()
 	if ok {
-		t.h.HandleEvent(e)
+		t.h(e)
 	} else if handler != nil {
-		handler.HandleEvent(e)
+		handler(e)
 	}
 	return nil
 }
@@ -218,7 +209,7 @@ func (a *Agent) Close() error {
 		return ErrAgentClosed
 	}
 	for _, t := range a.transactions {
-		t.h.HandleEvent(e)
+		t.h(e)
 	}
 	a.transactions = nil
 	a.closed = true

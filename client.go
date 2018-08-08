@@ -284,7 +284,7 @@ func (c *Client) Do(m *Message, d time.Time, f func(Event)) error {
 		h.reset()
 		callbackWaitHandlerPool.Put(h)
 	}()
-	if err := c.Start(m, d, h); err != nil {
+	if err := c.Start(m, d, h.HandleEvent); err != nil {
 		return err
 	}
 	h.wait()

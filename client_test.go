@@ -68,7 +68,7 @@ func BenchmarkClient_Do(b *testing.B) {
 			Message: nil,
 		}
 		for f := range agent.f {
-			f.HandleEvent(e)
+			f(e)
 		}
 	}()
 	m := new(Message)

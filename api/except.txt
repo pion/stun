@@ -1,0 +1,4 @@
+pkg github.com/gortc/stun, type Handler interface { HandleEvent }
+pkg github.com/gortc/stun, type Handler interface, HandleEvent(Event)
+pkg github.com/gortc/stun, type HandlerFunc func(Event)
+pkg github.com/gortc/stun, method (HandlerFunc) HandleEvent(Event)

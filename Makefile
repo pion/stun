@@ -72,7 +72,7 @@ test-integration:
 	@cd e2e && bash ./test.sh
 prepush: test lint test-integration
 check-api:
-	@api -c api/stun1.txt github.com/gortc/stun
+	@cd api && api -c stun1.txt,stun1.14.txt -except except.txt github.com/gortc/stun
 write-api:
 	@api github.com/gortc/stun > api/stun1.txt
 test:
