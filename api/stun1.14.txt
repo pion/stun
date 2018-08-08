@@ -1,1 +1,7 @@
 pkg github.com/gortc/stun, type Handler func(Event)
+pkg github.com/gortc/stun, method (*Client) Do(*Message, func(Event)) error
+pkg github.com/gortc/stun, method (*Client) SetRTO(time.Duration)
+pkg github.com/gortc/stun, method (*Client) Start(*Message, Handler) error
+pkg github.com/gortc/stun, type Clock interface { Now }
+pkg github.com/gortc/stun, type Clock interface, Now() time.Time
+pkg github.com/gortc/stun, type Event struct, TransactionID [12]uint8

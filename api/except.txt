@@ -2,3 +2,7 @@ pkg github.com/gortc/stun, type Handler interface { HandleEvent }
 pkg github.com/gortc/stun, type Handler interface, HandleEvent(Event)
 pkg github.com/gortc/stun, type HandlerFunc func(Event)
 pkg github.com/gortc/stun, method (HandlerFunc) HandleEvent(Event)
+pkg github.com/gortc/stun, method (*Client) Do(*Message, time.Time, func(Event)) error
+pkg github.com/gortc/stun, method (*Client) Start(*Message, time.Time, Handler) error
+pkg github.com/gortc/stun, method (*Client) Start(*Message, time.Time, Handler) error
+
