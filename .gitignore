@@ -9,3 +9,5 @@ stund/stund
 stun-cli/stun-cli
 stun-decode/stun-decode
 stun-bench/stun-bench
+
+coverage.txt
