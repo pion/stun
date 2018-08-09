@@ -92,6 +92,7 @@ func BenchmarkClient_Do(b *testing.B) {
 
 type testConnection struct {
 	write      func([]byte) (int, error)
+	read       func([]byte) (int, error)
 	b          []byte
 	stopped    bool
 	stoppedMux sync.Mutex
@@ -117,6 +118,9 @@ func (t *testConnection) Read(b []byte) (int, error) {
 	if t.stopped {
 		return 0, io.EOF
 	}
+	if t.read != nil {
+		return t.read(b)
+	}
 	return copy(b, t.b), nil
 }
 
@@ -132,6 +136,81 @@ func TestClosedOrPanic(t *testing.T) {
 		}()
 		closedOrPanic(io.EOF)
 	}()
+}
+
+func TestClient_Start(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	write := make(chan struct{}, 1)
+	read := make(chan struct{}, 1)
+	conn := &testConnection{
+		b: response.Raw,
+		read: func(i []byte) (int, error) {
+			t.Log("waiting for read")
+			select {
+			case <-read:
+				t.Log("reading")
+				copy(i, response.Raw)
+				return len(response.Raw), nil
+			case <-time.After(time.Millisecond * 10):
+				return 0, errors.New("read timed out")
+			}
+		},
+		write: func(bytes []byte) (int, error) {
+			t.Log("waiting for write")
+			select {
+			case <-write:
+				t.Log("writing")
+				return len(bytes), nil
+			case <-time.After(time.Millisecond * 10):
+				return 0, errors.New("write timed out")
+			}
+		},
+	}
+	c, err := NewClient(ClientOptions{
+		Connection: conn,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := c.Close(); err != nil {
+			t.Error(err)
+		}
+		if err := c.Close(); err == nil {
+			t.Error("second close should fail")
+		}
+		if err := c.Do(MustBuild(TransactionID), nil); err == nil {
+			t.Error("Do after Close should fail")
+		}
+	}()
+	m := MustBuild(response, BindingRequest)
+	t.Log("init")
+	got := make(chan struct{})
+	write <- struct{}{}
+	t.Log("starting the first transaction")
+	if err := c.Start(m, func(event Event) {
+		t.Log("got first transaction callback")
+		if event.Error != nil {
+			t.Error(event.Error)
+		}
+		got <- struct{}{}
+	}); err != nil {
+		t.Error(err)
+	}
+	t.Log("starting the second transaction")
+	if err := c.Start(m, func(e Event) {
+		t.Error("should not be called")
+	}); err != ErrTransactionExists {
+		t.Errorf("unexpected error %v", err)
+	}
+	read <- struct{}{}
+	select {
+	case <-got:
+		// pass
+	case <-time.After(time.Millisecond * 10):
+		t.Error("timed out")
+	}
 }
 
 func TestClient_Do(t *testing.T) {
