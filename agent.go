@@ -185,9 +185,10 @@ func (a *Agent) Process(m *Message) error {
 		a.mux.Unlock()
 		return ErrAgentClosed
 	}
+	h := a.handler
 	delete(a.transactions, m.TransactionID)
 	a.mux.Unlock()
-	a.handler(e)
+	h(e)
 	return nil
 }
 
