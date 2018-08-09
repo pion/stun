@@ -153,15 +153,14 @@ func (t clientTransaction) nextTimeout(now time.Time) time.Time {
 	return now.Add(time.Duration(t.attempt) * t.rto)
 }
 
-// Start registers transaction with provided id, deadline and callback.
-// Could return ErrAgentClosed, ErrTransactionExists.
-// Callback f is guaranteed to be eventually called. See AgentFn for
-// callback processing constraints.
+// start registers transaction.
+//
+// Could return ErrClientClosed, ErrTransactionExists.
 func (c *Client) start(t *clientTransaction) error {
 	c.tMux.Lock()
 	defer c.tMux.Unlock()
 	if c.closed {
-		return ErrAgentClosed
+		return ErrClientClosed
 	}
 	_, exists := c.t[t.id]
 	if exists {
