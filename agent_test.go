@@ -82,6 +82,11 @@ func TestAgent_Start(t *testing.T) {
 			ErrAgentClosed, err,
 		)
 	}
+	if err := a.SetHandler(nil); err != ErrAgentClosed {
+		t.Errorf("SetHandler on closed agent should return <%s>, got <%s>",
+			ErrAgentClosed, err,
+		)
+	}
 }
 
 func TestAgent_Stop(t *testing.T) {
