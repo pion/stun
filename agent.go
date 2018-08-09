@@ -191,8 +191,13 @@ func (a *Agent) Process(m *Message) error {
 	return nil
 }
 
+// SetHandler sets agent handler to h.
 func (a *Agent) SetHandler(h Handler) error {
 	a.mux.Lock()
+	if a.closed {
+		a.mux.Unlock()
+		return ErrAgentClosed
+	}
 	a.handler = h
 	a.mux.Unlock()
 	return nil

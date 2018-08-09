@@ -60,7 +60,9 @@ func NewClient(options ClientOptions) (*Client, error) {
 	if c.gcRate == 0 {
 		c.gcRate = defaultTimeoutRate
 	}
-	c.a.SetHandler(c.handleAgentCallback)
+	if err := c.a.SetHandler(c.handleAgentCallback); err != nil {
+		return nil, err
+	}
 	c.wg.Add(2)
 	go c.readUntilClosed()
 	go c.collectUntilClosed()
