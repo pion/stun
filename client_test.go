@@ -70,21 +70,24 @@ func BenchmarkClient_Do(b *testing.B) {
 		log.Fatal(err)
 	}
 	defer client.Close()
-	go func() {
-		for e := range agent.e {
-			agent.h(e)
-		}
-	}()
-	m := new(Message)
-	m.Encode()
 	noopF := func(event Event) {
 		// pass
 	}
-	for i := 0; i < b.N; i++ {
-		if err := client.Do(m, noopF); err != nil {
-			b.Fatal(err)
+	b.RunParallel(func(pb *testing.PB) {
+		go func() {
+			for e := range agent.e {
+				agent.h(e)
+			}
+		}()
+		m := New()
+		m.NewTransactionID()
+		m.Encode()
+		for pb.Next() {
+			if err := client.Do(m, noopF); err != nil {
+				b.Error(err)
+			}
 		}
-	}
+	})
 }
 
 type testConnection struct {
