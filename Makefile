@@ -40,6 +40,7 @@ lint:
 		-e "internal\/hmac\/hmac_test.+(lll)" \
 		-e "internal\/hmac\/.+Errors unhandled" \
 		-e "internal\/hmac\/.+parameter blocksize always receives 64" \
+		-e "cyclomatic complexity \d+ of function \(\*Client\)\.handleAgentCallback\(\)" \
 		--enable="lll" --line-length=100 \
 		--disable="gochecknoglobals" \
 		--deadline=300s \
