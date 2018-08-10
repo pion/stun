@@ -29,6 +29,7 @@ type ClientOptions struct {
 	Agent       ClientAgent
 	Connection  Connection
 	TimeoutRate time.Duration // defaults to 100 ms
+	Handler     Handler       // default handler (if no transaction found)
 }
 
 const defaultTimeoutRate = time.Millisecond * 100
@@ -50,6 +51,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 		rto:         int64(time.Millisecond * 500),
 		t:           make(map[transactionID]*clientTransaction, 100),
 		maxAttempts: 7,
+		handler:     options.Handler,
 	}
 	if c.c == nil {
 		return nil, ErrNoConnection
@@ -115,6 +117,7 @@ type Client struct {
 	closedMux   sync.RWMutex
 	wg          sync.WaitGroup
 	clock       Clock
+	handler     Handler
 
 	t    map[transactionID]*clientTransaction
 	tMux sync.RWMutex
@@ -400,6 +403,9 @@ func (c *Client) handleAgentCallback(e Event) {
 	}
 	c.tMux.Unlock()
 	if !found {
+		if c.handler != nil {
+			c.handler(e)
+		}
 		// Ignoring.
 		return
 	}
