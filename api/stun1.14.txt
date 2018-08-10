@@ -10,3 +10,4 @@ pkg github.com/gortc/stun, method (*Agent) Start([12]uint8, time.Time) error
 pkg github.com/gortc/stun, type ClientAgent interface { Close, Collect, Process, SetHandler, Start, Stop }
 pkg github.com/gortc/stun, type ClientAgent interface, SetHandler(Handler) error
 pkg github.com/gortc/stun, type ClientAgent interface, Start([12]uint8, time.Time) error
+pkg github.com/gortc/stun, type ClientOptions struct, Handler Handler
