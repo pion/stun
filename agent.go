@@ -72,11 +72,12 @@ func (a *Agent) StopWithError(id [TransactionIDSize]byte, err error) error {
 	}
 	t, exists := a.transactions[id]
 	delete(a.transactions, id)
+	h := a.handler
 	a.mux.Unlock()
 	if !exists {
 		return ErrTransactionNotExists
 	}
-	a.handler(Event{
+	h(Event{
 		TransactionID: t.id,
 		Error:         err,
 	})
@@ -151,6 +152,7 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	}
 	// Calling handler does not require locked mutex,
 	// reducing lock time.
+	h := a.handler
 	a.mux.Unlock()
 	// Sending ErrTransactionTimeOut to handler for all transactions,
 	// blocking until last one.
@@ -159,7 +161,7 @@ func (a *Agent) Collect(gcTime time.Time) error {
 	}
 	for _, id := range toRemove {
 		event.TransactionID = id
-		a.handler(event)
+		h(event)
 	}
 	return nil
 }
