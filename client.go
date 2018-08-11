@@ -26,10 +26,11 @@ func Dial(network, address string) (*Client, error) {
 
 // ClientOptions are used to initialize Client.
 type ClientOptions struct {
-	Agent       ClientAgent
-	Connection  Connection
+	Agent      ClientAgent
+	Connection Connection
+	Handler    Handler // default handler (if no transaction found)
+
 	TimeoutRate time.Duration // defaults to 100 ms
-	Handler     Handler       // default handler (if no transaction found)
 	Collector   Collector     // defaults to ticker collector
 	Clock       Clock         // defaults to calling time.Now
 }
