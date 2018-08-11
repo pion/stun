@@ -7,15 +7,13 @@ import (
 
 func TestAgent_ProcessInTransaction(t *testing.T) {
 	m := New()
-	a := NewAgent(AgentOptions{
-		Handler: func(e Event) {
-			if e.Error != nil {
-				t.Errorf("got error: %s", e.Error)
-			}
-			if !e.Message.Equal(m) {
-				t.Errorf("%s (got) != %s (expected)", e.Message, m)
-			}
-		},
+	a := NewAgent(func(e Event) {
+		if e.Error != nil {
+			t.Errorf("got error: %s", e.Error)
+		}
+		if !e.Message.Equal(m) {
+			t.Errorf("%s (got) != %s (expected)", e.Message, m)
+		}
 	})
 	if err := m.NewTransactionID(); err != nil {
 		t.Fatal(err)
@@ -33,15 +31,13 @@ func TestAgent_ProcessInTransaction(t *testing.T) {
 
 func TestAgent_Process(t *testing.T) {
 	m := New()
-	a := NewAgent(AgentOptions{
-		Handler: func(e Event) {
-			if e.Error != nil {
-				t.Errorf("got error: %s", e.Error)
-			}
-			if !e.Message.Equal(m) {
-				t.Errorf("%s (got) != %s (expected)", e.Message, m)
-			}
-		},
+	a := NewAgent(func(e Event) {
+		if e.Error != nil {
+			t.Errorf("got error: %s", e.Error)
+		}
+		if !e.Message.Equal(m) {
+			t.Errorf("%s (got) != %s (expected)", e.Message, m)
+		}
 	})
 	if err := m.NewTransactionID(); err != nil {
 		t.Fatal(err)
@@ -60,9 +56,7 @@ func TestAgent_Process(t *testing.T) {
 }
 
 func TestAgent_Start(t *testing.T) {
-	a := NewAgent(AgentOptions{
-		Handler: noopHandler,
-	})
+	a := NewAgent(noopHandler)
 	id := NewTransactionID()
 	deadline := time.Now().AddDate(0, 0, 1)
 	if err := a.Start(id, deadline); err != nil {
@@ -91,10 +85,8 @@ func TestAgent_Start(t *testing.T) {
 
 func TestAgent_Stop(t *testing.T) {
 	called := make(chan Event, 1)
-	a := NewAgent(AgentOptions{
-		Handler: func(e Event) {
-			called <- e
-		},
+	a := NewAgent(func(e Event) {
+		called <- e
 	})
 	if err := a.Stop(transactionID{}); err != ErrTransactionNotExists {
 		t.Fatalf("unexpected error: %s, should be %s", err, ErrTransactionNotExists)
@@ -131,9 +123,7 @@ func TestAgent_Stop(t *testing.T) {
 var noopHandler = func(e Event) {}
 
 func TestAgent_GC(t *testing.T) {
-	a := NewAgent(AgentOptions{
-		Handler: noopHandler,
-	})
+	a := NewAgent(noopHandler)
 	shouldTimeOutID := make(map[transactionID]bool)
 	deadline := time.Date(2027, time.November, 21,
 		23, 0, 0, 0,
@@ -180,9 +170,7 @@ func TestAgent_GC(t *testing.T) {
 }
 
 func BenchmarkAgent_GC(b *testing.B) {
-	a := NewAgent(AgentOptions{
-		Handler: noopHandler,
-	})
+	a := NewAgent(noopHandler)
 	deadline := time.Now().AddDate(0, 0, 1)
 	for i := 0; i < agentCollectCap; i++ {
 		if err := a.Start(NewTransactionID(), deadline); err != nil {
@@ -204,9 +192,7 @@ func BenchmarkAgent_GC(b *testing.B) {
 }
 
 func BenchmarkAgent_Process(b *testing.B) {
-	a := NewAgent(AgentOptions{
-		Handler: noopHandler,
-	})
+	a := NewAgent(noopHandler)
 	deadline := time.Now().AddDate(0, 0, 1)
 	for i := 0; i < 1000; i++ {
 		if err := a.Start(NewTransactionID(), deadline); err != nil {

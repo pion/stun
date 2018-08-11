@@ -6,16 +6,11 @@ import (
 	"time"
 )
 
-// AgentOptions are required to initialize Agent.
-type AgentOptions struct {
-	Handler Handler // Handler for transaction state changes.
-}
-
-// NewAgent initializes and returns new Agent from options.
-func NewAgent(o AgentOptions) *Agent {
+// NewAgent initializes and returns new Agent with provided handler.
+func NewAgent(h Handler) *Agent {
 	a := &Agent{
 		transactions: make(map[transactionID]agentTransaction),
-		handler:      o.Handler,
+		handler:      h,
 	}
 	return a
 }

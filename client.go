@@ -57,7 +57,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 		return nil, ErrNoConnection
 	}
 	if c.a == nil {
-		c.a = NewAgent(AgentOptions{})
+		c.a = NewAgent(nil)
 	}
 	if c.gcRate == 0 {
 		c.gcRate = defaultTimeoutRate
