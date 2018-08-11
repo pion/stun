@@ -31,6 +31,7 @@ type ClientOptions struct {
 	TimeoutRate time.Duration // defaults to 100 ms
 	Handler     Handler       // default handler (if no transaction found)
 	Collector   Collector     // defaults to ticker collector
+	Clock       Clock         // defaults to calling time.Now
 }
 
 const defaultTimeoutRate = time.Millisecond * 100
@@ -48,7 +49,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 		c:           options.Connection,
 		a:           options.Agent,
 		collector:   options.Collector,
-		clock:       systemClock,
+		clock:       options.Clock,
 		rto:         int64(time.Millisecond * 500),
 		t:           make(map[transactionID]*clientTransaction, 100),
 		maxAttempts: 7,
@@ -63,12 +64,16 @@ func NewClient(options ClientOptions) (*Client, error) {
 	if options.TimeoutRate == 0 {
 		options.TimeoutRate = defaultTimeoutRate
 	}
+	if c.clock == nil {
+		c.clock = systemClock
+	}
 	if err := c.a.SetHandler(c.handleAgentCallback); err != nil {
 		return nil, err
 	}
 	if c.collector == nil {
 		c.collector = &tickerCollector{
 			close: make(chan struct{}),
+			clock: c.clock,
 		}
 	}
 	if err := c.collector.Start(options.TimeoutRate, func(t time.Time) {
@@ -260,6 +265,7 @@ func closedOrPanic(err error) {
 type tickerCollector struct {
 	close chan struct{}
 	wg    sync.WaitGroup
+	clock Clock
 }
 
 // Collector calls function f with constant rate.
@@ -278,8 +284,8 @@ func (a *tickerCollector) Start(rate time.Duration, f func(now time.Time)) error
 			case <-a.close:
 				t.Stop()
 				return
-			case now := <-t.C:
-				f(now)
+			case <-t.C:
+				f(a.clock.Now())
 			}
 		}
 	}()
