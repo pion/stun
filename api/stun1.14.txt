@@ -16,4 +16,5 @@ pkg github.com/gortc/stun, type ClientAgent interface, Start([12]uint8, time.Tim
 pkg github.com/gortc/stun, type ClientOptions struct, Handler Handler
 pkg github.com/gortc/stun, type ClientOptions struct, Clock Clock
 pkg github.com/gortc/stun, type ClientOptions struct, Collector Collector
+pkg github.com/gortc/stun, type ClientOptions struct, RTO time.Duration
 pkg github.com/gortc/stun, func NewAgent(Handler) *Agent

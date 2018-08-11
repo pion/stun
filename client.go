@@ -30,12 +30,11 @@ type ClientOptions struct {
 	Connection Connection
 	Handler    Handler // default handler (if no transaction found)
 
+	RTO         time.Duration // defaults to 500ms
 	TimeoutRate time.Duration // defaults to 100 ms
 	Collector   Collector     // defaults to ticker collector
 	Clock       Clock         // defaults to calling time.Now
 }
-
-const defaultTimeoutRate = time.Millisecond * 100
 
 // ErrNoConnection means that ClientOptions.Connection is nil.
 var ErrNoConnection = errors.New("no connection provided")
@@ -45,13 +44,17 @@ var ErrNoConnection = errors.New("no connection provided")
 // if necessary. Call Close method after using Client to release
 // resources.
 func NewClient(options ClientOptions) (*Client, error) {
+	const (
+		defaultTimeoutRate = time.Millisecond * 100
+		defaultRTO         = defaultTimeoutRate * 5
+	)
 	c := &Client{
 		close:       make(chan struct{}),
 		c:           options.Connection,
 		a:           options.Agent,
 		collector:   options.Collector,
 		clock:       options.Clock,
-		rto:         int64(time.Millisecond * 500),
+		rto:         int64(options.RTO),
 		t:           make(map[transactionID]*clientTransaction, 100),
 		maxAttempts: 7,
 		handler:     options.Handler,
@@ -64,6 +67,9 @@ func NewClient(options ClientOptions) (*Client, error) {
 	}
 	if options.TimeoutRate == 0 {
 		options.TimeoutRate = defaultTimeoutRate
+	}
+	if c.rto == 0 {
+		c.rto = int64(defaultRTO)
 	}
 	if c.clock == nil {
 		c.clock = systemClock
