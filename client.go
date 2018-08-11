@@ -30,6 +30,7 @@ type ClientOptions struct {
 	Connection  Connection
 	TimeoutRate time.Duration // defaults to 100 ms
 	Handler     Handler       // default handler (if no transaction found)
+	Collector   Collector     // defaults to ticker collector
 }
 
 const defaultTimeoutRate = time.Millisecond * 100
@@ -46,7 +47,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 		close:       make(chan struct{}),
 		c:           options.Connection,
 		a:           options.Agent,
-		gcRate:      options.TimeoutRate,
+		collector:   options.Collector,
 		clock:       systemClock,
 		rto:         int64(time.Millisecond * 500),
 		t:           make(map[transactionID]*clientTransaction, 100),
@@ -59,15 +60,24 @@ func NewClient(options ClientOptions) (*Client, error) {
 	if c.a == nil {
 		c.a = NewAgent(nil)
 	}
-	if c.gcRate == 0 {
-		c.gcRate = defaultTimeoutRate
+	if options.TimeoutRate == 0 {
+		options.TimeoutRate = defaultTimeoutRate
 	}
 	if err := c.a.SetHandler(c.handleAgentCallback); err != nil {
 		return nil, err
 	}
-	c.wg.Add(2)
+	if c.collector == nil {
+		c.collector = &tickerCollector{
+			close: make(chan struct{}),
+		}
+	}
+	if err := c.collector.Start(options.TimeoutRate, func(t time.Time) {
+		closedOrPanic(c.a.Collect(t))
+	}); err != nil {
+		return nil, err
+	}
+	c.wg.Add(1)
 	go c.readUntilClosed()
-	go c.collectUntilClosed()
 	runtime.SetFinalizer(c, clientFinalizer)
 	return c, nil
 }
@@ -110,7 +120,6 @@ type Client struct {
 	a           ClientAgent
 	c           Connection
 	close       chan struct{}
-	gcRate      time.Duration
 	rto         int64 // time.Duration
 	maxAttempts int32
 	closed      bool
@@ -118,6 +127,7 @@ type Client struct {
 	wg          sync.WaitGroup
 	clock       Clock
 	handler     Handler
+	collector   Collector
 
 	t    map[transactionID]*clientTransaction
 	tMux sync.RWMutex
@@ -247,18 +257,39 @@ func closedOrPanic(err error) {
 	panic(err)
 }
 
-func (c *Client) collectUntilClosed() {
-	t := time.NewTicker(c.gcRate)
-	defer c.wg.Done()
-	for {
-		select {
-		case <-c.close:
-			t.Stop()
-			return
-		case gcTime := <-t.C:
-			closedOrPanic(c.a.Collect(gcTime))
+type tickerCollector struct {
+	close chan struct{}
+	wg    sync.WaitGroup
+}
+
+// Collector calls function f with constant rate.
+type Collector interface {
+	Start(rate time.Duration, f func(now time.Time)) error
+	Close() error
+}
+
+func (a *tickerCollector) Start(rate time.Duration, f func(now time.Time)) error {
+	t := time.NewTicker(rate)
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		for {
+			select {
+			case <-a.close:
+				t.Stop()
+				return
+			case now := <-t.C:
+				f(now)
+			}
 		}
-	}
+	}()
+	return nil
+}
+
+func (a *tickerCollector) Close() error {
+	close(a.close)
+	a.wg.Wait()
+	return nil
 }
 
 // ErrClientClosed indicates that client is closed.
@@ -276,6 +307,9 @@ func (c *Client) Close() error {
 	}
 	c.closed = true
 	c.closedMux.Unlock()
+	if closeErr := c.collector.Close(); closeErr != nil {
+		return closeErr
+	}
 	agentErr, connErr := c.a.Close(), c.c.Close()
 	close(c.close)
 	c.wg.Wait()
