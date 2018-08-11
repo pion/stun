@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"net"
 	"os"
 	"sync"
 	"testing"
@@ -635,4 +636,126 @@ func TestCallbackWaitHandler(t *testing.T) {
 		h.wait()
 		h.reset()
 	}
+}
+
+type manualCollector struct {
+	f func(t time.Time)
+}
+
+func (m *manualCollector) Collect(t time.Time) {
+	m.f(t)
+}
+
+func (m *manualCollector) Start(rate time.Duration, f func(t time.Time)) error {
+	m.f = f
+	return nil
+}
+
+func (m *manualCollector) Close() error {
+	return nil
+}
+
+type manualClock struct {
+	mux     sync.Mutex
+	current time.Time
+}
+
+func (m *manualClock) Add(d time.Duration) time.Time {
+	m.mux.Lock()
+	v := m.current.Add(d)
+	m.current = v
+	m.mux.Unlock()
+	return v
+}
+
+func (m *manualClock) Now() time.Time {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+	return m.current
+}
+
+type manualAgent struct {
+	start func(id [TransactionIDSize]byte, deadline time.Time) error
+	h     Handler
+}
+
+func (n *manualAgent) SetHandler(h Handler) error {
+	n.h = h
+	return nil
+}
+
+func (n *manualAgent) Close() error {
+	return nil
+}
+
+func (manualAgent) Collect(time.Time) error { return nil }
+
+func (manualAgent) Process(m *Message) error { return nil }
+
+func (n *manualAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
+	return n.start(id, deadline)
+}
+
+func (n *manualAgent) Stop([TransactionIDSize]byte) error {
+	return nil
+}
+
+func TestClientRetransmission(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	connL, connR := net.Pipe()
+	defer connL.Close()
+	collector := new(manualCollector)
+	clock := &manualClock{current: time.Now()}
+	agent := &manualAgent{}
+	attempt := 0
+	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+		if attempt == 0 {
+			attempt++
+			go agent.h(Event{
+				TransactionID: id,
+				Error:         ErrTransactionTimeOut,
+			})
+		} else {
+			go agent.h(Event{
+				TransactionID: id,
+				Message:       response,
+			})
+		}
+		return nil
+	}
+	c, err := NewClient(ClientOptions{
+		Agent:      agent,
+		Collector:  collector,
+		Connection: connR,
+		Clock:      clock,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		buf := make([]byte, 1500)
+		readN, readErr := connL.Read(buf)
+		if readErr != nil {
+			t.Error(readErr)
+		}
+		if !IsMessage(buf[:readN]) {
+			t.Error("should be STUN")
+		}
+		readN, readErr = connL.Read(buf)
+		if readErr != nil {
+			t.Error(readErr)
+		}
+		if !IsMessage(buf[:readN]) {
+			t.Error("should be STUN")
+		}
+	}()
+	if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+		if event.Error != nil {
+			t.Error("failed")
+		}
+	}); doErr != nil {
+		t.Fatal(err)
+	}
+
 }
