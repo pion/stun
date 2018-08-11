@@ -109,6 +109,14 @@ const (
 	CodeInsufficientCapacity  ErrorCode = 508 // Insufficient Capacity
 )
 
+// Error codes from RFC 6156.
+//
+// RFC 6156 Section 10.2
+const (
+	CodeAddrFamilyNotSupported ErrorCode = 440 // Address Family not Supported
+	CodePeerAddrFamilyMismatch ErrorCode = 443 // Peer Address Family Mismatch
+)
+
 var errorReasons = map[ErrorCode][]byte{
 	CodeTryAlternate:     []byte("Try Alternate"),
 	CodeBadRequest:       []byte("Bad Request"),
@@ -125,4 +133,8 @@ var errorReasons = map[ErrorCode][]byte{
 	CodeUnsupportedTransProto: []byte("Unsupported Transport Protocol"),
 	CodeAllocQuotaReached:     []byte("Allocation Quota Reached"),
 	CodeInsufficientCapacity:  []byte("Insufficient Capacity"),
+
+	// RFC 6156.
+	CodeAddrFamilyNotSupported: []byte("Address Family not Supported"),
+	CodePeerAddrFamilyMismatch: []byte("Peer Address Family Mismatch"),
 }
