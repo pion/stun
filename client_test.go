@@ -789,27 +789,26 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 		t.Fatal(err)
 	}
 	c.SetRTO(time.Second)
-	connClosed := make(chan struct{})
-	go func() {
-		defer func() {
-			connClosed <- struct{}{}
-		}()
-		buf := make([]byte, 1500)
-		for {
-			readN, readErr := connL.Read(buf)
-			if readErr != nil {
-				if readErr == io.EOF {
-					break
-				}
-				t.Error(readErr)
-			}
-			if !IsMessage(buf[:readN]) {
-				t.Error("should be STUN")
-			}
-		}
-	}()
+	conns := new(sync.WaitGroup)
 	wg := new(sync.WaitGroup)
 	for i := 0; i < concurrency; i++ {
+		conns.Add(1)
+		go func() {
+			defer conns.Done()
+			buf := make([]byte, 1500)
+			for {
+				readN, readErr := connL.Read(buf)
+				if readErr != nil {
+					if readErr == io.EOF {
+						break
+					}
+					t.Error(readErr)
+				}
+				if !IsMessage(buf[:readN]) {
+					t.Error("should be STUN")
+				}
+			}
+		}()
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -826,7 +825,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 	if connErr := connR.Close(); connErr != nil {
 		t.Error(connErr)
 	}
-	<-connClosed
+	conns.Wait()
 }
 
 func TestClient_DoConcurrent(t *testing.T) {
