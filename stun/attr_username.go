@@ -22,7 +22,7 @@ func (u *Username) Pack(message *Message) error {
 	if len([]byte(u.Username)) > usernameMaxLength {
 		return errors.Errorf("invalid username length %d", len([]byte(u.Username)))
 	}
-	message.AddAttribute(AttrSoftware, []byte(u.Username))
+	message.AddAttribute(AttrUsername, []byte(u.Username))
 	return nil
 }
 
