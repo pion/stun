@@ -10,15 +10,10 @@ os:
 
 go:
   - master
-  - 1.9.x
-  - 1.10.x
-  
-env:
-  - TEST_EXTERNAL=1
+  - stable
 
 matrix:
   allow_failures:
-    - go: 1.9.x
     - go: master
   fast_finish: true
 
