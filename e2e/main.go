@@ -41,7 +41,48 @@ func main() {
 	laddr := conn.LocalAddr()
 	fmt.Println("LISTEN ON", laddr)
 
-	request, err := stun.Build(stun.BindingRequest, stun.TransactionID)
+	request, err := stun.Build(stun.BindingRequest, stun.TransactionID, stun.Fingerprint)
+	if err != nil {
+		log.Fatalln("failed to build:", err)
+	}
+	var (
+		nonce stun.Nonce
+		realm stun.Realm
+	)
+	const (
+		username = "user"
+		password = "secret"
+	)
+
+	// First request should error.
+	if err = client.Do(request, func(event stun.Event) {
+		if event.Error != nil {
+			log.Fatalln("got event with error:", event.Error)
+		}
+		response := event.Message
+		if response.Type != stun.BindingError {
+			log.Fatalln("bad message", response)
+		}
+		var errCode stun.ErrorCodeAttribute
+		if codeErr := errCode.GetFrom(response); codeErr != nil {
+			log.Fatalln("failed to get error code:", codeErr)
+		}
+		if errCode.Code != stun.CodeUnauthorised {
+			log.Fatalln("unexpected error code:", errCode)
+		}
+		if parseErr := response.Parse(&nonce, &realm); parseErr != nil {
+			log.Fatalln("failed to parse:", parseErr)
+		}
+		fmt.Println("Got nonce", nonce, "and realm", realm)
+	}); err != nil {
+		log.Fatalln("failed to Do:", err)
+	}
+
+	request, err = stun.Build(stun.TransactionID, stun.BindingRequest,
+		stun.NewUsername(username), nonce, realm,
+		stun.NewLongTermIntegrity(username, realm.String(), password),
+		stun.Fingerprint,
+	)
 	if err != nil {
 		log.Fatalln("failed to build:", err)
 	}
