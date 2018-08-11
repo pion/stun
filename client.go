@@ -31,7 +31,7 @@ type ClientOptions struct {
 	Handler    Handler // default handler (if no transaction found)
 
 	RTO         time.Duration // defaults to 500ms
-	TimeoutRate time.Duration // defaults to 100 ms
+	TimeoutRate time.Duration // defaults to 100ms
 	Collector   Collector     // defaults to ticker collector
 	Clock       Clock         // defaults to calling time.Now
 }
