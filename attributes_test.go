@@ -75,6 +75,7 @@ func TestAttrTypeRange(t *testing.T) {
 		AttrErrorCode,
 		AttrUseCandidate,
 		AttrEvenPort,
+		AttrRequestedAddressFamily,
 	} {
 		t.Run(a.String(), func(t *testing.T) {
 			if a.Optional() || !a.Required() {

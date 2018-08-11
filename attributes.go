@@ -74,6 +74,11 @@ const (
 	AttrReservationToken   AttrType = 0x0022 // RESERVATION-TOKEN
 )
 
+// Attributes from RFC 6156 TURN IPv6.
+const (
+	AttrRequestedAddressFamily AttrType = 0x0017 // REQUESTED-ADDRESS-FAMILY
+)
+
 // Attributes from An Origin Attribute for the STUN Protocol.
 const (
 	AttrOrigin AttrType = 0x802F
@@ -85,31 +90,32 @@ func (t AttrType) Value() uint16 {
 }
 
 var attrNames = map[AttrType]string{
-	AttrMappedAddress:      "MAPPED-ADDRESS",
-	AttrUsername:           "USERNAME",
-	AttrErrorCode:          "ERROR-CODE",
-	AttrMessageIntegrity:   "MESSAGE-INTEGRITY",
-	AttrUnknownAttributes:  "UNKNOWN-ATTRIBUTES",
-	AttrRealm:              "REALM",
-	AttrNonce:              "NONCE",
-	AttrXORMappedAddress:   "XOR-MAPPED-ADDRESS",
-	AttrSoftware:           "SOFTWARE",
-	AttrAlternateServer:    "ALTERNATE-SERVER",
-	AttrFingerprint:        "FINGERPRINT",
-	AttrPriority:           "PRIORITY",
-	AttrUseCandidate:       "USE-CANDIDATE",
-	AttrICEControlled:      "ICE-CONTROLLED",
-	AttrICEControlling:     "ICE-CONTROLLING",
-	AttrChannelNumber:      "CHANNEL-NUMBER",
-	AttrLifetime:           "LIFETIME",
-	AttrXORPeerAddress:     "XOR-PEER-ADDRESS",
-	AttrData:               "DATA",
-	AttrXORRelayedAddress:  "XOR-RELAYED-ADDRESS",
-	AttrEvenPort:           "EVEN-PORT",
-	AttrRequestedTransport: "REQUESTED-TRANSPORT",
-	AttrDontFragment:       "DONT-FRAGMENT",
-	AttrReservationToken:   "RESERVATION-TOKEN",
-	AttrOrigin:             "ORIGIN",
+	AttrMappedAddress:          "MAPPED-ADDRESS",
+	AttrUsername:               "USERNAME",
+	AttrErrorCode:              "ERROR-CODE",
+	AttrMessageIntegrity:       "MESSAGE-INTEGRITY",
+	AttrUnknownAttributes:      "UNKNOWN-ATTRIBUTES",
+	AttrRealm:                  "REALM",
+	AttrNonce:                  "NONCE",
+	AttrXORMappedAddress:       "XOR-MAPPED-ADDRESS",
+	AttrSoftware:               "SOFTWARE",
+	AttrAlternateServer:        "ALTERNATE-SERVER",
+	AttrFingerprint:            "FINGERPRINT",
+	AttrPriority:               "PRIORITY",
+	AttrUseCandidate:           "USE-CANDIDATE",
+	AttrICEControlled:          "ICE-CONTROLLED",
+	AttrICEControlling:         "ICE-CONTROLLING",
+	AttrChannelNumber:          "CHANNEL-NUMBER",
+	AttrLifetime:               "LIFETIME",
+	AttrXORPeerAddress:         "XOR-PEER-ADDRESS",
+	AttrData:                   "DATA",
+	AttrXORRelayedAddress:      "XOR-RELAYED-ADDRESS",
+	AttrEvenPort:               "EVEN-PORT",
+	AttrRequestedTransport:     "REQUESTED-TRANSPORT",
+	AttrDontFragment:           "DONT-FRAGMENT",
+	AttrReservationToken:       "RESERVATION-TOKEN",
+	AttrRequestedAddressFamily: "REQUESTED-ADDRESS-FAMILY",
+	AttrOrigin:                 "ORIGIN",
 }
 
 func (t AttrType) String() string {
