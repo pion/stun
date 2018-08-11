@@ -395,7 +395,6 @@ func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 func (s *callbackWaitHandler) reset() {
 	s.processed = false
 	s.callback = nil
-	s.handler = nil
 }
 
 var callbackWaitHandlerPool = sync.Pool{

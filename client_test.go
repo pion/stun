@@ -712,12 +712,12 @@ func TestClientRetransmission(t *testing.T) {
 	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
 		if attempt == 0 {
 			attempt++
-			go agent.h(Event{
+			agent.h(Event{
 				TransactionID: id,
 				Error:         ErrTransactionTimeOut,
 			})
 		} else {
-			go agent.h(Event{
+			agent.h(Event{
 				TransactionID: id,
 				Message:       response,
 			})
@@ -733,6 +733,7 @@ func TestClientRetransmission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.SetRTO(time.Second)
 	go func() {
 		buf := make([]byte, 1500)
 		readN, readErr := connL.Read(buf)
