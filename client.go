@@ -26,14 +26,26 @@ func Dial(network, address string) (*Client, error) {
 
 // ClientOptions are used to initialize Client.
 type ClientOptions struct {
-	Agent      ClientAgent
+	// Connection is the only mandatory field in options. Abstracts network.
 	Connection Connection
-	Handler    Handler // default handler (if no transaction found)
 
-	RTO         time.Duration // defaults to 500ms
+	// Handler is called if Agent emits the Event with TransactionID that
+	// is not currently registered by Client. Useful for handling
+	// Data indications from TURN server.
+	Handler Handler // default handler (if no transaction found)
+	// Agent is optional implementation of STUN Agent. Defaults to
+	// agent implementation in current package, see agent.go.
+	Agent ClientAgent
+	// RTO as defined in STUN RFC.
+	RTO time.Duration // defaults to 500ms
+	// TimeoutRate is rate passed to Collector, the minimum duration between
+	// two calls of collector function.
 	TimeoutRate time.Duration // defaults to 100ms
-	Collector   Collector     // defaults to ticker collector
-	Clock       Clock         // defaults to calling time.Now
+	// Collector is optional implementation of ticker which calls function on each tick.
+	Collector Collector // defaults to ticker collector
+	// Clock is optional source of current time.
+	// Also Clock is passed to default collector if set.
+	Clock Clock // defaults to calling time.Now
 }
 
 // ErrNoConnection means that ClientOptions.Connection is nil.
@@ -276,6 +288,8 @@ type tickerCollector struct {
 }
 
 // Collector calls function f with constant rate.
+//
+// The simple Collector is ticker which calls function on each tick.
 type Collector interface {
 	Start(rate time.Duration, f func(now time.Time)) error
 	Close() error
