@@ -380,7 +380,7 @@ func TestClientConnErr(t *testing.T) {
 	if err := c.Do(m, nil); err == nil {
 		t.Error("error expected")
 	}
-	if err := c.Do(m, noopHandler); err == nil {
+	if err := c.Do(m, NoopHandler); err == nil {
 		t.Error("error expected")
 	}
 }
@@ -406,7 +406,7 @@ func TestClientConnErrStopErr(t *testing.T) {
 		}
 	}()
 	m := MustBuild(TransactionID)
-	if err := c.Do(m, noopHandler); err == nil {
+	if err := c.Do(m, NoopHandler); err == nil {
 		t.Error("error expected")
 	}
 }

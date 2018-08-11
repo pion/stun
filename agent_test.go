@@ -56,7 +56,7 @@ func TestAgent_Process(t *testing.T) {
 }
 
 func TestAgent_Start(t *testing.T) {
-	a := NewAgent(noopHandler)
+	a := NewAgent(nil)
 	id := NewTransactionID()
 	deadline := time.Now().AddDate(0, 0, 1)
 	if err := a.Start(id, deadline); err != nil {
@@ -120,10 +120,8 @@ func TestAgent_Stop(t *testing.T) {
 	}
 }
 
-var noopHandler = func(e Event) {}
-
 func TestAgent_GC(t *testing.T) {
-	a := NewAgent(noopHandler)
+	a := NewAgent(nil)
 	shouldTimeOutID := make(map[transactionID]bool)
 	deadline := time.Date(2027, time.November, 21,
 		23, 0, 0, 0,
@@ -170,7 +168,7 @@ func TestAgent_GC(t *testing.T) {
 }
 
 func BenchmarkAgent_GC(b *testing.B) {
-	a := NewAgent(noopHandler)
+	a := NewAgent(nil)
 	deadline := time.Now().AddDate(0, 0, 1)
 	for i := 0; i < agentCollectCap; i++ {
 		if err := a.Start(NewTransactionID(), deadline); err != nil {
@@ -192,7 +190,7 @@ func BenchmarkAgent_GC(b *testing.B) {
 }
 
 func BenchmarkAgent_Process(b *testing.B) {
-	a := NewAgent(noopHandler)
+	a := NewAgent(nil)
 	deadline := time.Now().AddDate(0, 0, 1)
 	for i := 0; i < 1000; i++ {
 		if err := a.Start(NewTransactionID(), deadline); err != nil {

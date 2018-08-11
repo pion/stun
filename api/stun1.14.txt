@@ -18,3 +18,4 @@ pkg github.com/gortc/stun, type ClientOptions struct, Clock Clock
 pkg github.com/gortc/stun, type ClientOptions struct, Collector Collector
 pkg github.com/gortc/stun, type ClientOptions struct, RTO time.Duration
 pkg github.com/gortc/stun, func NewAgent(Handler) *Agent
+pkg github.com/gortc/stun, var NoopHandler Handler
