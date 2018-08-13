@@ -25,7 +25,13 @@ func test(network string) {
 	if err != nil {
 		log.Fatalln("failed to dial conn:", err)
 	}
-	client, err := stun.NewClient(conn)
+	var options []stun.ClientOption
+	if network == "tcp" {
+		// Switching to "NO-RTO" mode.
+		fmt.Println("using WithNoRetransmit for TCP")
+		options = append(options, stun.WithNoRetransmit)
+	}
+	client, err := stun.NewClient(conn, options...)
 	if err != nil {
 		log.Fatal(err)
 	}

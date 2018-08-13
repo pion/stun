@@ -933,3 +933,60 @@ func TestClientClosedStart(t *testing.T) {
 		t.Error("should error")
 	}
 }
+
+func TestWithNoRetransmit(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	connL, connR := net.Pipe()
+	defer connL.Close()
+	collector := new(manualCollector)
+	clock := &manualClock{current: time.Now()}
+	agent := &manualAgent{}
+	attempt := 0
+	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+		if attempt == 0 {
+			attempt++
+			go agent.h(Event{
+				TransactionID: id,
+				Error:         ErrTransactionTimeOut,
+			})
+		} else {
+			t.Error("there should be no second attempt")
+			go agent.h(Event{
+				TransactionID: id,
+				Error:         ErrTransactionTimeOut,
+			})
+		}
+		return nil
+	}
+	c, err := NewClient(connR,
+		WithAgent(agent),
+		WithClock(clock),
+		WithCollector(collector),
+		WithRTO(time.Millisecond),
+		WithNoRetransmit,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotReads := make(chan struct{})
+	go func() {
+		buf := make([]byte, 1500)
+		readN, readErr := connL.Read(buf)
+		if readErr != nil {
+			t.Error(readErr)
+		}
+		if !IsMessage(buf[:readN]) {
+			t.Error("should be STUN")
+		}
+		gotReads <- struct{}{}
+	}()
+	if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+		if event.Error != ErrTransactionTimeOut {
+			t.Error("unexpected error")
+		}
+	}); doErr != nil {
+		t.Fatal(err)
+	}
+	<-gotReads
+}

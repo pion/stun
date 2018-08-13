@@ -77,16 +77,29 @@ func WithCollector(coll Collector) ClientOption {
 	}
 }
 
+// WithNoRetransmit disables retransmissions and sets RTO to
+// defaultMaxAttempts * defaultRTO which will be effectively time out
+// if not set.
+//
+// Useful for TCP connections where transport handles RTO.
+func WithNoRetransmit(c *Client) {
+	c.maxAttempts = 0
+	if c.rto == 0 {
+		c.rto = defaultMaxAttempts * int64(defaultRTO)
+	}
+}
+
+const (
+	defaultTimeoutRate = time.Millisecond * 5
+	defaultRTO         = time.Millisecond * 300
+	defaultMaxAttempts = 7
+)
+
 // NewClient initializes new Client from provided options,
 // starting internal goroutines and using default options fields
 // if necessary. Call Close method after using Client to release
 // resources.
 func NewClient(conn Connection, options ...ClientOption) (*Client, error) {
-	const (
-		defaultTimeoutRate = time.Millisecond * 5
-		defaultRTO         = time.Millisecond * 300
-		defaultMaxAttempts = 7
-	)
 	c := &Client{
 		close:       make(chan struct{}),
 		c:           conn,
@@ -491,7 +504,7 @@ func (c *Client) handleAgentCallback(e Event) {
 		return
 	}
 	h := t.h
-	if atomic.LoadInt32(&c.maxAttempts) < t.attempt || e.Error == nil {
+	if atomic.LoadInt32(&c.maxAttempts) <= t.attempt || e.Error == nil {
 		// Transaction completed.
 		putClientTransaction(t)
 		h(e)
