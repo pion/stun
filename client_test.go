@@ -874,3 +874,23 @@ func TestNewClient(t *testing.T) {
 		}
 	})
 }
+
+func TestClient_Close(t *testing.T) {
+	t.Run("CollectorCloseError", func(t *testing.T) {
+		closeErr := errors.New("start error")
+		c, createErr := NewClient(ClientOptions{
+			Connection: noopConnection{},
+			Collector: errorCollector{
+				closeError: closeErr,
+			},
+			Agent: &TestAgent{},
+		})
+		if createErr != nil {
+			t.Errorf("unexpected create error returned: %v", createErr)
+		}
+		gotCloseErr := c.Close()
+		if gotCloseErr != closeErr {
+			t.Errorf("unexpected close error returned: %v", gotCloseErr)
+		}
+	})
+}
