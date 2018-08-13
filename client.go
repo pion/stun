@@ -167,14 +167,14 @@ type Client struct {
 	rtoRate     time.Duration
 	maxAttempts int32
 	closed      bool
-	closedMux   sync.RWMutex
 	wg          sync.WaitGroup
 	clock       Clock
 	handler     Handler
 	collector   Collector
+	t           map[transactionID]*clientTransaction
 
-	t    map[transactionID]*clientTransaction
-	tMux sync.RWMutex
+	// mux guards closed and t
+	mux sync.RWMutex
 }
 
 // clientTransaction represents transaction in progress.
@@ -214,8 +214,8 @@ func (t clientTransaction) nextTimeout(now time.Time) time.Time {
 //
 // Could return ErrClientClosed, ErrTransactionExists.
 func (c *Client) start(t *clientTransaction) error {
-	c.tMux.Lock()
-	defer c.tMux.Unlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	if c.closed {
 		return ErrClientClosed
 	}
@@ -347,13 +347,13 @@ func (c *Client) Close() error {
 	if err := c.checkInit(); err != nil {
 		return err
 	}
-	c.closedMux.Lock()
+	c.mux.Lock()
 	if c.closed {
-		c.closedMux.Unlock()
+		c.mux.Unlock()
 		return ErrClientClosed
 	}
 	c.closed = true
-	c.closedMux.Unlock()
+	c.mux.Unlock()
 	if closeErr := c.collector.Close(); closeErr != nil {
 		return closeErr
 	}
@@ -461,7 +461,7 @@ func (c *Client) Do(m *Message, f func(Event)) error {
 }
 
 func (c *Client) delete(id transactionID) {
-	c.tMux.Lock()
+	c.mux.Lock()
 	if c.t != nil {
 		t, ok := c.t[id]
 		if ok {
@@ -469,20 +469,20 @@ func (c *Client) delete(id transactionID) {
 		}
 		delete(c.t, id)
 	}
-	c.tMux.Unlock()
+	c.mux.Unlock()
 }
 
 func (c *Client) handleAgentCallback(e Event) {
-	c.tMux.Lock()
-	if c.t == nil {
-		c.tMux.Unlock()
+	c.mux.Lock()
+	if c.closed {
+		c.mux.Unlock()
 		return
 	}
 	t, found := c.t[e.TransactionID]
 	if found {
 		delete(c.t, t.id)
 	}
-	c.tMux.Unlock()
+	c.mux.Unlock()
 	if !found {
 		if c.handler != nil && e.Error != ErrTransactionStopped {
 			c.handler(e)
@@ -541,9 +541,9 @@ func (c *Client) Start(m *Message, h Handler) error {
 	if err := c.checkInit(); err != nil {
 		return err
 	}
-	c.closedMux.RLock()
+	c.mux.RLock()
 	closed := c.closed
-	c.closedMux.RUnlock()
+	c.mux.RUnlock()
 	if closed {
 		return ErrClientClosed
 	}
