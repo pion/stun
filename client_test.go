@@ -874,3 +874,44 @@ func TestClient_Close(t *testing.T) {
 		}
 	})
 }
+
+func TestClientDefaultHandler(t *testing.T) {
+	a := &TestAgent{
+		e: make(chan Event),
+	}
+	id := NewTransactionID()
+	handlerCalled := make(chan struct{})
+	called := false
+	c, createErr := NewClient(noopConnection{},
+		WithAgent(a),
+		WithHandler(func(e Event) {
+			if called {
+				t.Error("should not be called twice")
+			}
+			called = true
+			if e.TransactionID != id {
+				t.Error("wrong transaction ID")
+			}
+			handlerCalled <- struct{}{}
+		}),
+	)
+	if createErr != nil {
+		t.Fatal(createErr)
+	}
+	go func() {
+		a.h(Event{
+			TransactionID: id,
+		})
+	}()
+	select {
+	case <-handlerCalled:
+		// pass
+	case <-time.After(time.Millisecond * 100):
+		t.Fatal("timed out")
+	}
+	if closeErr := c.Close(); closeErr != nil {
+		t.Error(closeErr)
+	}
+	// Handler call should be ignored.
+	a.h(Event{})
+}
