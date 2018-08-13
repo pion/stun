@@ -14,3 +14,11 @@ pkg github.com/gortc/stun, var ErrAttrSizeInvalid error
 pkg github.com/gortc/stun, type AgentOptions struct
 pkg github.com/gortc/stun, type AgentOptions struct, Handler Handler
 pkg github.com/gortc/stun, func NewClient(ClientOptions) (*Client, error)
+pkg github.com/gortc/stun, type ClientOptions struct
+pkg github.com/gortc/stun, type ClientOptions struct, Agent ClientAgent
+pkg github.com/gortc/stun, type ClientOptions struct, Clock Clock
+pkg github.com/gortc/stun, type ClientOptions struct, Collector Collector
+pkg github.com/gortc/stun, type ClientOptions struct, Connection Connection
+pkg github.com/gortc/stun, type ClientOptions struct, Handler Handler
+pkg github.com/gortc/stun, type ClientOptions struct, RTO time.Duration
+pkg github.com/gortc/stun, type ClientOptions struct, TimeoutRate time.Duration
