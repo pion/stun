@@ -915,3 +915,21 @@ func TestClientDefaultHandler(t *testing.T) {
 	// Handler call should be ignored.
 	a.h(Event{})
 }
+
+func TestClientClosedStart(t *testing.T) {
+	a := &TestAgent{
+		e: make(chan Event),
+	}
+	c, createErr := NewClient(noopConnection{},
+		WithAgent(a),
+	)
+	if createErr != nil {
+		t.Fatal(createErr)
+	}
+	if closeErr := c.Close(); closeErr != nil {
+		t.Error(closeErr)
+	}
+	if startErr := c.start(&clientTransaction{}); startErr != ErrClientClosed {
+		t.Error("should error")
+	}
+}
