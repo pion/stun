@@ -464,57 +464,55 @@ func (c *Client) handleAgentCallback(e Event) {
 	}
 	c.tMux.Unlock()
 	if !found {
-		if c.handler != nil {
+		if c.handler != nil && e.Error != ErrTransactionStopped {
 			c.handler(e)
 		}
 		// Ignoring.
 		return
 	}
 	h := t.h
-
 	if atomic.LoadInt32(&c.maxAttempts) < t.attempt || e.Error == nil {
 		// Transaction completed.
 		putClientTransaction(t)
 		h(e)
 		return
 	}
-
 	// Doing re-transmission.
 	t.attempt++
-	if err := c.start(t); err != nil {
-		putClientTransaction(t)
-		e.Error = err
+	// Starting client transaction.
+	if startErr := c.start(t); startErr != nil {
+		c.delete(t.id)
+		e.Error = startErr
 		h(e)
 		return
 	}
-
-	// Starting transaction in agent.
+	// Starting agent transaction.
 	now := c.clock.Now()
 	d := t.nextTimeout(now)
-	if err := c.a.Start(t.id, d); err != nil {
+	if startErr := c.a.Start(t.id, d); startErr != nil {
 		c.delete(t.id)
-		e.Error = err
+		e.Error = startErr
 		h(e)
 		return
 	}
-
 	// Writing message to connection again.
-	_, err := c.c.Write(t.raw)
-	if err != nil {
+	_, writeErr := c.c.Write(t.raw)
+	if writeErr != nil {
 		c.delete(t.id)
-		e.Error = err
-
-		// Stopping transaction instead of waiting until deadline.
+		e.Error = writeErr
+		// Stopping agent transaction instead of waiting until it's deadline.
+		// This will call handleAgentCallback with "ErrTransactionStopped" error
+		// which will be ignored.
 		if stopErr := c.a.Stop(t.id); stopErr != nil {
+			// Failed to stop agent transaction. Wrapping the error in StopError.
 			e.Error = StopErr{
 				Err:   stopErr,
-				Cause: err,
+				Cause: writeErr,
 			}
 		}
 		h(e)
 		return
 	}
-
 }
 
 // Start starts transaction (if f set) and writes message to server, handler
