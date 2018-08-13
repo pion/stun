@@ -963,8 +963,8 @@ func TestWithNoRetransmit(t *testing.T) {
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
-		WithRTO(time.Millisecond),
 		WithNoRetransmit,
+		WithRTO(time.Millisecond),
 	)
 	if err != nil {
 		t.Fatal(err)
