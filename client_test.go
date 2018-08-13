@@ -300,14 +300,13 @@ func TestStopErr_Error(t *testing.T) {
 }
 
 type errorAgent struct {
-	startErr error
-	stopErr  error
-	closeErr error
+	startErr        error
+	stopErr         error
+	closeErr        error
+	setHandlerError error
 }
 
-func (a errorAgent) SetHandler(h Handler) error {
-	return nil
-}
+func (a errorAgent) SetHandler(h Handler) error { return a.setHandlerError }
 
 func (a errorAgent) Close() error { return a.closeErr }
 
@@ -837,4 +836,41 @@ func TestClient_DoConcurrent(t *testing.T) {
 			testClientDoConcurrent(t, concurrency)
 		})
 	}
+}
+
+type errorCollector struct {
+	startError error
+	closeError error
+}
+
+func (c errorCollector) Start(rate time.Duration, f func(now time.Time)) error {
+	return c.startError
+}
+
+func (c errorCollector) Close() error { return c.closeError }
+
+func TestNewClient(t *testing.T) {
+	t.Run("SetCallbackError", func(t *testing.T) {
+		setHandlerError := errors.New("set handler error")
+		if _, createErr := NewClient(ClientOptions{
+			Connection: noopConnection{},
+			Agent: &errorAgent{
+				setHandlerError: setHandlerError,
+			},
+		}); createErr != setHandlerError {
+			t.Errorf("unexpected error returned: %v", createErr)
+		}
+	})
+	t.Run("CollectorStartError", func(t *testing.T) {
+		startError := errors.New("start error")
+		if _, createErr := NewClient(ClientOptions{
+			Connection: noopConnection{},
+			Collector: errorCollector{
+				startError: startError,
+			},
+			Agent: &TestAgent{},
+		}); createErr != startError {
+			t.Errorf("unexpected error returned: %v", createErr)
+		}
+	})
 }
