@@ -37,10 +37,10 @@ type ClientOptions struct {
 	// agent implementation in current package, see agent.go.
 	Agent ClientAgent
 	// RTO as defined in STUN RFC.
-	RTO time.Duration // defaults to 500ms
+	RTO time.Duration // defaults to 100ms
 	// TimeoutRate is rate passed to Collector, the minimum duration between
-	// two calls of collector function.
-	TimeoutRate time.Duration // defaults to 100ms
+	// two calls of collector function (efficient minimum RTO timer resolution).
+	TimeoutRate time.Duration // defaults to 5ms
 	// Collector is optional implementation of ticker which calls function on each tick.
 	Collector Collector // defaults to ticker collector
 	// Clock is optional source of current time.
@@ -57,8 +57,8 @@ var ErrNoConnection = errors.New("no connection provided")
 // resources.
 func NewClient(options ClientOptions) (*Client, error) {
 	const (
-		defaultTimeoutRate = time.Millisecond * 100
-		defaultRTO         = defaultTimeoutRate * 5
+		defaultTimeoutRate = time.Millisecond * 5
+		defaultRTO         = time.Millisecond * 300
 	)
 	c := &Client{
 		close:       make(chan struct{}),
