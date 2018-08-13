@@ -12,6 +12,6 @@ services:
       args:
         CI_GO_VERSION: ${CI_GO_VERSION}
   stun-server:
-    build:
-      dockerfile: coturn.Dockerfile
-      context: .
+    image: gortc/coturn
+    volumes:
+    - ./turnserver.conf:/etc/turnserver.conf
