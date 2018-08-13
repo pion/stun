@@ -10,8 +10,9 @@ Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC 5389](h
 with no external dependencies and zero allocations in hot paths.
 Complies to [gortc principles](https://gortc.io/#principles) as core package.
 
-See [example](https://godoc.org/github.com/gortc/stun#example-Message) and [stun server](https://github.com/gortc/stund) for simple usage,
-or [gortcd](https://github.com/gortc/gortcd) for advanced one.
+See [example](https://godoc.org/github.com/gortc/stun#example-Message) and [stun server](https://github.com/gortc/stund) for simple usage.
+Also see [gortc/turn](https://godoc.org/github.com/gortc/turn) for TURN [[RFC 5766](https://tools.ietf.org/html/rfc5766)] implementation and
+[gortcd](https://github.com/gortc/gortcd) for TURN and STUN server.
 
 # Example
 You can get your current IP address from any STUN server by sending
