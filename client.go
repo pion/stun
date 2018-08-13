@@ -19,72 +19,91 @@ func Dial(network, address string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewClient(ClientOptions{
-		Connection: conn,
-	})
-}
-
-// ClientOptions are used to initialize Client.
-type ClientOptions struct {
-	// Connection is the only mandatory field in options. Abstracts network.
-	Connection Connection
-
-	// Handler is called if Agent emits the Event with TransactionID that
-	// is not currently registered by Client. Useful for handling
-	// Data indications from TURN server.
-	Handler Handler // default handler (if no transaction found)
-	// Agent is optional implementation of STUN Agent. Defaults to
-	// agent implementation in current package, see agent.go.
-	Agent ClientAgent
-	// RTO as defined in STUN RFC.
-	RTO time.Duration // defaults to 100ms
-	// TimeoutRate is rate passed to Collector, the minimum duration between
-	// two calls of collector function (efficient minimum RTO timer resolution).
-	TimeoutRate time.Duration // defaults to 5ms
-	// Collector is optional implementation of ticker which calls function on each tick.
-	Collector Collector // defaults to ticker collector
-	// Clock is optional source of current time.
-	// Also Clock is passed to default collector if set.
-	Clock Clock // defaults to calling time.Now
+	return NewClient(conn)
 }
 
 // ErrNoConnection means that ClientOptions.Connection is nil.
 var ErrNoConnection = errors.New("no connection provided")
 
+// ClientOption sets some client option.
+type ClientOption func(c *Client)
+
+// WithHandler sets client handler which is called if Agent emits the Event
+// with TransactionID that is not currently registered by Client.
+// Useful for handling Data indications from TURN server.
+func WithHandler(h Handler) ClientOption {
+	return func(c *Client) {
+		c.handler = h
+	}
+}
+
+// WithRTO sets client RTO as defined in STUN RFC.
+func WithRTO(rto time.Duration) ClientOption {
+	return func(c *Client) {
+		c.rto = int64(rto)
+	}
+}
+
+// WithClock sets Clock of client, the source of current time.
+// Also clock is passed to default collector if set.
+func WithClock(clock Clock) ClientOption {
+	return func(c *Client) {
+		c.clock = clock
+	}
+}
+
+// WithTimeoutRate sets RTO timer minimum resolution.
+func WithTimeoutRate(d time.Duration) ClientOption {
+	return func(c *Client) {
+		c.rtoRate = d
+	}
+}
+
+// WithAgent sets client STUN agent.
+//
+// Defaults to agent implementation in current package,
+// see agent.go.
+func WithAgent(a ClientAgent) ClientOption {
+	return func(c *Client) {
+		c.a = a
+	}
+}
+
+// WithCollector rests client timeout collector, the implementation
+// of ticker which calls function on each tick.
+func WithCollector(coll Collector) ClientOption {
+	return func(c *Client) {
+		c.collector = coll
+	}
+}
+
 // NewClient initializes new Client from provided options,
 // starting internal goroutines and using default options fields
 // if necessary. Call Close method after using Client to release
 // resources.
-func NewClient(options ClientOptions) (*Client, error) {
+func NewClient(conn Connection, options ...ClientOption) (*Client, error) {
 	const (
 		defaultTimeoutRate = time.Millisecond * 5
 		defaultRTO         = time.Millisecond * 300
+		defaultMaxAttempts = 7
 	)
 	c := &Client{
 		close:       make(chan struct{}),
-		c:           options.Connection,
-		a:           options.Agent,
-		collector:   options.Collector,
-		clock:       options.Clock,
-		rto:         int64(options.RTO),
+		c:           conn,
+		clock:       systemClock,
+		rto:         int64(defaultRTO),
+		rtoRate:     defaultTimeoutRate,
 		t:           make(map[transactionID]*clientTransaction, 100),
-		maxAttempts: 7,
-		handler:     options.Handler,
+		maxAttempts: defaultMaxAttempts,
+	}
+	for _, o := range options {
+		o(c)
 	}
 	if c.c == nil {
 		return nil, ErrNoConnection
 	}
 	if c.a == nil {
 		c.a = NewAgent(nil)
-	}
-	if options.TimeoutRate == 0 {
-		options.TimeoutRate = defaultTimeoutRate
-	}
-	if c.rto == 0 {
-		c.rto = int64(defaultRTO)
-	}
-	if c.clock == nil {
-		c.clock = systemClock
 	}
 	if err := c.a.SetHandler(c.handleAgentCallback); err != nil {
 		return nil, err
@@ -95,7 +114,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 			clock: c.clock,
 		}
 	}
-	if err := c.collector.Start(options.TimeoutRate, func(t time.Time) {
+	if err := c.collector.Start(c.rtoRate, func(t time.Time) {
 		closedOrPanic(c.a.Collect(t))
 	}); err != nil {
 		return nil, err
@@ -145,6 +164,7 @@ type Client struct {
 	c           Connection
 	close       chan struct{}
 	rto         int64 // time.Duration
+	rtoRate     time.Duration
 	maxAttempts int32
 	closed      bool
 	closedMux   sync.RWMutex

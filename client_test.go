@@ -64,10 +64,9 @@ func BenchmarkClient_Do(b *testing.B) {
 	agent := &TestAgent{
 		e: make(chan Event, 1000),
 	}
-	client, err := NewClient(ClientOptions{
-		Agent:      agent,
-		Connection: noopConnection{},
-	})
+	client, err := NewClient(noopConnection{},
+		WithAgent(agent),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -169,9 +168,7 @@ func TestClient_Start(t *testing.T) {
 			}
 		},
 	}
-	c, err := NewClient(ClientOptions{
-		Connection: conn,
-	})
+	c, err := NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -224,9 +221,7 @@ func TestClient_Do(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	c, err := NewClient(ClientOptions{
-		Connection: conn,
-	})
+	c, err := NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -331,12 +326,11 @@ func TestClientAgentError(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	c, err := NewClient(ClientOptions{
-		Agent: errorAgent{
+	c, err := NewClient(conn,
+		WithAgent(errorAgent{
 			startErr: io.ErrUnexpectedEOF,
-		},
-		Connection: conn,
-	})
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -364,9 +358,7 @@ func TestClientConnErr(t *testing.T) {
 			return 0, io.ErrClosedPipe
 		},
 	}
-	c, err := NewClient(ClientOptions{
-		Connection: conn,
-	})
+	c, err := NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -390,12 +382,11 @@ func TestClientConnErrStopErr(t *testing.T) {
 			return 0, io.ErrClosedPipe
 		},
 	}
-	c, err := NewClient(ClientOptions{
-		Connection: conn,
-		Agent: errorAgent{
+	c, err := NewClient(conn,
+		WithAgent(errorAgent{
 			stopErr: io.ErrUnexpectedEOF,
-		},
-	})
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -431,9 +422,7 @@ func TestCallbackWaitHandler_HandleEvent(t *testing.T) {
 }
 
 func TestNewClientNoConnection(t *testing.T) {
-	c, err := NewClient(ClientOptions{
-		Connection: nil,
-	})
+	c, err := NewClient(nil)
 	if c != nil {
 		t.Error("c should be nil")
 	}
@@ -469,12 +458,11 @@ func TestClientCloseErr(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	c, err := NewClient(ClientOptions{
-		Agent: errorAgent{
+	c, err := NewClient(conn,
+		WithAgent(errorAgent{
 			closeErr: io.ErrUnexpectedEOF,
-		},
-		Connection: conn,
-	})
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -527,11 +515,10 @@ func TestClientGC(t *testing.T) {
 	agent := &gcWaitAgent{
 		gc: make(chan struct{}),
 	}
-	c, err := NewClient(ClientOptions{
-		Agent:       agent,
-		Connection:  conn,
-		TimeoutRate: time.Millisecond * 1,
-	})
+	c, err := NewClient(conn,
+		WithAgent(agent),
+		WithTimeoutRate(time.Millisecond),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -577,9 +564,7 @@ func TestClientFinalizer(t *testing.T) {
 			return 0, io.ErrClosedPipe
 		},
 	}
-	c, err := NewClient(ClientOptions{
-		Connection: conn,
-	})
+	c, err := NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -593,12 +578,11 @@ func TestClientFinalizer(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	c, err = NewClient(ClientOptions{
-		Agent: errorAgent{
+	c, err = NewClient(conn,
+		WithAgent(errorAgent{
 			closeErr: io.ErrUnexpectedEOF,
-		},
-		Connection: conn,
-	})
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -724,12 +708,12 @@ func TestClientRetransmission(t *testing.T) {
 		}
 		return nil
 	}
-	c, err := NewClient(ClientOptions{
-		Agent:      agent,
-		Collector:  collector,
-		Connection: connR,
-		Clock:      clock,
-	})
+	c, err := NewClient(connR,
+		WithAgent(agent),
+		WithClock(clock),
+		WithCollector(collector),
+		WithRTO(time.Millisecond),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -778,12 +762,11 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 		})
 		return nil
 	}
-	c, err := NewClient(ClientOptions{
-		Agent:      agent,
-		Collector:  collector,
-		Connection: connR,
-		Clock:      clock,
-	})
+	c, err := NewClient(connR,
+		WithAgent(agent),
+		WithClock(clock),
+		WithCollector(collector),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -852,24 +835,22 @@ func (c errorCollector) Close() error { return c.closeError }
 func TestNewClient(t *testing.T) {
 	t.Run("SetCallbackError", func(t *testing.T) {
 		setHandlerError := errors.New("set handler error")
-		if _, createErr := NewClient(ClientOptions{
-			Connection: noopConnection{},
-			Agent: &errorAgent{
+		if _, createErr := NewClient(noopConnection{},
+			WithAgent(&errorAgent{
 				setHandlerError: setHandlerError,
-			},
-		}); createErr != setHandlerError {
+			}),
+		); createErr != setHandlerError {
 			t.Errorf("unexpected error returned: %v", createErr)
 		}
 	})
 	t.Run("CollectorStartError", func(t *testing.T) {
 		startError := errors.New("start error")
-		if _, createErr := NewClient(ClientOptions{
-			Connection: noopConnection{},
-			Collector: errorCollector{
+		if _, createErr := NewClient(noopConnection{},
+			WithAgent(&TestAgent{}),
+			WithCollector(errorCollector{
 				startError: startError,
-			},
-			Agent: &TestAgent{},
-		}); createErr != startError {
+			}),
+		); createErr != startError {
 			t.Errorf("unexpected error returned: %v", createErr)
 		}
 	})
@@ -878,13 +859,12 @@ func TestNewClient(t *testing.T) {
 func TestClient_Close(t *testing.T) {
 	t.Run("CollectorCloseError", func(t *testing.T) {
 		closeErr := errors.New("start error")
-		c, createErr := NewClient(ClientOptions{
-			Connection: noopConnection{},
-			Collector: errorCollector{
+		c, createErr := NewClient(noopConnection{},
+			WithCollector(errorCollector{
 				closeError: closeErr,
-			},
-			Agent: &TestAgent{},
-		})
+			}),
+			WithAgent(&TestAgent{}),
+		)
 		if createErr != nil {
 			t.Errorf("unexpected create error returned: %v", createErr)
 		}

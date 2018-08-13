@@ -25,9 +25,7 @@ func test(network string) {
 	if err != nil {
 		log.Fatalln("failed to dial conn:", err)
 	}
-	client, err := stun.NewClient(stun.ClientOptions{
-		Connection: conn,
-	})
+	client, err := stun.NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}

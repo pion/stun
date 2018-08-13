@@ -74,7 +74,7 @@ test-integration:
 prepush: test lint test-integration
 check-api:
 	@cd api && api -c \
-	stun1.txt,stun1.14.txt,stun1.15.txt \
+	stun1.txt,stun1.14.txt,stun1.15.txt,stun1.16.txt \
 	-except except.txt \
 	github.com/gortc/stun
 write-api:
