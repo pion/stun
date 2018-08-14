@@ -489,6 +489,16 @@ func (c *Client) delete(id transactionID) {
 	c.mux.Unlock()
 }
 
+type buffer struct {
+	buf []byte
+}
+
+var bufferPool = &sync.Pool{
+	New: func() interface{} {
+		return &buffer{buf: make([]byte, 2048)}
+	},
+}
+
 func (c *Client) handleAgentCallback(e Event) {
 	c.mux.Lock()
 	if c.closed {
@@ -516,8 +526,9 @@ func (c *Client) handleAgentCallback(e Event) {
 	}
 	// Doing re-transmission.
 	t.attempt++
-	buf := make([]byte, 2048)
-	buf = buf[:copy(buf, t.raw)]
+	b := bufferPool.Get().(*buffer)
+	b.buf = b.buf[:copy(b.buf[:cap(b.buf)], t.raw)]
+	defer bufferPool.Put(b)
 	var (
 		now     = c.clock.Now()
 		timeOut = t.nextTimeout(now)
@@ -538,7 +549,7 @@ func (c *Client) handleAgentCallback(e Event) {
 		return
 	}
 	// Writing message to connection again.
-	_, writeErr := c.c.Write(buf)
+	_, writeErr := c.c.Write(b.buf)
 	if writeErr != nil {
 		c.delete(id)
 		e.Error = writeErr
