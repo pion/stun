@@ -92,7 +92,7 @@ const (
 	CodeBadRequest       ErrorCode = 400
 	CodeUnauthorised     ErrorCode = 401
 	CodeUnknownAttribute ErrorCode = 420
-	CodeStaleNonce       ErrorCode = 428
+	CodeStaleNonce       ErrorCode = 438
 	CodeRoleConflict     ErrorCode = 478
 	CodeServerError      ErrorCode = 500
 )

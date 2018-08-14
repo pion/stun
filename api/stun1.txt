@@ -70,7 +70,7 @@ pkg github.com/gortc/stun, const CodeRoleConflict = 478
 pkg github.com/gortc/stun, const CodeRoleConflict ErrorCode
 pkg github.com/gortc/stun, const CodeServerError = 500
 pkg github.com/gortc/stun, const CodeServerError ErrorCode
-pkg github.com/gortc/stun, const CodeStaleNonce = 428
+pkg github.com/gortc/stun, const CodeStaleNonce = 438
 pkg github.com/gortc/stun, const CodeStaleNonce ErrorCode
 pkg github.com/gortc/stun, const CodeTryAlternate = 300
 pkg github.com/gortc/stun, const CodeTryAlternate ErrorCode
