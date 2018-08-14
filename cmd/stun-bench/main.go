@@ -59,13 +59,17 @@ func main() {
 				atomic.AddInt64(&request, 1)
 				if doErr := c.Do(req, func(event stun.Event) {
 					if event.Error != nil {
-						log.Println("event.Error error:", event.Error)
+						if event.Error != stun.ErrTransactionTimeOut {
+							log.Println("event.Error error:", event.Error)
+						}
 						atomic.AddInt64(&requestErr, 1)
 						return
 					}
 					atomic.AddInt64(&requestOK, 1)
 				}); doErr != nil {
-					log.Println("Do() error:", doErr)
+					if doErr != stun.ErrTransactionExists {
+						log.Println("Do() error:", doErr)
+					}
 					atomic.AddInt64(&requestErr, 1)
 				}
 			}
