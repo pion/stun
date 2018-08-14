@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
+	mathRand "math/rand"
 	"net"
 	"os"
 	"os/signal"
@@ -25,6 +26,7 @@ var (
 	network    = flag.String("net", "udp", "protocol to use (udp, tcp)")
 	cpuProfile = flag.String("cpuprofile", "", "file output of pprof cpu profile")
 	memProfile = flag.String("memprofile", "", "file output of pprof memory profile")
+	realRand   = flag.Bool("crypt", false, "use crypto/rand as random source")
 )
 
 func main() {
@@ -77,6 +79,9 @@ func main() {
 			cancel()
 		}
 	}()
+	if *realRand {
+		fmt.Println("using crypto/rand as random source for transaction id")
+	}
 	for i := 0; i < *workers; i++ {
 		wConn, connErr := net.Dial(*network, fmt.Sprintf("%s:%d", *addr, *port))
 		if connErr != nil {
@@ -89,7 +94,11 @@ func main() {
 		go func(client *stun.Client) {
 			req := stun.New()
 			for {
-				rand.Read(req.TransactionID[:])
+				if *realRand {
+					rand.Read(req.TransactionID[:])
+				} else {
+					mathRand.Read(req.TransactionID[:])
+				}
 				req.Type = stun.BindingRequest
 				req.WriteHeader()
 				atomic.AddInt64(&request, 1)
