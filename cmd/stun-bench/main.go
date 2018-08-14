@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/pprof"
 	"sync/atomic"
 	"time"
 
@@ -17,11 +18,13 @@ import (
 )
 
 var (
-	workers  = flag.Int("w", runtime.GOMAXPROCS(0), "concurrent workers")
-	addr     = flag.String("addr", fmt.Sprintf("localhost"), "target address")
-	port     = flag.Int("port", stun.DefaultPort, "target port")
-	duration = flag.Duration("d", time.Minute, "benchmark duration")
-	network  = flag.String("net", "udp", "protocol to use (udp, tcp)")
+	workers    = flag.Int("w", runtime.GOMAXPROCS(0), "concurrent workers")
+	addr       = flag.String("addr", fmt.Sprintf("localhost"), "target address")
+	port       = flag.Int("port", stun.DefaultPort, "target port")
+	duration   = flag.Duration("d", time.Minute, "benchmark duration")
+	network    = flag.String("net", "udp", "protocol to use (udp, tcp)")
+	cpuProfile = flag.String("cpuprofile", "", "file output of pprof cpu profile")
+	memProfile = flag.String("memprofile", "", "file output of pprof memory profile")
 )
 
 func main() {
@@ -34,6 +37,39 @@ func main() {
 		requestOK  int64
 		requestErr int64
 	)
+	if *cpuProfile != "" {
+		f, createErr := os.Create(*cpuProfile)
+		if createErr != nil {
+			log.Fatalln("failed to create cpu profile output file:", createErr)
+		}
+		if pprofErr := pprof.StartCPUProfile(f); pprofErr != nil {
+			log.Fatalln("failed to start pprof cpu profiling:", pprofErr)
+		}
+		defer func() {
+			pprof.StopCPUProfile()
+			if closeErr := f.Close(); closeErr != nil {
+				log.Println("failed to close cpu profile output file:", closeErr)
+			} else {
+				fmt.Println("saved cpu profile to", *cpuProfile)
+			}
+		}()
+	}
+	if *memProfile != "" {
+		f, createErr := os.Create(*memProfile)
+		if createErr != nil {
+			log.Fatalln("failed to create memory profile output file:", createErr)
+		}
+		defer func() {
+			if pprofErr := pprof.Lookup("heap").WriteTo(f, 1); pprofErr != nil {
+				log.Fatalln("failed to write pprof memory profiling:", pprofErr)
+			}
+			if closeErr := f.Close(); closeErr != nil {
+				log.Println("failed to close memory profile output file:", closeErr)
+			} else {
+				fmt.Println("saved memory profile to", *memProfile)
+			}
+		}()
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), *duration)
 	go func() {
 		for sig := range signals {
@@ -84,5 +120,4 @@ func main() {
 		fmt.Println("errors:", reqErr)
 	}
 	fmt.Println("total:", atomic.LoadInt64(&request))
-	os.Exit(1)
 }
