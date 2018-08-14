@@ -216,6 +216,10 @@ func acquireClientTransaction() *clientTransaction {
 }
 
 func putClientTransaction(t *clientTransaction) {
+	t.raw = t.raw[:0]
+	t.start = time.Time{}
+	t.attempt = 0
+	t.id = transactionID{}
 	clientTransactionPool.Put(t)
 }
 
@@ -512,6 +516,13 @@ func (c *Client) handleAgentCallback(e Event) {
 	}
 	// Doing re-transmission.
 	t.attempt++
+	buf := make([]byte, 2048)
+	buf = buf[:copy(buf, t.raw)]
+	var (
+		now     = c.clock.Now()
+		timeOut = t.nextTimeout(now)
+		id      = t.id
+	)
 	// Starting client transaction.
 	if startErr := c.start(t); startErr != nil {
 		c.delete(t.id)
@@ -520,23 +531,21 @@ func (c *Client) handleAgentCallback(e Event) {
 		return
 	}
 	// Starting agent transaction.
-	now := c.clock.Now()
-	d := t.nextTimeout(now)
-	if startErr := c.a.Start(t.id, d); startErr != nil {
-		c.delete(t.id)
+	if startErr := c.a.Start(id, timeOut); startErr != nil {
+		c.delete(id)
 		e.Error = startErr
 		h(e)
 		return
 	}
 	// Writing message to connection again.
-	_, writeErr := c.c.Write(t.raw)
+	_, writeErr := c.c.Write(buf)
 	if writeErr != nil {
-		c.delete(t.id)
+		c.delete(id)
 		e.Error = writeErr
 		// Stopping agent transaction instead of waiting until it's deadline.
 		// This will call handleAgentCallback with "ErrTransactionStopped" error
 		// which will be ignored.
-		if stopErr := c.a.Stop(t.id); stopErr != nil {
+		if stopErr := c.a.Stop(id); stopErr != nil {
 			// Failed to stop agent transaction. Wrapping the error in StopError.
 			e.Error = StopErr{
 				Err:   stopErr,
