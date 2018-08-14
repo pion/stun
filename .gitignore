@@ -5,9 +5,8 @@ benchmark.*.write
 *.out
 bench.go-*
 PACKAGES
-stund/stund
-stun-cli/stun-cli
-stun-decode/stun-decode
-stun-bench/stun-bench
+cmd/stun-cli/stun-cli
+cmd/stun-decode/stun-decode
+cmd/stun-bench/stun-bench
 
 coverage.txt
