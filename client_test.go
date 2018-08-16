@@ -742,7 +742,7 @@ func TestClientRetransmission(t *testing.T) {
 			t.Error("failed")
 		}
 	}); doErr != nil {
-		t.Fatal(err)
+		t.Fatal(doErr)
 	}
 	<-gotReads
 }
@@ -989,4 +989,122 @@ func TestWithNoRetransmit(t *testing.T) {
 		t.Fatal(err)
 	}
 	<-gotReads
+}
+
+type callbackClock func() time.Time
+
+func (c callbackClock) Now() time.Time {
+	return c()
+}
+
+func TestClientRTOStartErr(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	connL, connR := net.Pipe()
+	defer connL.Close()
+	collector := new(manualCollector)
+	shouldWait := false
+	shouldWaitMux := new(sync.RWMutex)
+	clockWait := make(chan struct{})
+	clockLocked := make(chan struct{})
+	clock := callbackClock(func() time.Time {
+		shouldWaitMux.RLock()
+		waiting := shouldWait
+		t.Log("waiting:", waiting)
+		time.Sleep(time.Millisecond * 100)
+		shouldWaitMux.RUnlock()
+		if waiting {
+			t.Log("clock waiting for log ack")
+			clockLocked <- struct{}{}
+			t.Log("clock waiting for unlock")
+			<-clockWait
+			t.Log("clock returned after waiting")
+		} else {
+			t.Log("clock returned")
+		}
+		return time.Now()
+	})
+	agent := &manualAgent{}
+	attempt := 0
+	gotReads := make(chan struct{})
+	var (
+		c              *Client
+		startClientErr error
+	)
+	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+		t.Log("start", attempt)
+		if attempt == 0 {
+			attempt++
+			go agent.h(Event{
+				TransactionID: id,
+				Error:         ErrTransactionTimeOut,
+			})
+		} else {
+			go func() {
+				<-gotReads
+				shouldWaitMux.Lock()
+				shouldWait = true
+				shouldWaitMux.Unlock()
+				go agent.h(Event{
+					TransactionID: id,
+					Error:         ErrTransactionTimeOut,
+				})
+				t.Log("clock locked")
+				<-clockLocked
+				t.Log("closing client")
+				if closeErr := c.Close(); closeErr != nil {
+					t.Error(closeErr)
+				}
+				t.Log("client closed, unlocking clock")
+				clockWait <- struct{}{}
+				t.Log("clock unlocked")
+			}()
+		}
+		return nil
+	}
+	c, startClientErr = NewClient(connR,
+		WithAgent(agent),
+		WithClock(clock),
+		WithCollector(collector),
+		WithRTO(time.Millisecond),
+	)
+	if startClientErr != nil {
+		t.Fatal(startClientErr)
+	}
+	go func() {
+		buf := make([]byte, 1500)
+		readN, readErr := connL.Read(buf)
+		if readErr != nil {
+			t.Error(readErr)
+		}
+		if !IsMessage(buf[:readN]) {
+			t.Error("should be STUN")
+		}
+		readN, readErr = connL.Read(buf)
+		if readErr != nil {
+			t.Error(readErr)
+		}
+		if !IsMessage(buf[:readN]) {
+			t.Error("should be STUN")
+		}
+		gotReads <- struct{}{}
+	}()
+	t.Log("starting")
+	done := make(chan struct{})
+	go func() {
+		if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+			if event.Error != ErrClientClosed {
+				t.Error(event.Error)
+			}
+		}); doErr != nil {
+			t.Error(doErr)
+		}
+		done <- struct{}{}
+	}()
+	select {
+	case <-done:
+		// ok
+	case <-time.After(time.Second):
+		t.Error("timeout")
+	}
 }
