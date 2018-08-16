@@ -659,9 +659,10 @@ func (m *manualClock) Now() time.Time {
 }
 
 type manualAgent struct {
-	start func(id [TransactionIDSize]byte, deadline time.Time) error
-	stop  func(id [TransactionIDSize]byte) error
-	h     Handler
+	start   func(id [TransactionIDSize]byte, deadline time.Time) error
+	stop    func(id [TransactionIDSize]byte) error
+	process func(m *Message) error
+	h       Handler
 }
 
 func (n *manualAgent) SetHandler(h Handler) error {
@@ -675,7 +676,12 @@ func (n *manualAgent) Close() error {
 
 func (manualAgent) Collect(time.Time) error { return nil }
 
-func (manualAgent) Process(m *Message) error { return nil }
+func (n *manualAgent) Process(m *Message) error {
+	if n.process != nil {
+		return n.process(m)
+	}
+	return nil
+}
 
 func (n *manualAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
 	return n.start(id, deadline)
@@ -1297,5 +1303,49 @@ func TestClientRTOAgentErr(t *testing.T) {
 		// ok
 	case <-time.After(time.Second * 5):
 		t.Error("reads timeout")
+	}
+}
+
+func TestClient_HandleProcessError(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	connL, connR := net.Pipe()
+	defer connL.Close()
+	collector := new(manualCollector)
+	clock := callbackClock(func() time.Time {
+		return time.Now()
+	})
+	agent := &manualAgent{}
+	gotWrites := make(chan struct{})
+	processCalled := make(chan struct{}, 1)
+	agent.process = func(m *Message) error {
+		processCalled <- struct{}{}
+		return ErrAgentClosed
+	}
+	c, startClientErr := NewClient(connR,
+		WithAgent(agent),
+		WithClock(clock),
+		WithCollector(collector),
+		WithRTO(time.Millisecond),
+	)
+	if startClientErr != nil {
+		t.Fatal(startClientErr)
+	}
+	go func() {
+		_, readErr := connL.Write(response.Raw)
+		if readErr != nil {
+			t.Error(readErr)
+		}
+		gotWrites <- struct{}{}
+	}()
+	t.Log("starting")
+	select {
+	case <-gotWrites:
+		// ok
+	case <-time.After(time.Second * 5):
+		t.Error("reads timeout")
+	}
+	if closeErr := c.Close(); closeErr != nil {
+		t.Error(closeErr)
 	}
 }
