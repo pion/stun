@@ -1108,7 +1108,7 @@ func TestClientRTOStartErr(t *testing.T) {
 	select {
 	case <-done:
 		// ok
-	case <-time.After(time.Second):
+	case <-time.After(time.Second * 5):
 		t.Error("timeout")
 	}
 }
@@ -1229,7 +1229,7 @@ func TestClientRTOWriteErr(t *testing.T) {
 	select {
 	case <-done:
 		// ok
-	case <-time.After(time.Second):
+	case <-time.After(time.Second * 5):
 		t.Error("timeout")
 	}
 }
@@ -1295,7 +1295,7 @@ func TestClientRTOAgentErr(t *testing.T) {
 	select {
 	case <-gotReads:
 		// ok
-	case <-time.After(time.Second):
+	case <-time.After(time.Second * 5):
 		t.Error("reads timeout")
 	}
 }
