@@ -12,6 +12,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/pions/pkg/stun"
 )
 
 type TestAgent struct {
@@ -660,6 +662,7 @@ func (m *manualClock) Now() time.Time {
 
 type manualAgent struct {
 	start func(id [TransactionIDSize]byte, deadline time.Time) error
+	stop  func(id [TransactionIDSize]byte) error
 	h     Handler
 }
 
@@ -680,7 +683,10 @@ func (n *manualAgent) Start(id [TransactionIDSize]byte, deadline time.Time) erro
 	return n.start(id, deadline)
 }
 
-func (n *manualAgent) Stop([TransactionIDSize]byte) error {
+func (n *manualAgent) Stop(id [TransactionIDSize]byte) error {
+	if n.stop != nil {
+		return n.stop(id)
+	}
 	return nil
 }
 
@@ -1143,6 +1149,10 @@ func TestClientRTOWriteErr(t *testing.T) {
 		c              *Client
 		startClientErr error
 	)
+	agentStopErr := errors.New("agent dont want to stop")
+	agent.stop = func(id [stun.TransactionIDSize]byte) error {
+		return agentStopErr
+	}
 	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
 		t.Log("start", attempt)
 		if attempt == 0 {
@@ -1203,8 +1213,15 @@ func TestClientRTOWriteErr(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
-			if event.Error != io.ErrClosedPipe {
+			if e, ok := event.Error.(StopErr); !ok {
 				t.Error(event.Error)
+			} else {
+				if e.Err != agentStopErr {
+					t.Error("incorrect agent error")
+				}
+				if e.Cause != io.ErrClosedPipe {
+					t.Error("incorrect connection error")
+				}
 			}
 		}); doErr != nil {
 			t.Error(doErr)
