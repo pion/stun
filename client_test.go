@@ -12,8 +12,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/pions/pkg/stun"
 )
 
 type TestAgent struct {
@@ -1150,7 +1148,7 @@ func TestClientRTOWriteErr(t *testing.T) {
 		startClientErr error
 	)
 	agentStopErr := errors.New("agent dont want to stop")
-	agent.stop = func(id [stun.TransactionIDSize]byte) error {
+	agent.stop = func(id [TransactionIDSize]byte) error {
 		return agentStopErr
 	}
 	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
