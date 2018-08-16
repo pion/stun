@@ -1218,3 +1218,69 @@ func TestClientRTOWriteErr(t *testing.T) {
 		t.Error("timeout")
 	}
 }
+
+func TestClientRTOAgentErr(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	connL, connR := net.Pipe()
+	defer connL.Close()
+	collector := new(manualCollector)
+	clock := callbackClock(func() time.Time {
+		return time.Now()
+	})
+	agent := &manualAgent{}
+	attempt := 0
+	gotReads := make(chan struct{})
+	var (
+		c              *Client
+		startClientErr error
+	)
+	agentStartErr := errors.New("start refused")
+	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+		t.Log("start", attempt)
+		if attempt == 0 {
+			attempt++
+			go agent.h(Event{
+				TransactionID: id,
+				Error:         ErrTransactionTimeOut,
+			})
+		} else {
+			return agentStartErr
+		}
+		return nil
+	}
+	c, startClientErr = NewClient(connR,
+		WithAgent(agent),
+		WithClock(clock),
+		WithCollector(collector),
+		WithRTO(time.Millisecond),
+	)
+	if startClientErr != nil {
+		t.Fatal(startClientErr)
+	}
+	go func() {
+		buf := make([]byte, 1500)
+		readN, readErr := connL.Read(buf)
+		if readErr != nil {
+			t.Error(readErr)
+		}
+		if !IsMessage(buf[:readN]) {
+			t.Error("should be STUN")
+		}
+		gotReads <- struct{}{}
+	}()
+	t.Log("starting")
+	if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+		if event.Error != agentStartErr {
+			t.Error(event.Error)
+		}
+	}); doErr != nil {
+		t.Error(doErr)
+	}
+	select {
+	case <-gotReads:
+		// ok
+	case <-time.After(time.Second):
+		t.Error("reads timeout")
+	}
+}
