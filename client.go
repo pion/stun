@@ -197,10 +197,17 @@ type Client struct {
 type clientTransaction struct {
 	id      transactionID
 	attempt int32
+	calls   int32
 	h       Handler
 	start   time.Time
 	rto     time.Duration
 	raw     []byte
+}
+
+func (t *clientTransaction) handle(e Event) {
+	if atomic.AddInt32(&t.calls, 1) == 1 {
+		t.h(e)
+	}
 }
 
 var clientTransactionPool = &sync.Pool{
@@ -480,10 +487,6 @@ func (c *Client) Do(m *Message, f func(Event)) error {
 func (c *Client) delete(id transactionID) {
 	c.mux.Lock()
 	if c.t != nil {
-		t, ok := c.t[id]
-		if ok {
-			putClientTransaction(t)
-		}
 		delete(c.t, id)
 	}
 	c.mux.Unlock()
@@ -517,11 +520,10 @@ func (c *Client) handleAgentCallback(e Event) {
 		// Ignoring.
 		return
 	}
-	h := t.h
 	if atomic.LoadInt32(&c.maxAttempts) <= t.attempt || e.Error == nil {
 		// Transaction completed.
+		t.handle(e)
 		putClientTransaction(t)
-		h(e)
 		return
 	}
 	// Doing re-transmission.
@@ -536,16 +538,18 @@ func (c *Client) handleAgentCallback(e Event) {
 	)
 	// Starting client transaction.
 	if startErr := c.start(t); startErr != nil {
-		c.delete(t.id)
+		c.delete(id)
 		e.Error = startErr
-		h(e)
+		t.handle(e)
+		putClientTransaction(t)
 		return
 	}
 	// Starting agent transaction.
 	if startErr := c.a.Start(id, timeOut); startErr != nil {
 		c.delete(id)
 		e.Error = startErr
-		h(e)
+		t.handle(e)
+		putClientTransaction(t)
 		return
 	}
 	// Writing message to connection again.
@@ -563,7 +567,8 @@ func (c *Client) handleAgentCallback(e Event) {
 				Cause: writeErr,
 			}
 		}
-		h(e)
+		t.handle(e)
+		putClientTransaction(t)
 		return
 	}
 }
@@ -589,6 +594,7 @@ func (c *Client) Start(m *Message, h Handler) error {
 		t.rto = time.Duration(atomic.LoadInt64(&c.rto))
 		t.attempt = 0
 		t.raw = append(t.raw[:0], m.Raw...)
+		t.calls = 0
 		d := t.nextTimeout(t.start)
 		if err := c.start(t); err != nil {
 			return err
