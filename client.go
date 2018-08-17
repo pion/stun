@@ -408,11 +408,11 @@ type callbackWaitHandler struct {
 }
 
 func (s *callbackWaitHandler) HandleEvent(e Event) {
+	s.cond.L.Lock()
 	if s.callback == nil {
 		panic("s.callback is nil")
 	}
 	s.callback(e)
-	s.cond.L.Lock()
 	s.processed = true
 	s.cond.Broadcast()
 	s.cond.L.Unlock()
@@ -423,6 +423,8 @@ func (s *callbackWaitHandler) wait() {
 	for !s.processed {
 		s.cond.Wait()
 	}
+	s.processed = false
+	s.callback = nil
 	s.cond.L.Unlock()
 }
 
@@ -430,15 +432,12 @@ func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 	if f == nil {
 		panic("f is nil")
 	}
+	s.cond.L.Lock()
 	s.callback = f
 	if s.handler == nil {
 		s.handler = s.HandleEvent
 	}
-}
-
-func (s *callbackWaitHandler) reset() {
-	s.processed = false
-	s.callback = nil
+	s.cond.L.Unlock()
 }
 
 var callbackWaitHandlerPool = sync.Pool{
@@ -474,7 +473,6 @@ func (c *Client) Do(m *Message, f func(Event)) error {
 	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler)
 	h.setCallback(f)
 	defer func() {
-		h.reset()
 		callbackWaitHandlerPool.Put(h)
 	}()
 	if err := c.Start(m, h.handler); err != nil {

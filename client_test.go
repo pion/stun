@@ -618,7 +618,6 @@ func TestCallbackWaitHandler(t *testing.T) {
 			h.HandleEvent(Event{})
 		}()
 		h.wait()
-		h.reset()
 	}
 }
 
