@@ -231,7 +231,7 @@ func putClientTransaction(t *clientTransaction) {
 }
 
 func (t clientTransaction) nextTimeout(now time.Time) time.Time {
-	return now.Add(time.Duration(t.attempt) * t.rto)
+	return now.Add(time.Duration(t.attempt+1) * t.rto)
 }
 
 // start registers transaction.
