@@ -55,14 +55,15 @@ func main() {
 
 ## RFCs
 
-The package aims to implement the following RFCs. Note that the requirement status is based on the [WebRTC spec](https://tools.ietf.org/html/draft-ietf-rtcweb-overview), focusing on data channels for now.
+The package aims to implement the following RFCs.
 
-rfc | status | requirement | description
-----|--------|-------------|----
-[![RFC5389](https://img.shields.io/badge/RFC-5389-blue.svg)](https://tools.ietf.org/html/rfc5389) | ![status](https://img.shields.io/badge/status-beta-green.svg) | [![status](https://img.shields.io/badge/requirement-MUST-green.svg)](https://tools.ietf.org/html/rfc2119) | Session Traversal Utilities for NAT
-IPv6 | ![status](https://img.shields.io/badge/status-research-orange.svg) | [![status](https://img.shields.io/badge/requirement-MUST-green.svg)](https://tools.ietf.org/html/rfc2119) | IPv6 support
-[(TLS-over-)TCP](https://tools.ietf.org/html/rfc5389#section-7.2.2) | ![status](https://img.shields.io/badge/status-research-orange.svg) | [![status](https://img.shields.io/badge/requirement-MUST-green.svg)](https://tools.ietf.org/html/rfc2119) | Sending over TCP or TLS-over-TCP
-[ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) | ![status](https://img.shields.io/badge/status-dev-blue.svg) | [![status](https://img.shields.io/badge/requirement-MUST-green.svg)](https://tools.ietf.org/html/rfc2119) | ALTERNATE-SERVER Mechanism
+rfc | status | description
+----|--------|----
+[![RFC5389](https://img.shields.io/badge/RFC-5389-blue.svg)](https://tools.ietf.org/html/rfc5389) | ![status](https://img.shields.io/badge/status-beta-green.svg) | Session Traversal Utilities for NAT
+[![RFC7064](https://img.shields.io/badge/RFC-7064-blue.svg)](https://tools.ietf.org/html/rfc7064) | ![status](https://img.shields.io/badge/status-beta-green.svg) | STUN URI
+IPv6 | ![status](https://img.shields.io/badge/status-beta-green.svg) | IPv6 support
+[(TLS-over-)TCP](https://tools.ietf.org/html/rfc5389#section-7.2.2) | ![status](https://img.shields.io/badge/status-beta-green.svg) | Sending over TCP or TLS-over-TCP
+[ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) | ![status](https://img.shields.io/badge/status-dev-blue.svg) |  ALTERNATE-SERVER Mechanism
 
 
 # Stability
