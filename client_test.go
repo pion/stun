@@ -412,7 +412,9 @@ func TestCallbackWaitHandler_setCallback(t *testing.T) {
 }
 
 func TestCallbackWaitHandler_HandleEvent(t *testing.T) {
-	c := callbackWaitHandler{}
+	c := &callbackWaitHandler{
+		cond: sync.NewCond(new(sync.Mutex)),
+	}
 	defer func() {
 		if err := recover(); err == nil {
 			t.Error("should panic")
