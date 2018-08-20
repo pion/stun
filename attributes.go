@@ -74,6 +74,11 @@ const (
 	AttrReservationToken   AttrType = 0x0022 // RESERVATION-TOKEN
 )
 
+// Attributes from RFC 6062 TURN Extensions for TCP Allocations.
+const (
+	AttrConnectionID AttrType = 0x002a // CONNECTION-ID
+)
+
 // Attributes from RFC 6156 TURN IPv6.
 const (
 	AttrRequestedAddressFamily AttrType = 0x0017 // REQUESTED-ADDRESS-FAMILY
@@ -114,6 +119,7 @@ var attrNames = map[AttrType]string{
 	AttrRequestedTransport:     "REQUESTED-TRANSPORT",
 	AttrDontFragment:           "DONT-FRAGMENT",
 	AttrReservationToken:       "RESERVATION-TOKEN",
+	AttrConnectionID:           "CONNECTION-ID",
 	AttrRequestedAddressFamily: "REQUESTED-ADDRESS-FAMILY",
 	AttrOrigin:                 "ORIGIN",
 }
