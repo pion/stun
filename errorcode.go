@@ -109,6 +109,14 @@ const (
 	CodeInsufficientCapacity  ErrorCode = 508 // Insufficient Capacity
 )
 
+// Error codes from RFC 6062.
+//
+// RFC 6062 Section 6.3
+const (
+	CodeConnAlreadyExists    ErrorCode = 446
+	CodeConnTimeoutOrFailure ErrorCode = 447
+)
+
 // Error codes from RFC 6156.
 //
 // RFC 6156 Section 10.2
@@ -133,6 +141,10 @@ var errorReasons = map[ErrorCode][]byte{
 	CodeUnsupportedTransProto: []byte("Unsupported Transport Protocol"),
 	CodeAllocQuotaReached:     []byte("Allocation Quota Reached"),
 	CodeInsufficientCapacity:  []byte("Insufficient Capacity"),
+
+	// RFC 6062.
+	CodeConnAlreadyExists:    []byte("Connection Already Exists"),
+	CodeConnTimeoutOrFailure: []byte("Connection Timeout or Failure"),
 
 	// RFC 6156.
 	CodeAddrFamilyNotSupported: []byte("Address Family not Supported"),
