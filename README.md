@@ -6,6 +6,7 @@
 [![Go Report](https://goreportcard.com/badge/github.com/gortc/stun?camo=retarded)](http://goreportcard.com/report/gortc/stun)
 [![stability-beta](https://img.shields.io/badge/stability-beta-33bbff.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#beta)
 ![GitHub tag](https://img.shields.io/github/tag/gortc/stun.svg)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgortc%2Fstun.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgortc%2Fstun?ref=badge_shield)
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC 5389](https://tools.ietf.org/html/rfc5389)]
 with no external dependencies and zero allocations in hot paths.
@@ -137,3 +138,7 @@ BenchmarkXORMappedAddress_AddTo-12            20000000     56.70 ns/op          
 BenchmarkXORMappedAddress_GetFrom-12          50000000     37.40 ns/op                        0 B/op   0 allocs/op
 ok  	github.com/gortc/stun	76.868s
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgortc%2Fstun.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgortc%2Fstun?ref=badge_large)
