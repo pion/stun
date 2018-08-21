@@ -57,6 +57,7 @@ func main() {
 
 ## Supported RFCs
 - [x] [RFC 5389](https://tools.ietf.org/html/rfc5389) — Session Traversal Utilities for NAT
+- [x] [RFC 5769](https://tools.ietf.org/html/rfc6062) — Test Vectors for STUN
 - [x] [RFC 6062](https://tools.ietf.org/html/rfc6062) — TURN extensions for TCP allocations
 - [x] [RFC 7064](https://tools.ietf.org/html/rfc7064) — STUN URI
 - [x] (TLS-over-)TCP client support
