@@ -9,7 +9,8 @@
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgortc%2Fstun.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgortc%2Fstun?ref=badge_shield)
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC 5389](https://tools.ietf.org/html/rfc5389)]
-with no external dependencies and zero allocations in hot paths.
+protocol and [client](https://godoc.org/github.com/gortc/stun#Client) with no external dependencies and zero allocations in hot paths.
+Client [supports](https://godoc.org/github.com/gortc/stun#WithRTO) automatic request retransmissions.
 Complies to [gortc principles](https://gortc.io/#principles) as core package.
 
 See [example](https://godoc.org/github.com/gortc/stun#example-Message) and [stun server](https://github.com/gortc/stund) for simple usage.
