@@ -54,18 +54,13 @@ func main() {
 }
 ```
 
-## RFCs
-
-The package aims to implement the following RFCs.
-
-rfc | status | description
-----|--------|----
-[![RFC5389](https://img.shields.io/badge/RFC-5389-blue.svg)](https://tools.ietf.org/html/rfc5389) | ![status](https://img.shields.io/badge/status-beta-green.svg) | Session Traversal Utilities for NAT
-[![RFC7064](https://img.shields.io/badge/RFC-7064-blue.svg)](https://tools.ietf.org/html/rfc7064) | ![status](https://img.shields.io/badge/status-beta-green.svg) | STUN URI
-IPv6 | ![status](https://img.shields.io/badge/status-beta-green.svg) | IPv6 support
-[(TLS-over-)TCP](https://tools.ietf.org/html/rfc5389#section-7.2.2) | ![status](https://img.shields.io/badge/status-beta-green.svg) | Sending over TCP or TLS-over-TCP
-[ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) | ![status](https://img.shields.io/badge/status-dev-blue.svg) |  ALTERNATE-SERVER Mechanism
-
+## Supported RFCs
+- [x] [RFC 5389](https://tools.ietf.org/html/rfc5389) — Session Traversal Utilities for NAT
+- [x] [RFC 6062](https://tools.ietf.org/html/rfc6062) — TURN extensions for TCP allocations
+- [x] [RFC 7064](https://tools.ietf.org/html/rfc7064) — STUN URI
+- [x] (TLS-over-)TCP client support
+- [ ] [ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) support [#48](https://github.com/gortc/stun/issues/48)
+- [ ] [RFC 5780](https://tools.ietf.org/html/rfc5780) — NAT Behavior Discovery Using STUN [#49](https://github.com/gortc/stun/issues/49)
 
 # Stability
 Package is currently approaching beta stage, API should be fairly stable
