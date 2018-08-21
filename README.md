@@ -79,6 +79,17 @@ RFC 3489 can be easily implemented as separate package.
 # Requirements
 Go 1.10 is currently supported and tested in CI. Should work on 1.9 and tip.
 
+# Testing
+Client behavior is tested and verified in many ways:
+  * End-To-End with long-term credentials
+    * **coturn**: The coturn [server](https://github.com/coturn/coturn/wiki/turnserver) (linux)
+  * Bunch of code static checkers (linters)
+  * Standard unit-tests with coverage reporting
+  * Explicit API backward compatibility [check](https://github.com/gortc/api), see `api` directory
+
+See [TeamCity project](https://tc.gortc.io/project.html?projectId=stun&guest=1) and `e2e` directory
+for more information.
+
 # Benchmarks
 
 Intel(R) Core(TM) i7-8700K:
