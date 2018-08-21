@@ -15,3 +15,8 @@ services:
     image: gortc/coturn
     volumes:
     - ./turnserver.conf:/etc/turnserver.conf
+
+networks:
+  default:
+    external:
+      name: stun_e2e_coturn

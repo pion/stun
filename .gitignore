@@ -10,3 +10,6 @@ cmd/stun-decode/stun-decode
 cmd/stun-bench/stun-bench
 
 coverage.txt
+
+e2e/dump.pcap
+e2e/log-*.txt
