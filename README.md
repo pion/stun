@@ -88,7 +88,8 @@ Client behavior is tested and verified in many ways:
   * Explicit API backward compatibility [check](https://github.com/gortc/api), see `api` directory
 
 See [TeamCity project](https://tc.gortc.io/project.html?projectId=stun&guest=1) and `e2e` directory
-for more information.
+for more information. Also the Wireshark `.pcap` files are available for e2e test in
+artifacts for build.
 
 # Benchmarks
 
