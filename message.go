@@ -459,6 +459,13 @@ const (
 	MethodChannelBind      Method = 0x009
 )
 
+// Methods from RFC 6062.
+const (
+	MethodConnect           Method = 0x000a
+	MethodConnectionBind    Method = 0x000b
+	MethodConnectionAttempt Method = 0x000c
+)
+
 var methodName = map[Method]string{
 	MethodBinding:          "binding",
 	MethodAllocate:         "allocate",
@@ -467,6 +474,11 @@ var methodName = map[Method]string{
 	MethodData:             "data",
 	MethodCreatePermission: "create permission",
 	MethodChannelBind:      "channel bind",
+
+	// RFC 6062.
+	MethodConnect:           "connect",
+	MethodConnectionBind:    "connection bind",
+	MethodConnectionAttempt: "connection attempt",
 }
 
 func (m Method) String() string {
