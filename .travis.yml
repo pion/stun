@@ -6,7 +6,7 @@ os:
   - linux
 
 go:
-  - stable
+  - "go1.11"
 
 install: true
 
