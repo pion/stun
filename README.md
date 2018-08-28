@@ -8,13 +8,13 @@
 ![GitHub tag](https://img.shields.io/github/tag/gortc/stun.svg)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgortc%2Fstun.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgortc%2Fstun?ref=badge_shield)
 # STUN
-Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC 5389](https://tools.ietf.org/html/rfc5389)]
+Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
 protocol and [client](https://godoc.org/github.com/gortc/stun#Client) with no external dependencies and zero allocations in hot paths.
 Client [supports](https://godoc.org/github.com/gortc/stun#WithRTO) automatic request retransmissions.
 Complies to [gortc principles](https://gortc.io/#principles) as core package.
 
 See [example](https://godoc.org/github.com/gortc/stun#example-Message) and [stun server](https://github.com/gortc/stund) for simple usage.
-Also see [gortc/turn](https://github.com/gortc/turn) for TURN [[RFC 5766](https://tools.ietf.org/html/rfc5766)] implementation and
+Also see [gortc/turn](https://github.com/gortc/turn) for TURN [[RFC5766](https://tools.ietf.org/html/rfc5766)] implementation and
 [gortcd](https://github.com/gortc/gortcd) for TURN and STUN server.
 
 # Example
