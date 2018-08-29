@@ -34,13 +34,15 @@ lint:
 		-e "Message.+\(aligncheck\)" \
 		-e "arg .+ for .+ verb %. of wrong type" \
 		-e "error return value not checked \(fmt.Fprint\(h, k\)\) " \
-		-e "parameter result 0 \(int\) is never used" \
+		-e "parameter xorBytes - result 0 \(int\) is never used" \
 		-e "cmd\/" \
 		-e "e2e\/.+(gocyclo|errcheck|dupl)" \
 		-e "internal\/hmac\/hmac_test.+(lll)" \
 		-e "internal\/hmac\/.+Errors unhandled" \
-		-e "internal\/hmac\/.+parameter blocksize always receives 64" \
+		-e "internal\/hmac\/.+parameter assertHMACSize - blocksize always receives 64" \
 		-e "cyclomatic complexity \d+ of function \(\*Client\)\.handleAgentCallback\(\)" \
+		-e "Blacklisted import crypto/sha1" \
+		-e "SA9004" \
 		--enable="lll" --line-length=100 \
 		--disable="gochecknoglobals" \
 		--deadline=300s \
