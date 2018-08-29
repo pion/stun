@@ -39,7 +39,8 @@ lint:
 		-e "e2e\/.+(gocyclo|errcheck|dupl)" \
 		-e "internal\/hmac\/hmac_test.+(lll)" \
 		-e "internal\/hmac\/.+Errors unhandled" \
-		-e "internal\/hmac\/.+parameter assertHMACSize - blocksize always receives 64" \
+		-e "blocksize always receives 64" \
+		-e "result 0 \(int\) is never used" \
 		-e "cyclomatic complexity \d+ of function \(\*Client\)\.handleAgentCallback\(\)" \
 		-e "Blacklisted import crypto/sha1" \
 		-e "SA9004" \
