@@ -434,7 +434,7 @@ func TestNewClientNoConnection(t *testing.T) {
 }
 
 func TestDial(t *testing.T) {
-	c, err := Dial("udp4", "localhost:0")
+	c, err := Dial("udp4", "localhost:3458")
 	if err != nil {
 		t.Fatal(err)
 	}

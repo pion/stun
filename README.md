@@ -84,7 +84,7 @@ Client behavior is tested and verified in many ways:
   * End-To-End with long-term credentials
     * **coturn**: The coturn [server](https://github.com/coturn/coturn/wiki/turnserver) (linux)
   * Bunch of code static checkers (linters)
-  * Standard unit-tests with coverage reporting (linux {amd64, **arm**64}, windows)
+  * Standard unit-tests with coverage reporting (linux {amd64, **arm**64}, windows and darwin)
   * Explicit API backward compatibility [check](https://github.com/gortc/api), see `api` directory
 
 See [TeamCity project](https://tc.gortc.io/project.html?projectId=stun&guest=1) and `e2e` directory
