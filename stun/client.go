@@ -51,17 +51,7 @@ func generateSTUNTransactionID() []byte {
 
 // Request executes a STUN request against the clients server
 func (c *Client) Request() (*Message, error) {
-	host, port, err := netAddrIPPort(c.conn.RemoteAddr())
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := Build(ClassRequest, MethodBinding, GenerateTransactionId(), &XorMappedAddress{
-		XorAddress: XorAddress{
-			IP:   host,
-			Port: port,
-		},
-	})
+	req, err := Build(ClassRequest, MethodBinding, GenerateTransactionId())
 	if err != nil {
 		return nil, err
 	}
