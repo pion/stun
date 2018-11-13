@@ -207,6 +207,22 @@ func getAttribute(attribute []byte, offset int) *RawAttribute {
 	return &RawAttribute{typ, len, attribute[attrValueStart : attrValueStart+len], pad, offset}
 }
 
+// IsSTUN determines if a package is likely a STUN package
+// Used for de-multiplexing STUN packages
+func IsSTUN(packet []byte) bool {
+	if len(packet) < 20 {
+		return false
+	}
+
+	header := packet[messageHeaderStart : messageHeaderStart+messageHeaderLength]
+
+	if !verifyStunHeaderMostSignificant2Bits(header) {
+		return false
+	}
+
+	return verifyMagicCookie(header) == nil
+}
+
 // NewMessage parses a binary STUN message into a Message struct
 // TODO Break this apart, too big
 func NewMessage(packet []byte) (*Message, error) {
