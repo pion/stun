@@ -24,6 +24,7 @@ func calculateFingerprint(b []byte) uint32 {
 	return crc32.ChecksumIEEE(b) ^ fingerprintXOR
 }
 
+// Pack with Fingerprint
 func (s *Fingerprint) Pack(message *Message) error {
 	prevLen := message.Length
 	message.Length += attrHeaderLength + fingerprintLength
@@ -36,6 +37,7 @@ func (s *Fingerprint) Pack(message *Message) error {
 	return nil
 }
 
+//Unpack with Fingerprint
 func (s *Fingerprint) Unpack(message *Message, rawAttribute *RawAttribute) error {
 
 	s.Fingerprint = enc.Uint32(rawAttribute.Value)

@@ -4,6 +4,7 @@ import "github.com/pkg/errors"
 
 type protocolNumber byte
 
+//ProtocolUDP User Datagram	https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
 const (
 	ProtocolUDP protocolNumber = 0x11
 )
@@ -26,14 +27,18 @@ const (
 // The RFFU field MUST be set to zero on transmission and MUST be
 // ignored on reception.  It is reserved for future uses.
 // https://tools.ietf.org/html/rfc5766#section-14.7
+
+//RequestedTransport represented transport protocol
 type RequestedTransport struct {
 	Protocol protocolNumber
 }
 
+//Pack always error
 func (r *RequestedTransport) Pack(message *Message) error {
 	return errors.Errorf("stun.RequestedTransport Pack not implemented")
 }
 
+//Unpack RequestedTransport protocol
 func (r *RequestedTransport) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	r.Protocol = protocolNumber(rawAttribute.Value[0])
 	if r.Protocol != ProtocolUDP {

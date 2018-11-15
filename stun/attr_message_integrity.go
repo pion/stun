@@ -24,10 +24,12 @@ const (
 	messageIntegrityLength = 20
 )
 
+// MessageIntegrity is struct represented MESSAGE-INTEGRITY attribute rfc5389#section-15.4
 type MessageIntegrity struct {
 	Key []byte
 }
 
+//MessageIntegrityCalculateHMAC returns hmac checksum
 func MessageIntegrityCalculateHMAC(key, message []byte) ([]byte, error) {
 	mac := hmac.New(sha1.New, key)
 	if _, err := mac.Write(message); err != nil {
@@ -37,6 +39,7 @@ func MessageIntegrityCalculateHMAC(key, message []byte) ([]byte, error) {
 	return mac.Sum(nil), nil
 }
 
+//Pack message with MessageIntegrity
 func (m *MessageIntegrity) Pack(message *Message) error {
 	prevLen := message.Length
 	message.Length += attrHeaderLength + messageIntegrityLength
@@ -51,6 +54,7 @@ func (m *MessageIntegrity) Pack(message *Message) error {
 	return nil
 }
 
+//Unpack copy from Key to rawAttribute.Value
 func (m *MessageIntegrity) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	if len(rawAttribute.Value) != messageIntegrityLength {
 		return errors.Errorf("MessageIntegrity bad key length %d", len(rawAttribute.Value))

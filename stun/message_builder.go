@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Build return messsage which is built from class, method, transactionID, and pack message using attribute
 func Build(class MessageClass, method Method, transactionID []byte, attrs ...Attribute) (*Message, error) {
 
 	m := &Message{

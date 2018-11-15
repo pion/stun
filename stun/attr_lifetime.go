@@ -4,10 +4,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Lifetime represented duration
 type Lifetime struct {
 	Duration uint32
 }
 
+//Pack with Lifetime duration
 func (x *Lifetime) Pack(message *Message) error {
 	v := make([]byte, 4)
 	enc.PutUint32(v, x.Duration)
@@ -15,6 +17,7 @@ func (x *Lifetime) Pack(message *Message) error {
 	return nil
 }
 
+//Unpack with lifetime
 func (x *Lifetime) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	v := rawAttribute.Value
 

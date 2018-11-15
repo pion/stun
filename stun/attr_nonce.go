@@ -11,6 +11,8 @@ import "github.com/pkg/errors"
 //
 // It MUST be less than 128 characters (which can be as long as 763
 // bytes).
+
+// Nonce struct represented by NONCE attribute rfc5389#section-15.8
 type Nonce struct {
 	Nonce string
 }
@@ -19,6 +21,7 @@ const (
 	nonceMaxLength = 763
 )
 
+//Pack with checking nonce max length
 func (n *Nonce) Pack(message *Message) error {
 	if len([]byte(n.Nonce)) > nonceMaxLength {
 		return errors.Errorf("invalid nonce length %d", len([]byte(n.Nonce)))
@@ -27,6 +30,7 @@ func (n *Nonce) Pack(message *Message) error {
 	return nil
 }
 
+//Unpack nonce
 func (n *Nonce) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	n.Nonce = string(rawAttribute.Value)
 	return nil

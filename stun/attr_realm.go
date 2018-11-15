@@ -16,6 +16,8 @@ import "github.com/pkg/errors"
 // credentials are being used for authentication.  Presence in certain
 // error responses indicates that the server wishes the client to use a
 // long-term credential for authentication.
+
+//Realm represented REALM attribute rfc5389#section-15.7
 type Realm struct {
 	Realm string
 }
@@ -24,6 +26,7 @@ const (
 	realmMaxLength = 763
 )
 
+//Pack with checking realm max length
 func (r *Realm) Pack(message *Message) error {
 	if len([]byte(r.Realm)) > realmMaxLength {
 		return errors.Errorf("invalid realm length %d", len([]byte(r.Realm)))
@@ -32,6 +35,7 @@ func (r *Realm) Pack(message *Message) error {
 	return nil
 }
 
+//Unpack realm
 func (r *Realm) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	r.Realm = string(rawAttribute.Value)
 	return nil

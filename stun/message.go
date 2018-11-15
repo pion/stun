@@ -25,8 +25,10 @@ const (
 	ClassErrorResponse MessageClass = 0x03
 )
 
+// Method is selector which can be select MethodType
 type Method uint16
 
+//Method Type
 const (
 	MethodBinding          Method = 0x01 // STUN
 	MethodSharedSecret     Method = 0x02 // STUN
@@ -45,6 +47,7 @@ var messageClassName = map[MessageClass]string{
 	ClassErrorResponse:   "ERROR-RESPONSE",
 }
 
+// String prints the known class names and a hex format for unknown class names
 func (m MessageClass) String() string {
 	s, err := messageClassName[m]
 	if !err {
@@ -65,6 +68,7 @@ var methodName = map[Method]string{
 	MethodChannelBind:      "CHANNEL-BIND",
 }
 
+// String prints the known method names and a hex format for unknown method names
 func (m Method) String() string {
 	s, err := methodName[m]
 	if !err {
@@ -100,6 +104,7 @@ const (
 	TransactionIDSize = 96 / 8
 )
 
+// Message structs
 type Message struct {
 	Class         MessageClass
 	Method        Method
@@ -275,6 +280,7 @@ func NewMessage(packet []byte) (*Message, error) {
 	return &m, nil
 }
 
+// GetOneAttribute can get a RawAttribute which adopts attrbute type
 func (m *Message) GetOneAttribute(attrType AttrType) (*RawAttribute, bool) {
 	for _, v := range m.Attributes {
 		if v.Type == attrType {
@@ -285,6 +291,7 @@ func (m *Message) GetOneAttribute(attrType AttrType) (*RawAttribute, bool) {
 	return nil, false
 }
 
+// GetAllAttributes can get all RawAttributes which adopt attrbute type
 func (m *Message) GetAllAttributes(attrType AttrType) ([]*RawAttribute, bool) {
 	var attrs []*RawAttribute
 	for _, v := range m.Attributes {
@@ -296,10 +303,12 @@ func (m *Message) GetAllAttributes(attrType AttrType) ([]*RawAttribute, bool) {
 	return attrs, len(attrs) > 0
 }
 
+// CommitLength returns message length
 func (m *Message) CommitLength() {
 	enc.PutUint16(m.Raw[messageLengthStart:], uint16(m.Length))
 }
 
+// AddAttribute append bytes formatted RawAttribute to message
 func (m *Message) AddAttribute(attrType AttrType, v []byte) {
 
 	ra := RawAttribute{
@@ -323,6 +332,7 @@ func (m *Message) AddAttribute(attrType AttrType, v []byte) {
 	m.CommitLength()
 }
 
+// Pack returns Message.Raw
 func (m *Message) Pack() []byte {
 
 	setMessageType(m.Raw[messageHeaderStart:2], m.Class, m.Method)
@@ -332,6 +342,7 @@ func (m *Message) Pack() []byte {
 	return m.Raw
 }
 
+// BuildAndSend is building message, pack using attribute and send
 func BuildAndSend(conn *ipv4.PacketConn, addr *TransportAddr, class MessageClass, method Method, transactionID []byte, attrs ...Attribute) error {
 
 	rsp, err := Build(class, method, transactionID, attrs...)
@@ -352,6 +363,7 @@ func BuildAndSend(conn *ipv4.PacketConn, addr *TransportAddr, class MessageClass
 	return nil
 }
 
+// GenerateTransactionId returns 16bytes ids
 func GenerateTransactionId() []byte {
 	randSeq := func(n int) string {
 		letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")

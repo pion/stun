@@ -4,12 +4,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+//ChannelData is struct including ChannelNumber and Data
 type ChannelData struct {
 	ChannelNumber uint16
 	Length        uint16
 	Data          []byte
 }
 
+//NewChannelData return ChannelData from packet
 func NewChannelData(packet []byte) (*ChannelData, error) {
 	cn, err := getChannelNumber(packet)
 	if err != nil {

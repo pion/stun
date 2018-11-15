@@ -4,10 +4,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// IceControlling struct representated tiebreak
 type IceControlling struct {
 	TieBreaker uint64
 }
 
+// Pack with TieBreak
 func (i *IceControlling) Pack(message *Message) error {
 	v := make([]byte, 8)
 	enc.PutUint64(v, i.TieBreaker)
@@ -15,6 +17,7 @@ func (i *IceControlling) Pack(message *Message) error {
 	return nil
 }
 
+// Unpack with TieBreak
 func (i *IceControlling) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	v := rawAttribute.Value
 

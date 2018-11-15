@@ -10,7 +10,7 @@ notifications:
     secure: neajsJrsYjNFAnDQA9et0yXDgcTeNDVJRf1Py7KceW/s8O23jN/qYWmQ/l3JjUJ2ce58xfH4BqIRFrmZYB06j8t+RfaYm26QMlzQOelXQN46Ll0ScYFSpdjShiyjrazlV2CNDUQJ1EVxX0R0zij9zON3rT/r37QSRD1gnHyE/rw4w1gOo3Ur7sRgw7Y9kJqoGbHZo0AsCnvScm8ChWXt+2EoQmQ+CxB1+rTmX/1F0J6g1Rdz/AsTfbDge1i/J12FdLgG5mgBXweF+VSYIRxxwJkvrxTnrKFI4jUvj8IqF/TIF6Z/2Cks6bBg1fnGMoRmc9qTf5tbfRUKxziRTYw0d2tqIfm+7bFQbPh/8q9IDivgNQdI+Fgzte7r4goKVVs//5ueXUewOFXeLovGutCRt8SBBN2iPyu3Dcwa3yYqwEdOBdFfW/k9hSBBHH5a71x6TA2B3JxFdASrZxdqj1kV3PJsjAchpwz6zBD7tp5/KWqTY0jzQU9QV+zjOiGZyo6POsDN7zGDjcbeUqrVrw/mmNfef7IV7U1/RhLJXtULcvljHGJ9c2DXhusIiyDr4TPC6A/wyFtkVQ5WXfaruWZmHh0v2CFmIYMk4qEDT7BSZuPWFQuEpHA+yjN5LUi1h5xTBGHazQCN3KRx2QiRA8iBQkJINq0yb/ecDTXDqWIdKQs=
 
 before_script:
-  - go get github.com/golang/lint/golint
+  - go get golang.org/x/lint/golint
   - go get honnef.co/go/tools/cmd/megacheck
   - go get github.com/fzipp/gocyclo
   - go get -u github.com/kisielk/errcheck

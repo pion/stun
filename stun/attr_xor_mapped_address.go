@@ -8,7 +8,7 @@ package stun
 // |                X-Address (Variable)
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-// https://tools.ietf.org/html/rfc5389#section-15.2
+//XorMappedAddress https://tools.ietf.org/html/rfc5389#section-15.2
 type XorMappedAddress struct {
 	XorAddress
 }

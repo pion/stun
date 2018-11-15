@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TransportAddr is struct with ip address and port number
 type TransportAddr struct {
 	IP   net.IP
 	Port int
@@ -28,6 +29,7 @@ func netAddrIPPort(addr net.Addr) (net.IP, int, error) {
 	return net.ParseIP(host), port, nil
 }
 
+// NewTransportAddr returns transportadd struct within address and port
 func NewTransportAddr(addr net.Addr) (*TransportAddr, error) {
 	ip, port, err := netAddrIPPort(addr)
 	if err != nil {
@@ -40,10 +42,12 @@ func NewTransportAddr(addr net.Addr) (*TransportAddr, error) {
 	}, nil
 }
 
+// Equal returns both of address and port is same
 func (a *TransportAddr) Equal(b *TransportAddr) bool {
 	return a.IP.Equal(b.IP) && a.Port == b.Port
 }
 
+// Addr returns net.UDPAddr from TransportAddr
 func (a *TransportAddr) Addr() net.Addr {
 	return &net.UDPAddr{
 		IP:   a.IP,
@@ -54,6 +58,7 @@ func (a *TransportAddr) Addr() net.Addr {
 	// Handle other network types here (TCPv4/6)
 }
 
+// String returns "address:port"
 func (a *TransportAddr) String() string {
 	return fmt.Sprintf("%s:%d", a.IP.String(), a.Port)
 }

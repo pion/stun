@@ -122,6 +122,7 @@ type RawAttribute struct {
 	Offset int
 }
 
+// Attribute can impliment Pack and Unpack
 type Attribute interface {
 	Pack(message *Message) error
 	Unpack(message *Message, rawAttribute *RawAttribute) error

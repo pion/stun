@@ -29,13 +29,20 @@ func NewClient(protocol, server string, deadline time.Duration) (*Client, error)
 	if err != nil {
 		return nil, err
 	}
-	conn.SetReadDeadline(time.Now().Add(deadline))
-	conn.SetWriteDeadline(time.Now().Add(deadline))
+	err = conn.SetReadDeadline(time.Now().Add(deadline))
+	if err != nil {
+		return nil, err
+	}
+	err = conn.SetWriteDeadline(time.Now().Add(deadline))
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		conn: conn,
 	}, nil
 }
 
+// LocalAddr returns local address of the client
 func (c *Client) LocalAddr() net.Addr {
 	return c.conn.LocalAddr()
 }
@@ -43,10 +50,6 @@ func (c *Client) LocalAddr() net.Addr {
 // Close disconnects the client
 func (c *Client) Close() error {
 	return c.conn.Close()
-}
-
-func generateSTUNTransactionID() []byte {
-	return GenerateTransactionId()[:TransactionIDSize]
 }
 
 // Request executes a STUN request against the clients server

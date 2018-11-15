@@ -26,6 +26,7 @@ import (
 //    last attribute.  In this version of the specification, the normal
 //    padding rules for attributes are used instead.
 
+// UnknownAttributes has several attrTypes
 type UnknownAttributes struct {
 	Attributes []AttrType
 }
@@ -34,6 +35,7 @@ const (
 	unknownAttributesMax = 4
 )
 
+// Pack AttrUnknownAttributes
 func (u *UnknownAttributes) Pack(message *Message) error {
 	if len(u.Attributes) > unknownAttributesMax {
 		return errors.Errorf("UnknownAttributes only supports up to 4 attributes")
@@ -48,6 +50,7 @@ func (u *UnknownAttributes) Pack(message *Message) error {
 	return nil
 }
 
+// Unpack always returns error
 func (u *UnknownAttributes) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	return errors.Errorf("stun.UnknownAttributes Unpack not implemented")
 }

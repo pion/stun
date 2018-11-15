@@ -81,6 +81,7 @@ func getIPAndFamily(unkIP net.IP) (ip net.IP, family uint16, err error) {
 	return ip, family, err
 }
 
+// XorAddress is struct with in ip address and port number
 type XorAddress struct {
 	IP   net.IP
 	Port int
@@ -107,6 +108,7 @@ func (x *XorAddress) packInner(message *Message) ([]byte, error) {
 	return v, nil
 }
 
+// Unpack message checking address and port suites
 func (x *XorAddress) Unpack(message *Message, rawAttribute *RawAttribute) error {
 	v := rawAttribute.Value
 

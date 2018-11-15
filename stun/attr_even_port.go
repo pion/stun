@@ -4,10 +4,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-//  A EvenPort attribute allows the client to request that the port in the
-//  relayed transport address be even, and (optionally) that the server
-//  reserve the next-higher port number.  The value portion of this
-//  attribute is 1 byte long.
+// A EvenPort attribute allows the client to request that the port in the
+// relayed transport address be even, and (optionally) that the server
+// reserve the next-higher port number.  The value portion of this
+// attribute is 1 byte long.
 type EvenPort struct {
 	ReserveAdditional bool
 }
