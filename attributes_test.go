@@ -1,6 +1,7 @@
 package stun
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -18,6 +19,24 @@ func BenchmarkMessage_Get(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		m.Get(AttrUsername)
+	}
+}
+
+func TestRawAttribute_AddTo(t *testing.T) {
+	v := []byte{1, 2, 3, 4}
+	m, err := Build(RawAttribute{
+		Type:  AttrData,
+		Value: v,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotV, gotErr := m.Get(AttrData)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if !bytes.Equal(gotV, v) {
+		t.Error("value mismatch")
 	}
 }
 

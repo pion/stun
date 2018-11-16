@@ -146,6 +146,13 @@ type RawAttribute struct {
 	Value  []byte
 }
 
+// AddTo implements Setter, adding attribute as a.Type with a.Value and ignoring
+// the Length field.
+func (a RawAttribute) AddTo(m *Message) error {
+	m.Add(a.Type, a.Value)
+	return nil
+}
+
 // Equal returns true if a == b.
 func (a RawAttribute) Equal(b RawAttribute) bool {
 	if a.Type != b.Type {
