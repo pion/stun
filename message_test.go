@@ -363,7 +363,7 @@ func TestAttrType_String(t *testing.T) {
 }
 
 func TestMethod_String(t *testing.T) {
-	if MethodBinding.String() != "binding" {
+	if MethodBinding.String() != "Binding" {
 		t.Error("binding is not binding!")
 	}
 	if Method(0x616).String() != "0x616" {
@@ -731,7 +731,7 @@ func ExampleMessage() {
 	}
 
 	// Output:
-	// binding request l=48 attrs=3 id=AQIDBAUGBwgJAAEA buff length: 68
+	// Binding request l=48 attrs=3 id=AQIDBAUGBwgJAAEA buff length: 68
 	// wrote 68 err <nil>
 	// has software: true
 	// has nonce: false
