@@ -48,4 +48,38 @@ func TestIANA(t *testing.T) {
 			}
 		}
 	})
+	t.Run("Attributes", func(t *testing.T) {
+		records := loadCSV(t, "stun-parameters-4.csv")
+		m := map[string]AttrType{}
+		for _, r := range records[1:] {
+			var (
+				v    = r[0]
+				name = r[1]
+			)
+			if strings.Contains(v, "-") {
+				continue
+			}
+			val, parseErr := strconv.ParseInt(v[2:], 16, 64)
+			if parseErr != nil {
+				t.Fatal(parseErr)
+			}
+			t.Logf("value: 0x%x, name: %s", val, name)
+			m[name] = AttrType(val)
+		}
+		// Not registered in IANA.
+		for k, v := range map[string]AttrType{
+			"ORIGIN": 0x802F,
+		} {
+			m[k] = v
+		}
+		for val, name := range attrNames {
+			mapped, ok := m[name]
+			if !ok {
+				t.Errorf("failed to find method %s in IANA", name)
+			}
+			if mapped != val {
+				t.Errorf("%s: IANA %d != actual %d", name, mapped, val)
+			}
+		}
+	})
 }
