@@ -467,18 +467,18 @@ const (
 )
 
 var methodName = map[Method]string{
-	MethodBinding:          "binding",
-	MethodAllocate:         "allocate",
-	MethodRefresh:          "refresh",
-	MethodSend:             "send",
-	MethodData:             "data",
-	MethodCreatePermission: "create permission",
-	MethodChannelBind:      "channel bind",
+	MethodBinding:          "Binding",
+	MethodAllocate:         "Allocate",
+	MethodRefresh:          "Refresh",
+	MethodSend:             "Send",
+	MethodData:             "Data",
+	MethodCreatePermission: "CreatePermission",
+	MethodChannelBind:      "ChannelBind",
 
 	// RFC 6062.
-	MethodConnect:           "connect",
-	MethodConnectionBind:    "connection bind",
-	MethodConnectionAttempt: "connection attempt",
+	MethodConnect:           "Connect",
+	MethodConnectionBind:    "ConnectionBind",
+	MethodConnectionAttempt: "ConnectionAttempt",
 }
 
 func (m Method) String() string {
