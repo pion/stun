@@ -22,3 +22,4 @@ pkg github.com/gortc/stun, type ClientOptions struct, Connection Connection
 pkg github.com/gortc/stun, type ClientOptions struct, Handler Handler
 pkg github.com/gortc/stun, type ClientOptions struct, RTO time.Duration
 pkg github.com/gortc/stun, type ClientOptions struct, TimeoutRate time.Duration
+pkg github.com/gortc/stun, const CodeRoleConflict = 478

@@ -75,7 +75,36 @@ func TestIANA(t *testing.T) {
 		for val, name := range attrNames {
 			mapped, ok := m[name]
 			if !ok {
-				t.Errorf("failed to find method %s in IANA", name)
+				t.Errorf("failed to find attribute %s in IANA", name)
+			}
+			if mapped != val {
+				t.Errorf("%s: IANA %d != actual %d", name, mapped, val)
+			}
+		}
+	})
+	t.Run("ErrorCodes", func(t *testing.T) {
+		records := loadCSV(t, "stun-parameters-6.csv")
+		m := map[string]ErrorCode{}
+		for _, r := range records[1:] {
+			var (
+				v    = r[0]
+				name = r[1]
+			)
+			if strings.Contains(v, "-") {
+				continue
+			}
+			val, parseErr := strconv.ParseInt(v, 10, 64)
+			if parseErr != nil {
+				t.Fatal(parseErr)
+			}
+			t.Logf("value: 0x%x, name: %s", val, name)
+			m[name] = ErrorCode(val)
+		}
+		for val, nameB := range errorReasons {
+			name := string(nameB)
+			mapped, ok := m[name]
+			if !ok {
+				t.Errorf("failed to find error code %s in IANA", name)
 			}
 			if mapped != val {
 				t.Errorf("%s: IANA %d != actual %d", name, mapped, val)

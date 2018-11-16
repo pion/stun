@@ -52,7 +52,7 @@ func test(network string) {
 		if codeErr := errCode.GetFrom(response); codeErr != nil {
 			log.Fatalln("failed to get error code:", codeErr)
 		}
-		if errCode.Code != stun.CodeUnauthorised {
+		if errCode.Code != stun.CodeUnauthorized {
 			log.Fatalln("unexpected error code:", errCode)
 		}
 		if parseErr := response.Parse(&nonce, &realm); parseErr != nil {

@@ -90,11 +90,17 @@ func (c ErrorCode) AddTo(m *Message) error {
 const (
 	CodeTryAlternate     ErrorCode = 300
 	CodeBadRequest       ErrorCode = 400
-	CodeUnauthorised     ErrorCode = 401
+	CodeUnauthorized     ErrorCode = 401
 	CodeUnknownAttribute ErrorCode = 420
 	CodeStaleNonce       ErrorCode = 438
-	CodeRoleConflict     ErrorCode = 478
+	CodeRoleConflict     ErrorCode = 487
 	CodeServerError      ErrorCode = 500
+)
+
+// DEPRECATED constants.
+const (
+	// DEPRECATED, use CodeUnauthorized.
+	CodeUnauthorised = CodeUnauthorized
 )
 
 // Error codes from RFC 5766.
@@ -128,7 +134,7 @@ const (
 var errorReasons = map[ErrorCode][]byte{
 	CodeTryAlternate:     []byte("Try Alternate"),
 	CodeBadRequest:       []byte("Bad Request"),
-	CodeUnauthorised:     []byte("Unauthorised"),
+	CodeUnauthorized:     []byte("Unauthorized"),
 	CodeUnknownAttribute: []byte("Unknown Attribute"),
 	CodeStaleNonce:       []byte("Stale Nonce"),
 	CodeServerError:      []byte("Server Error"),
