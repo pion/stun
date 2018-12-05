@@ -2,6 +2,7 @@ package stun
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/gortc/stun/internal/testutil"
@@ -202,4 +203,22 @@ func TestMessage_ForEach(t *testing.T) {
 			}
 		})
 	})
+}
+
+func ExampleMessage_ForEach() {
+	m := MustBuild(NewRealm("realm1"), NewRealm("realm2"))
+	if err := m.ForEach(AttrRealm, func(m *Message) error {
+		var r Realm
+		if err := r.GetFrom(m); err != nil {
+			return err
+		}
+		fmt.Println(r)
+		return nil
+	}); err != nil {
+		fmt.Println("error:", err)
+	}
+
+	// Output:
+	// realm1
+	// realm2
 }
