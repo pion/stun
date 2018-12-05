@@ -222,3 +222,20 @@ func ExampleMessage_ForEach() {
 	// realm1
 	// realm2
 }
+
+func BenchmarkMessage_ForEach(b *testing.B) {
+	b.ReportAllocs()
+	m := MustBuild(
+		NewRealm("realm1"),
+		NewRealm("realm2"),
+		NewRealm("realm3"),
+		NewRealm("realm4"),
+	)
+	for i := 0; i < b.N; i++ {
+		if err := m.ForEach(AttrRealm, func(m *Message) error {
+			return nil
+		}); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
