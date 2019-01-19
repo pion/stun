@@ -231,12 +231,13 @@ func IsSTUN(packet []byte) bool {
 // NewMessage parses a binary STUN message into a Message struct
 // TODO Break this apart, too big
 func NewMessage(packet []byte) (*Message, error) {
-
-	if len(packet) < 20 {
-		return nil, errors.Errorf("stun header must be at least 20 bytes, was %d", len(packet))
+	buf := make([]byte, len(packet))
+	copy(buf, packet)
+	if len(buf) < 20 {
+		return nil, errors.Errorf("stun header must be at least 20 bytes, was %d", len(buf))
 	}
 
-	header := packet[messageHeaderStart : messageHeaderStart+messageHeaderLength]
+	header := buf[messageHeaderStart : messageHeaderStart+messageHeaderLength]
 
 	if !verifyStunHeaderMostSignificant2Bits(header) {
 		return nil, errors.New("stun header most significant 2 bits must equal 0b00")
@@ -252,8 +253,8 @@ func NewMessage(packet []byte) (*Message, error) {
 		return nil, errors.Wrap(err, "stun header invalid")
 	}
 
-	if len(packet) != messageHeaderLength+int(ml) {
-		return nil, errors.Errorf("stun header length invalid; %d != %d (expected)", messageHeaderLength+int(ml), len(packet))
+	if len(buf) != messageHeaderLength+int(ml) {
+		return nil, errors.Errorf("stun header length invalid; %d != %d (expected)", messageHeaderLength+int(ml), len(buf))
 	}
 
 	t := header[transactionIDStart : transactionIDStart+transactionIDLength]
@@ -262,9 +263,9 @@ func NewMessage(packet []byte) (*Message, error) {
 
 	ra := []*RawAttribute{}
 	// TODO Check attr length <= attr slice remaining
-	attr := packet[messageHeaderLength:]
+	attr := buf[messageHeaderLength:]
 	for len(attr) > 0 {
-		a := getAttribute(attr, cap(packet)-cap(attr))
+		a := getAttribute(attr, cap(buf)-cap(attr))
 		attr = attr[attrValueStart+a.Length+a.Pad:]
 		ra = append(ra, a)
 	}
@@ -275,7 +276,7 @@ func NewMessage(packet []byte) (*Message, error) {
 	m.Length = ml
 	m.TransactionID = t[0:transactionIDLength]
 	m.Attributes = ra
-	m.Raw = packet
+	m.Raw = buf
 
 	return &m, nil
 }
