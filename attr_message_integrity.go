@@ -2,7 +2,7 @@ package stun
 
 import (
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec
 
 	"github.com/pkg/errors"
 )
@@ -31,6 +31,7 @@ type MessageIntegrity struct {
 
 //MessageIntegrityCalculateHMAC returns hmac checksum
 func MessageIntegrityCalculateHMAC(key, message []byte) ([]byte, error) {
+	/* #nosec */
 	mac := hmac.New(sha1.New, key)
 	if _, err := mac.Write(message); err != nil {
 		// Can we recover from this failure?

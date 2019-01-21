@@ -54,7 +54,7 @@ func (c *Client) Close() error {
 
 // Request executes a STUN request against the clients server
 func (c *Client) Request() (*Message, error) {
-	req, err := Build(ClassRequest, MethodBinding, GenerateTransactionId())
+	req, err := Build(ClassRequest, MethodBinding, GenerateTransactionID())
 	if err != nil {
 		return nil, err
 	}

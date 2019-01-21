@@ -305,7 +305,7 @@ func (m *Message) GetAllAttributes(attrType AttrType) ([]*RawAttribute, bool) {
 
 // CommitLength returns message length
 func (m *Message) CommitLength() {
-	enc.PutUint16(m.Raw[messageLengthStart:], uint16(m.Length))
+	enc.PutUint16(m.Raw[messageLengthStart:], m.Length)
 }
 
 // AddAttribute append bytes formatted RawAttribute to message
@@ -363,8 +363,8 @@ func BuildAndSend(conn *ipv4.PacketConn, addr *TransportAddr, class MessageClass
 	return nil
 }
 
-// GenerateTransactionId returns 16bytes ids
-func GenerateTransactionId() []byte {
+// GenerateTransactionID returns 16bytes ids
+func GenerateTransactionID() []byte {
 	randSeq := func(n int) string {
 		letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 		b := make([]rune, n)
