@@ -3,9 +3,9 @@ package stun
 import (
 	"fmt"
 	"math/rand"
+	"net"
 
 	"github.com/pkg/errors"
-	"golang.org/x/net/ipv4"
 )
 
 // MessageClass of 0b00 is a request, a class of 0b01 is an
@@ -344,15 +344,14 @@ func (m *Message) Pack() []byte {
 }
 
 // BuildAndSend is building message, pack using attribute and send
-func BuildAndSend(conn *ipv4.PacketConn, addr *TransportAddr, class MessageClass, method Method, transactionID []byte, attrs ...Attribute) error {
-
+func BuildAndSend(conn net.PacketConn, addr *TransportAddr, class MessageClass, method Method, transactionID []byte, attrs ...Attribute) error {
 	rsp, err := Build(class, method, transactionID, attrs...)
 	if err != nil {
 		return err
 	}
 
 	b := rsp.Pack()
-	l, err := conn.WriteTo(b, nil, addr.Addr())
+	l, err := conn.WriteTo(b, addr.Addr())
 	if err != nil {
 		return errors.Wrap(err, "failed writing to socket")
 	}
