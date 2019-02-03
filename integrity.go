@@ -38,7 +38,7 @@ func NewShortTermIntegrity(password string) MessageIntegrity {
 
 // MessageIntegrity represents MESSAGE-INTEGRITY attribute.
 //
-// AddTo and GetFrom methods are using zero-allocation version of hmac, see
+// AddTo and Check methods are using zero-allocation version of hmac, see
 // newHMAC function and internal/hmac/pool.go.
 //
 // RFC 5389 Section 15.4
