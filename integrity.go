@@ -61,8 +61,9 @@ const messageIntegritySize = 20
 // message, so MESSAGE-INTEGRITY attribute cannot be added.
 var ErrFingerprintBeforeIntegrity = errors.New("FINGERPRINT before MESSAGE-INTEGRITY attribute")
 
-// AddTo adds MESSAGE-INTEGRITY attribute to message. Be advised, CPU
-// and allocations costly, can be cause of DOS.
+// AddTo adds MESSAGE-INTEGRITY attribute to message.
+//
+// CPU costly, see BenchmarkMessageIntegrity_AddTo.
 func (i MessageIntegrity) AddTo(m *Message) error {
 	for _, a := range m.Attributes {
 		// Message should not contain FINGERPRINT attribute
@@ -93,8 +94,9 @@ func (i MessageIntegrity) AddTo(m *Message) error {
 // ErrIntegrityMismatch means that computed HMAC differs from expected.
 var ErrIntegrityMismatch = errors.New("integrity check failed")
 
-// Check checks MESSAGE-INTEGRITY attribute. Be advised, CPU and allocations
-// costly, can be cause of DOS.
+// Check checks MESSAGE-INTEGRITY attribute.
+//
+// CPU costly, see BenchmarkMessageIntegrity_Check.
 func (i MessageIntegrity) Check(m *Message) error {
 	v, err := m.Get(AttrMessageIntegrity)
 	if err != nil {
