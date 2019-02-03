@@ -36,10 +36,10 @@ func NewShortTermIntegrity(password string) MessageIntegrity {
 	return MessageIntegrity(password)
 }
 
-// MessageIntegrity represents MESSAGE-INTEGRITY attribute. AddTo and GetFrom
-// methods will allocate memory for cryptographic functions. Zero-allocation
-// version of MessageIntegrity is not implemented. Implementation and changes
-// to it is subject to security review.
+// MessageIntegrity represents MESSAGE-INTEGRITY attribute.
+//
+// AddTo and GetFrom methods are using zero-allocation version of hmac, see
+// internal/hmac/pool.go.
 //
 // RFC 5389 Section 15.4
 type MessageIntegrity []byte
