@@ -39,20 +39,27 @@ func NewShortTermIntegrity(password string) MessageIntegrity {
 // MessageIntegrity represents MESSAGE-INTEGRITY attribute.
 //
 // AddTo and GetFrom methods are using zero-allocation version of hmac, see
-// internal/hmac/pool.go.
+// newHMAC function and internal/hmac/pool.go.
 //
 // RFC 5389 Section 15.4
 type MessageIntegrity []byte
 
-// ErrFingerprintBeforeIntegrity means that FINGERPRINT attribute is already in
-// message, so MESSAGE-INTEGRITY attribute cannot be added.
-var ErrFingerprintBeforeIntegrity = errors.New("FINGERPRINT before MESSAGE-INTEGRITY attribute")
+func newHMAC(key, message, buf []byte) []byte {
+	mac := hmac.AcquireSHA1(key)
+	writeOrPanic(mac, message)
+	defer hmac.PutSHA1(mac)
+	return mac.Sum(buf)
+}
 
 func (i MessageIntegrity) String() string {
 	return fmt.Sprintf("KEY: 0x%x", []byte(i))
 }
 
 const messageIntegritySize = 20
+
+// ErrFingerprintBeforeIntegrity means that FINGERPRINT attribute is already in
+// message, so MESSAGE-INTEGRITY attribute cannot be added.
+var ErrFingerprintBeforeIntegrity = errors.New("FINGERPRINT before MESSAGE-INTEGRITY attribute")
 
 // AddTo adds MESSAGE-INTEGRITY attribute to message. Be advised, CPU
 // and allocations costly, can be cause of DOS.
@@ -85,13 +92,6 @@ func (i MessageIntegrity) AddTo(m *Message) error {
 
 // ErrIntegrityMismatch means that computed HMAC differs from expected.
 var ErrIntegrityMismatch = errors.New("integrity check failed")
-
-func newHMAC(key, message, buf []byte) []byte {
-	mac := hmac.AcquireSHA1(key)
-	writeOrPanic(mac, message)
-	defer hmac.PutSHA1(mac)
-	return mac.Sum(buf)
-}
 
 // Check checks MESSAGE-INTEGRITY attribute. Be advised, CPU and allocations
 // costly, can be cause of DOS.
