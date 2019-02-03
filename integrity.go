@@ -44,11 +44,9 @@ func NewShortTermIntegrity(password string) MessageIntegrity {
 // RFC 5389 Section 15.4
 type MessageIntegrity []byte
 
-// ErrFingerprintBeforeIntegrity means that FINGEPRINT attribute is already in
+// ErrFingerprintBeforeIntegrity means that FINGERPRINT attribute is already in
 // message, so MESSAGE-INTEGRITY attribute cannot be added.
-var ErrFingerprintBeforeIntegrity = errors.New(
-	"FINGERPRINT before MESSAGE-INTEGRITY attribute",
-)
+var ErrFingerprintBeforeIntegrity = errors.New("FINGERPRINT before MESSAGE-INTEGRITY attribute")
 
 func (i MessageIntegrity) String() string {
 	return fmt.Sprintf("KEY: 0x%x", []byte(i))
