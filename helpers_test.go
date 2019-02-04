@@ -59,7 +59,7 @@ func TestMessage_Apply(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to build:", err)
 	}
-	if m.Check(Fingerprint, integrity); err != nil {
+	if err = m.Check(Fingerprint, integrity); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := decoded.Write(m.Raw); err != nil {
