@@ -6,7 +6,6 @@
 [![Go Report](https://goreportcard.com/badge/github.com/gortc/stun?camo=retarded)](http://goreportcard.com/report/gortc/stun)
 [![stability-beta](https://img.shields.io/badge/stability-beta-33bbff.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#beta)
 ![GitHub tag](https://img.shields.io/github/tag/gortc/stun.svg)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgortc%2Fstun.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgortc%2Fstun?ref=badge_shield)
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
 protocol and [client](https://godoc.org/github.com/gortc/stun#Client) with no external dependencies and zero allocations in hot paths.
@@ -150,4 +149,4 @@ ok  	github.com/gortc/stun	76.868s
 
 
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgortc%2Fstun.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgortc%2Fstun?ref=badge_large)
+BSD 3-Clause License
