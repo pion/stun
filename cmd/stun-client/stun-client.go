@@ -23,13 +23,13 @@ func main() {
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
-	if err := c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
+	if err = c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
 			log.Fatalln(err)
 		}
 		var xorAddr stun.XORMappedAddress
-		if err := xorAddr.GetFrom(res.Message); err != nil {
-			log.Fatalln(err)
+		if getErr := xorAddr.GetFrom(res.Message); getErr != nil {
+			log.Fatalln(getErr)
 		}
 		fmt.Println(xorAddr)
 	}); err != nil {

@@ -1,8 +1,8 @@
 package stun
 
 import (
-	"crypto/md5" // #nosec
-	"crypto/sha1"
+	"crypto/md5"  // #nosec
+	"crypto/sha1" // #nosec
 	"errors"
 	"fmt"
 	"strings"

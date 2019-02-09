@@ -324,7 +324,7 @@ func TestMessageClass_String(t *testing.T) {
 		ClassIndication,
 	}
 	for _, k := range v {
-		if len(k.String()) == 0 {
+		if k.String() == "" {
 			t.Error(k, "bad stringer")
 		}
 	}
@@ -349,7 +349,7 @@ func TestAttrType_String(t *testing.T) {
 		AttrFingerprint,
 	}
 	for _, k := range v {
-		if len(k.String()) == 0 {
+		if k.String() == "" {
 			t.Error(k, "bad stringer")
 		}
 		if strings.HasPrefix(k.String(), "0x") {
@@ -490,7 +490,7 @@ func TestMessageGrowSmaller(t *testing.T) {
 
 func TestMessage_String(t *testing.T) {
 	m := New()
-	if len(m.String()) == 0 {
+	if m.String() == "" {
 		t.Error("bad string")
 	}
 }

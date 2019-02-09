@@ -22,8 +22,8 @@ var ErrFingerprintMismatch = errors.New("fingerprint check failed")
 var Fingerprint FingerprintAttr
 
 const (
-	fingerprintXORValue uint32 = 0x5354554e
-	fingerprintSize            = 4 // 32 bit
+	fingerprintXORValue uint32 = 0x5354554e //nolint:staticcheck
+	fingerprintSize            = 4          // 32 bit
 )
 
 // FingerprintValue returns CRC-32 of b XOR-ed by 0x5354554e.

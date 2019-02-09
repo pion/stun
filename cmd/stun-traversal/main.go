@@ -80,14 +80,14 @@ func main() {
 			case stun.IsMessage(message):
 				m := new(stun.Message)
 				m.Raw = message
-				err := m.Decode()
-				if err != nil {
-					log.Println("decode:", err)
+				decErr := m.Decode()
+				if decErr != nil {
+					log.Println("decode:", decErr)
 					break
 				}
 				var xorAddr stun.XORMappedAddress
-				if err := xorAddr.GetFrom(m); err != nil {
-					log.Println("getFrom:", err)
+				if getErr := xorAddr.GetFrom(m); getErr != nil {
+					log.Println("getFrom:", getErr)
 					break
 				}
 

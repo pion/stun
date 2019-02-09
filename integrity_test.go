@@ -67,7 +67,6 @@ func TestMessageIntegrityWithFingerprint(t *testing.T) {
 
 func TestMessageIntegrity(t *testing.T) {
 	m := new(Message)
-	//NewSoftware("software")
 	i := NewShortTermIntegrity("password")
 	m.WriteHeader()
 	if err := i.AddTo(m); err != nil {
@@ -81,7 +80,6 @@ func TestMessageIntegrity(t *testing.T) {
 
 func TestMessageIntegrityBeforeFingerprint(t *testing.T) {
 	m := new(Message)
-	//NewSoftware("software")
 	m.WriteHeader()
 	Fingerprint.AddTo(m)
 	i := NewShortTermIntegrity("password")
