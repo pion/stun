@@ -571,7 +571,7 @@ func (c *Client) handleAgentCallback(e Event) {
 	}
 }
 
-// Start starts transaction (if f set) and writes message to server, handler
+// Start starts transaction (if h set) and writes message to server, handler
 // is called asynchronously.
 func (c *Client) Start(m *Message, h Handler) error {
 	if err := c.checkInit(); err != nil {
