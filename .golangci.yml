@@ -80,10 +80,6 @@ issues:
       text: "(unnamedResult|exitAfterDefer)"
       linters:
         - gocritic
-    - path: ^message.go$
-      text: "commentedOutCode"
-      linters:
-        - gocritic
 
 linters:
   enable-all: true

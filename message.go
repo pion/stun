@@ -135,7 +135,7 @@ func (m *Message) Add(t AttrType, v []byte) {
 	// [first:last]                         <- same as previous
 	// [0 1|2 3|4    4 + len(v)]            <- mapping for allocated buffer
 	//   T   L        V
-	allocSize := attributeHeaderSize + len(v)  // len(TLV) = len(TL) + len(V)
+	allocSize := attributeHeaderSize + len(v)  // ~ len(TLV) = len(TL) + len(V)
 	first := messageHeaderSize + int(m.Length) // first byte number
 	last := first + allocSize                  // last byte number
 	m.grow(last)                               // growing cap(Raw) to fit TLV
