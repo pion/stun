@@ -44,9 +44,7 @@ install-fuzz:
 	go get github.com/dvyukov/go-fuzz/go-fuzz
 install:
 	go get gortc.io/api
-	go get -u github.com/go-critic/go-critic/...
-	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install --update
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 docker-build:
 	docker build -t gortc/stun .
 test-integration:
