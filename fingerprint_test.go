@@ -33,7 +33,7 @@ func TestFingerprint_Check(t *testing.T) {
 	if err := Fingerprint.Check(m); err != nil {
 		t.Error(err)
 	}
-	m.Raw[3] = m.Raw[3] + 1
+	m.Raw[3]++
 	if err := Fingerprint.Check(m); err == nil {
 		t.Error("should error")
 	}

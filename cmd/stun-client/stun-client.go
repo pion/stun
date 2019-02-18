@@ -16,7 +16,7 @@ func main() {
 	}
 	flag.Parse()
 	addr := flag.Arg(0)
-	if len(addr) == 0 {
+	if addr == "" {
 		addr = "stun.l.google.com:19302"
 	}
 	c, err := stun.Dial("udp", addr)

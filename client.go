@@ -230,7 +230,7 @@ func putClientTransaction(t *clientTransaction) {
 	clientTransactionPool.Put(t)
 }
 
-func (t clientTransaction) nextTimeout(now time.Time) time.Time {
+func (t *clientTransaction) nextTimeout(now time.Time) time.Time {
 	return now.Add(time.Duration(t.attempt+1) * t.rto)
 }
 
