@@ -93,12 +93,8 @@ func (m *Message) NewTransactionID() error {
 }
 
 func (m *Message) String() string {
-	return fmt.Sprintf("%s l=%d attrs=%d id=%s",
-		m.Type,
-		m.Length,
-		len(m.Attributes),
-		base64.StdEncoding.EncodeToString(m.TransactionID[:]),
-	)
+	tID := base64.StdEncoding.EncodeToString(m.TransactionID[:])
+	return fmt.Sprintf("%s l=%d attrs=%d id=%s", m.Type, m.Length, len(m.Attributes), tID)
 }
 
 // Reset resets Message, attributes and underlying buffer length.
@@ -336,17 +332,11 @@ func (m *Message) Decode() error {
 		fullSize = messageHeaderSize + size  // len(m.Raw)
 	)
 	if cookie != magicCookie {
-		msg := fmt.Sprintf(
-			"%x is invalid magic cookie (should be %x)",
-			cookie, magicCookie,
-		)
+		msg := fmt.Sprintf("%x is invalid magic cookie (should be %x)", cookie, magicCookie)
 		return newDecodeErr("message", "cookie", msg)
 	}
 	if len(buf) < fullSize {
-		msg := fmt.Sprintf(
-			"buffer length %d is less than %d (expected message size)",
-			len(buf), fullSize,
-		)
+		msg := fmt.Sprintf("buffer length %d is less than %d (expected message size)", len(buf), fullSize)
 		return newAttrDecodeErr("message", msg)
 	}
 	// saving header data
@@ -362,10 +352,7 @@ func (m *Message) Decode() error {
 	for offset < size {
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
-			msg := fmt.Sprintf(
-				"buffer length %d is less than %d (expected header size)",
-				len(b), attributeHeaderSize,
-			)
+			msg := fmt.Sprintf("buffer length %d is less than %d (expected header size)", len(b), attributeHeaderSize)
 			return newAttrDecodeErr("header", msg)
 		}
 		var (
@@ -379,10 +366,7 @@ func (m *Message) Decode() error {
 		b = b[attributeHeaderSize:] // slicing again to simplify value read
 		offset += attributeHeaderSize
 		if len(b) < aBuffL { // checking size
-			msg := fmt.Sprintf(
-				"buffer length %d is less than %d (expected value size for %s)",
-				len(b), aBuffL, a.Type,
-			)
+			msg := fmt.Sprintf("buffer length %d is less than %d (expected value size for %s)", len(b), aBuffL, a.Type)
 			return newAttrDecodeErr("value", msg)
 		}
 		a.Value = b[:aL]

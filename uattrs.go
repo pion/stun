@@ -56,9 +56,7 @@ func (a *UnknownAttributes) GetFrom(m *Message) error {
 	first := 0
 	for first < len(v) {
 		last := first + attrTypeSize
-		*a = append(*a,
-			AttrType(bin.Uint16(v[first:last])),
-		)
+		*a = append(*a, AttrType(bin.Uint16(v[first:last])))
 		first = last
 	}
 	return nil

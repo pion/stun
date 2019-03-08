@@ -275,9 +275,7 @@ type StopErr struct {
 }
 
 func (e StopErr) Error() string {
-	return fmt.Sprintf("error while stopping due to %s: %s",
-		sprintErr(e.Cause), sprintErr(e.Err),
-	)
+	return fmt.Sprintf("error while stopping due to %s: %s", sprintErr(e.Cause), sprintErr(e.Err))
 }
 
 // CloseErr indicates client close failure.
@@ -294,9 +292,7 @@ func sprintErr(err error) string {
 }
 
 func (c CloseErr) Error() string {
-	return fmt.Sprintf("failed to close: %s (connection), %s (agent)",
-		sprintErr(c.ConnectionErr), sprintErr(c.AgentErr),
-	)
+	return fmt.Sprintf("failed to close: %s (connection), %s (agent)", sprintErr(c.ConnectionErr), sprintErr(c.AgentErr))
 }
 
 func (c *Client) readUntilClosed() {

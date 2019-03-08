@@ -16,14 +16,7 @@ const credentialsSep = ":"
 // NewLongTermIntegrity returns new MessageIntegrity with key for long-term
 // credentials. Password, username, and realm must be SASL-prepared.
 func NewLongTermIntegrity(username, realm, password string) MessageIntegrity {
-	k := strings.Join(
-		[]string{
-			username,
-			realm,
-			password,
-		},
-		credentialsSep,
-	)
+	k := strings.Join([]string{username, realm, password}, credentialsSep)
 	// #nosec
 	h := md5.New()
 	fmt.Fprint(h, k)
