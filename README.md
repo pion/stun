@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://pion.ly"><img src="https://img.shields.io/badge/pion-stun-gray.svg?longCache=true&colorB=brightgreen" alt="Pion stun"></a>
   <!--<a href="https://sourcegraph.com/github.com/pions/webrtc?badge"><img src="https://sourcegraph.com/github.com/pions/webrtc/-/badge.svg" alt="Sourcegraph Widget"></a>-->
-  <a href="http://gophers.slack.com/messages/pion"><img src="https://img.shields.io/badge/join-us%20on%20slack-gray.svg?longCache=true&logo=slack&colorB=brightgreen" alt="Slack Widget"></a>
+  <a href="https://pion.ly/slack"><img src="https://img.shields.io/badge/join-us%20on%20slack-gray.svg?longCache=true&logo=slack&colorB=brightgreen" alt="Slack Widget"></a>
   <a href="https://waffle.io/pions/webrtc"><img src="https://img.shields.io/badge/pm-waffle-gray.svg?longCache=true&colorB=brightgreen" alt="Waffle board"></a>
   <br>
   <a href="https://travis-ci.org/pions/stun"><img src="https://travis-ci.org/pions/stun.svg?branch=master" alt="Build Status"></a>
