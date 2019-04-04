@@ -1,4 +1,4 @@
-module github.com/pions/stun
+module github.com/pion/stun
 
 require (
 	github.com/pkg/errors v0.8.1
