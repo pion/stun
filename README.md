@@ -24,7 +24,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/gortc/stun"
 )
