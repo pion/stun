@@ -94,6 +94,7 @@ func BenchmarkClient_Do(b *testing.B) {
 type testConnection struct {
 	write      func([]byte) (int, error)
 	read       func([]byte) (int, error)
+	close      func() error
 	b          []byte
 	stopped    bool
 	stoppedMux sync.Mutex
@@ -104,6 +105,9 @@ func (t *testConnection) Write(b []byte) (int, error) {
 }
 
 func (t *testConnection) Close() error {
+	if t.close != nil {
+		return t.close()
+	}
 	t.stoppedMux.Lock()
 	defer t.stoppedMux.Unlock()
 	if t.stopped {
@@ -473,6 +477,30 @@ func TestClientCloseErr(t *testing.T) {
 			t.Error("unexpected close err")
 		}
 	}()
+}
+
+func TestWithNoConnClose(t *testing.T) {
+	response := MustBuild(TransactionID, BindingSuccess)
+	response.Encode()
+	closeErr := errors.New("close error")
+	conn := &testConnection{
+		b: response.Raw,
+		close: func() error {
+			return closeErr
+		},
+	}
+	c, err := NewClient(conn,
+		WithAgent(errorAgent{
+			closeErr: nil,
+		}),
+		WithNoConnClose,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := c.Close(); err != nil {
+		t.Error("unexpected non-nil error")
+	}
 }
 
 type gcWaitAgent struct {

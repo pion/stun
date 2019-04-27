@@ -77,6 +77,12 @@ func WithCollector(coll Collector) ClientOption {
 	}
 }
 
+// WithNoConnClose prevents client from closing underlying connection when
+// the Close() method is called.
+var WithNoConnClose ClientOption = func(c *Client) {
+	c.closeConn = false
+}
+
 // WithNoRetransmit disables retransmissions and sets RTO to
 // defaultMaxAttempts * defaultRTO which will be effectively time out
 // if not set.
@@ -97,8 +103,15 @@ const (
 
 // NewClient initializes new Client from provided options,
 // starting internal goroutines and using default options fields
-// if necessary. Call Close method after using Client to release
-// resources.
+// if necessary. Call Close method after using Client to close conn and
+// release resources.
+//
+// The conn will be closed on Close call. Use WithNoConnClose option to
+// prevent that.
+//
+// Note that user should handle the protocol multiplexing, client does not
+// provide any API for it, so if you need to read application data, wrap the
+// connection with your (de-)multiplexer and pass the wrapper as conn.
 func NewClient(conn Connection, options ...ClientOption) (*Client, error) {
 	c := &Client{
 		close:       make(chan struct{}),
@@ -108,6 +121,7 @@ func NewClient(conn Connection, options ...ClientOption) (*Client, error) {
 		rtoRate:     defaultTimeoutRate,
 		t:           make(map[transactionID]*clientTransaction, 100),
 		maxAttempts: defaultMaxAttempts,
+		closeConn:   true,
 	}
 	for _, o := range options {
 		o(c)
@@ -180,6 +194,7 @@ type Client struct {
 	rtoRate     time.Duration
 	maxAttempts int32
 	closed      bool
+	closeConn   bool // should call c.Close() while closing
 	wg          sync.WaitGroup
 	clock       Clock
 	handler     Handler
@@ -377,7 +392,11 @@ func (c *Client) Close() error {
 	if closeErr := c.collector.Close(); closeErr != nil {
 		return closeErr
 	}
-	agentErr, connErr := c.a.Close(), c.c.Close()
+	var connErr error
+	agentErr := c.a.Close()
+	if c.closeConn {
+		connErr = c.c.Close()
+	}
 	close(c.close)
 	c.wg.Wait()
 	if agentErr == nil && connErr == nil {
