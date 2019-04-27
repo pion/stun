@@ -30,6 +30,8 @@ linters-settings:
       - style
       - experimental
     disabled-checks:
+      - evalOrder
+      - commentedOutCode
       - sloppyReassign
 
 issues:
