@@ -19,7 +19,7 @@ stun-multiplex 123.131.100.200:34690
 
 On "client":
 ```sh
-$ ./stun-multiplex 123.131.100.200:34690
+$ stun-multiplex 123.131.100.200:34690
 local addr: 0.0.0.0:37551 stun server addr: 66.102.1.127:19302
 public addr: 159.69.13.15:37551
 Acting as client. Connecting to 123.131.100.200:34690
