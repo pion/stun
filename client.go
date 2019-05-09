@@ -1,6 +1,7 @@
 package stun
 
 import (
+	"fmt"
 	"net"
 	"time"
 
@@ -54,18 +55,71 @@ func (c *Client) Close() error {
 
 // Request executes a STUN request against the clients server
 func (c *Client) Request() (*Message, error) {
+	return request(c.conn.Read, c.conn.Write)
+}
+
+// GetMappedAddressUDP initiates a stun requests to serverAddr using conn, reads the response and returns
+// the XorAddress returned by the stun server via the AttrXORMappedAddress attribute
+func GetMappedAddressUDP(conn *net.UDPConn, serverAddr net.Addr, deadline time.Duration) (*XorAddress, error) {
+	var err error
+	if deadline > 0 {
+		err = conn.SetReadDeadline(time.Now().Add(deadline))
+		if err != nil {
+			return nil, err
+		}
+		err = conn.SetWriteDeadline(time.Now().Add(deadline))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	resp, err := request(
+		conn.Read,
+		func(b []byte) (int, error) {
+			return conn.WriteTo(b, serverAddr)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if deadline > 0 {
+		err = conn.SetReadDeadline(time.Time{})
+		if err != nil {
+			return nil, err
+		}
+		err = conn.SetWriteDeadline(time.Time{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	attr, ok := resp.GetOneAttribute(AttrXORMappedAddress)
+	if !ok {
+		return nil, fmt.Errorf("got response from STUN server that did not contain XORAddress")
+	}
+
+	addr := &XorAddress{}
+	if err = addr.Unpack(resp, attr); err != nil {
+		return nil, fmt.Errorf("failed to unpack STUN XorAddress response: %v", err)
+	}
+
+	return addr, nil
+}
+
+func request(read func([]byte) (int, error), write func([]byte) (int, error)) (*Message, error) {
 	req, err := Build(ClassRequest, MethodBinding, GenerateTransactionID())
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = c.conn.Write(req.Pack())
+	_, err = write(req.Pack())
 	if err != nil {
 		return nil, err
 	}
 
 	bs := make([]byte, maxMessageSize)
-	n, err := c.conn.Read(bs)
+	n, err := read(bs)
 	if err != nil {
 		return nil, err
 	}
