@@ -4,7 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/gortc/stun?status.svg)](http://godoc.org/github.com/gortc/stun)
 [![codecov](https://codecov.io/gh/gortc/stun/branch/master/graph/badge.svg)](https://codecov.io/gh/gortc/stun)
 [![Go Report](https://goreportcard.com/badge/github.com/gortc/stun?camo=retarded)](http://goreportcard.com/report/gortc/stun)
-[![stability-beta](https://img.shields.io/badge/stability-beta-33bbff.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#beta)
+[![stability-mature](https://img.shields.io/badge/stability-mature-008000.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature)
 ![GitHub tag](https://img.shields.io/github/tag/gortc/stun.svg)
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
@@ -63,9 +63,8 @@ func main() {
 - [ ] [RFC 5780](https://tools.ietf.org/html/rfc5780) — NAT Behavior Discovery Using STUN [#49](https://github.com/gortc/stun/issues/49)
 
 # Stability
-Package is currently approaching beta stage, API should be fairly stable
-(with exception of Agent and Client) and implementation is almost complete.
-Bug reports are welcome.
+Package is currently stable, no backward incompatible changes are expected
+with exception of critical bugs or security fixes.
 
 Additional attributes are unlikely to be implemented in scope of stun package,
 the only exception is constants for attribute or message types.
