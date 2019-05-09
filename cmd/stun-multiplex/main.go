@@ -139,7 +139,7 @@ func main() {
 	// data will keep alive that binding too.
 	go keepAlive(c)
 
-	notify := make(chan os.Signal)
+	notify := make(chan os.Signal, 1)
 	signal.Notify(notify, os.Interrupt, syscall.SIGTERM)
 	if flag.Arg(0) == "" {
 		fmt.Println("Acting as server. Use following command to connect:")
