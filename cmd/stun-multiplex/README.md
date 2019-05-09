@@ -28,4 +28,4 @@ demultiplex: [123.131.100.200:34690]: Hello peer
 Got response from 123.131.100.200:34690: Hello peer
 ```
 
-On "server you will see" `demultiplex: [159.69.13.15:37551]: Hello peer` message.
+On "server" you will see `demultiplex: [159.69.13.15:37551]: Hello peer` message.
