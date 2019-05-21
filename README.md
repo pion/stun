@@ -35,6 +35,7 @@ Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contribu
 * [Raphael Randschau](https://github.com/nicolai86) - *STUN client*
 * [Michiel De Backker](https://github.com/backkem) - *Minor fixes*
 * [Y.Horie](https://github.com/u5surf) - *Fix lint issues*
+* [Hugo Arregui](https://github.com/hugoArregui)
 
 ### License
 MIT License - see [LICENSE](LICENSE) for full text

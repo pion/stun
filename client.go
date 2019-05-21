@@ -60,7 +60,7 @@ func (c *Client) Request() (*Message, error) {
 
 // GetMappedAddressUDP initiates a stun requests to serverAddr using conn, reads the response and returns
 // the XorAddress returned by the stun server via the AttrXORMappedAddress attribute
-func GetMappedAddressUDP(conn *net.UDPConn, serverAddr net.Addr, deadline time.Duration) (*XorAddress, error) {
+func GetMappedAddressUDP(conn net.PacketConn, serverAddr net.Addr, deadline time.Duration) (*XorAddress, error) {
 	var err error
 	if deadline > 0 {
 		err = conn.SetReadDeadline(time.Now().Add(deadline))
@@ -74,7 +74,10 @@ func GetMappedAddressUDP(conn *net.UDPConn, serverAddr net.Addr, deadline time.D
 	}
 
 	resp, err := request(
-		conn.Read,
+		func(p []byte) (int, error) {
+			n, _, errr := conn.ReadFrom(p)
+			return n, errr
+		},
 		func(b []byte) (int, error) {
 			return conn.WriteTo(b, serverAddr)
 		},
