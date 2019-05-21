@@ -1,0 +1,31 @@
+Value,Name,Reference
+0-299,Reserved,
+300,Try Alternate,[RFC5389]
+301-399,Unassigned,
+400,Bad Request,[RFC5389]
+401,Unauthorized,[RFC5389]
+402,Unassigned,
+403,Forbidden,[RFC5766]
+404,Unassigned,
+405,Mobility Forbidden,[RFC8016]
+406-419,Unassigned,
+420,Unknown Attribute,[RFC5389]
+421-436,Unassigned,
+437,Allocation Mismatch,[RFC5766]
+438,Stale Nonce,[RFC5389]
+439,Unassigned,
+440,Address Family not Supported,[RFC6156]
+441,Wrong Credentials,[RFC5766]
+442,Unsupported Transport Protocol,[RFC5766]
+443,Peer Address Family Mismatch,[RFC6156]
+444-445,Unassigned,
+446,Connection Already Exists,[RFC6062]
+447,Connection Timeout or Failure,[RFC6062]
+448-485,Unassigned,
+486,Allocation Quota Reached,[RFC5766]
+487,Role Conflict,[RFC8445]
+488-499,Unassigned,
+500,Server Error,[RFC5389]
+501-507,Unassigned,
+508,Insufficient Capacity,[RFC5766]
+509-699,Unassigned,

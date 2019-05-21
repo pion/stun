@@ -1,0 +1,12 @@
+pkg github.com/gortc/stun, const AttrConnectionID = 42
+pkg github.com/gortc/stun, const AttrConnectionID AttrType
+pkg github.com/gortc/stun, const CodeConnAlreadyExists = 446
+pkg github.com/gortc/stun, const CodeConnAlreadyExists ErrorCode
+pkg github.com/gortc/stun, const CodeConnTimeoutOrFailure = 447
+pkg github.com/gortc/stun, const CodeConnTimeoutOrFailure ErrorCode
+pkg github.com/gortc/stun, const MethodConnect = 10
+pkg github.com/gortc/stun, const MethodConnect Method
+pkg github.com/gortc/stun, const MethodConnectionAttempt = 12
+pkg github.com/gortc/stun, const MethodConnectionAttempt Method
+pkg github.com/gortc/stun, const MethodConnectionBind = 11
+pkg github.com/gortc/stun, const MethodConnectionBind Method

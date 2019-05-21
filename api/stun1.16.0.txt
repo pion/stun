@@ -1,0 +1,9 @@
+pkg github.com/gortc/stun, func NewClient(Connection, ...ClientOption) (*Client, error)
+pkg github.com/gortc/stun, func WithAgent(ClientAgent) ClientOption
+pkg github.com/gortc/stun, func WithClock(Clock) ClientOption
+pkg github.com/gortc/stun, func WithCollector(Collector) ClientOption
+pkg github.com/gortc/stun, func WithHandler(Handler) ClientOption
+pkg github.com/gortc/stun, func WithRTO(time.Duration) ClientOption
+pkg github.com/gortc/stun, func WithTimeoutRate(time.Duration) ClientOption
+pkg github.com/gortc/stun, func WithNoRetransmit(*Client)
+pkg github.com/gortc/stun, type ClientOption func(*Client)

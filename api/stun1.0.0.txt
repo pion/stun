@@ -1,0 +1,323 @@
+pkg github.com/gortc/stun, const AttrAlternateServer = 32803
+pkg github.com/gortc/stun, const AttrAlternateServer AttrType
+pkg github.com/gortc/stun, const AttrChannelNumber = 12
+pkg github.com/gortc/stun, const AttrChannelNumber AttrType
+pkg github.com/gortc/stun, const AttrData = 19
+pkg github.com/gortc/stun, const AttrData AttrType
+pkg github.com/gortc/stun, const AttrDontFragment = 26
+pkg github.com/gortc/stun, const AttrDontFragment AttrType
+pkg github.com/gortc/stun, const AttrErrorCode = 9
+pkg github.com/gortc/stun, const AttrErrorCode AttrType
+pkg github.com/gortc/stun, const AttrEvenPort = 24
+pkg github.com/gortc/stun, const AttrEvenPort AttrType
+pkg github.com/gortc/stun, const AttrFingerprint = 32808
+pkg github.com/gortc/stun, const AttrFingerprint AttrType
+pkg github.com/gortc/stun, const AttrICEControlled = 32809
+pkg github.com/gortc/stun, const AttrICEControlled AttrType
+pkg github.com/gortc/stun, const AttrICEControlling = 32810
+pkg github.com/gortc/stun, const AttrICEControlling AttrType
+pkg github.com/gortc/stun, const AttrLifetime = 13
+pkg github.com/gortc/stun, const AttrLifetime AttrType
+pkg github.com/gortc/stun, const AttrMappedAddress = 1
+pkg github.com/gortc/stun, const AttrMappedAddress AttrType
+pkg github.com/gortc/stun, const AttrMessageIntegrity = 8
+pkg github.com/gortc/stun, const AttrMessageIntegrity AttrType
+pkg github.com/gortc/stun, const AttrNonce = 21
+pkg github.com/gortc/stun, const AttrNonce AttrType
+pkg github.com/gortc/stun, const AttrOrigin = 32815
+pkg github.com/gortc/stun, const AttrOrigin AttrType
+pkg github.com/gortc/stun, const AttrPriority = 36
+pkg github.com/gortc/stun, const AttrPriority AttrType
+pkg github.com/gortc/stun, const AttrRealm = 20
+pkg github.com/gortc/stun, const AttrRealm AttrType
+pkg github.com/gortc/stun, const AttrRequestedTransport = 25
+pkg github.com/gortc/stun, const AttrRequestedTransport AttrType
+pkg github.com/gortc/stun, const AttrReservationToken = 34
+pkg github.com/gortc/stun, const AttrReservationToken AttrType
+pkg github.com/gortc/stun, const AttrSoftware = 32802
+pkg github.com/gortc/stun, const AttrSoftware AttrType
+pkg github.com/gortc/stun, const AttrUnknownAttributes = 10
+pkg github.com/gortc/stun, const AttrUnknownAttributes AttrType
+pkg github.com/gortc/stun, const AttrUseCandidate = 37
+pkg github.com/gortc/stun, const AttrUseCandidate AttrType
+pkg github.com/gortc/stun, const AttrUsername = 6
+pkg github.com/gortc/stun, const AttrUsername AttrType
+pkg github.com/gortc/stun, const AttrXORMappedAddress = 32
+pkg github.com/gortc/stun, const AttrXORMappedAddress AttrType
+pkg github.com/gortc/stun, const AttrXORPeerAddress = 18
+pkg github.com/gortc/stun, const AttrXORPeerAddress AttrType
+pkg github.com/gortc/stun, const AttrXORRelayedAddress = 22
+pkg github.com/gortc/stun, const AttrXORRelayedAddress AttrType
+pkg github.com/gortc/stun, const ClassErrorResponse = 3
+pkg github.com/gortc/stun, const ClassErrorResponse MessageClass
+pkg github.com/gortc/stun, const ClassIndication = 1
+pkg github.com/gortc/stun, const ClassIndication MessageClass
+pkg github.com/gortc/stun, const ClassRequest = 0
+pkg github.com/gortc/stun, const ClassRequest MessageClass
+pkg github.com/gortc/stun, const ClassSuccessResponse = 2
+pkg github.com/gortc/stun, const ClassSuccessResponse MessageClass
+pkg github.com/gortc/stun, const CodeAllocMismatch = 437
+pkg github.com/gortc/stun, const CodeAllocMismatch ErrorCode
+pkg github.com/gortc/stun, const CodeAllocQuotaReached = 486
+pkg github.com/gortc/stun, const CodeAllocQuotaReached ErrorCode
+pkg github.com/gortc/stun, const CodeBadRequest = 400
+pkg github.com/gortc/stun, const CodeBadRequest ErrorCode
+pkg github.com/gortc/stun, const CodeForbidden = 403
+pkg github.com/gortc/stun, const CodeForbidden ErrorCode
+pkg github.com/gortc/stun, const CodeInsufficientCapacity = 508
+pkg github.com/gortc/stun, const CodeInsufficientCapacity ErrorCode
+pkg github.com/gortc/stun, const CodeRoleConflict = 478
+pkg github.com/gortc/stun, const CodeRoleConflict ErrorCode
+pkg github.com/gortc/stun, const CodeServerError = 500
+pkg github.com/gortc/stun, const CodeServerError ErrorCode
+pkg github.com/gortc/stun, const CodeStaleNonce = 438
+pkg github.com/gortc/stun, const CodeStaleNonce ErrorCode
+pkg github.com/gortc/stun, const CodeTryAlternate = 300
+pkg github.com/gortc/stun, const CodeTryAlternate ErrorCode
+pkg github.com/gortc/stun, const CodeUnauthorised = 401
+pkg github.com/gortc/stun, const CodeUnauthorised ErrorCode
+pkg github.com/gortc/stun, const CodeUnknownAttribute = 420
+pkg github.com/gortc/stun, const CodeUnknownAttribute ErrorCode
+pkg github.com/gortc/stun, const CodeUnsupportedTransProto = 442
+pkg github.com/gortc/stun, const CodeUnsupportedTransProto ErrorCode
+pkg github.com/gortc/stun, const CodeWrongCredentials = 441
+pkg github.com/gortc/stun, const CodeWrongCredentials ErrorCode
+pkg github.com/gortc/stun, const DefaultPort = 3478
+pkg github.com/gortc/stun, const DefaultPort ideal-int
+pkg github.com/gortc/stun, const DefaultTLSPort = 5349
+pkg github.com/gortc/stun, const DefaultTLSPort ideal-int
+pkg github.com/gortc/stun, const MethodAllocate = 3
+pkg github.com/gortc/stun, const MethodAllocate Method
+pkg github.com/gortc/stun, const MethodBinding = 1
+pkg github.com/gortc/stun, const MethodBinding Method
+pkg github.com/gortc/stun, const MethodChannelBind = 9
+pkg github.com/gortc/stun, const MethodChannelBind Method
+pkg github.com/gortc/stun, const MethodCreatePermission = 8
+pkg github.com/gortc/stun, const MethodCreatePermission Method
+pkg github.com/gortc/stun, const MethodData = 7
+pkg github.com/gortc/stun, const MethodData Method
+pkg github.com/gortc/stun, const MethodRefresh = 4
+pkg github.com/gortc/stun, const MethodRefresh Method
+pkg github.com/gortc/stun, const MethodSend = 6
+pkg github.com/gortc/stun, const MethodSend Method
+pkg github.com/gortc/stun, const TransactionIDSize = 12
+pkg github.com/gortc/stun, const TransactionIDSize ideal-int
+pkg github.com/gortc/stun, func Build(...Setter) (*Message, error)
+pkg github.com/gortc/stun, func CheckOverflow(AttrType, int, int) error
+pkg github.com/gortc/stun, func CheckSize(AttrType, int, int) error
+pkg github.com/gortc/stun, func Decode([]uint8, *Message) error
+pkg github.com/gortc/stun, func Dial(string, string) (*Client, error)
+pkg github.com/gortc/stun, func FingerprintValue([]uint8) uint32
+pkg github.com/gortc/stun, func IsAttrSizeInvalid(error) bool
+pkg github.com/gortc/stun, func IsAttrSizeOverflow(error) bool
+pkg github.com/gortc/stun, func IsMessage([]uint8) bool
+pkg github.com/gortc/stun, func MustBuild(...Setter) *Message
+pkg github.com/gortc/stun, func New() *Message
+pkg github.com/gortc/stun, func NewAgent(AgentOptions) *Agent
+pkg github.com/gortc/stun, func NewClient(ClientOptions) (*Client, error)
+pkg github.com/gortc/stun, func NewLongTermIntegrity(string, string, string) MessageIntegrity
+pkg github.com/gortc/stun, func NewNonce(string) Nonce
+pkg github.com/gortc/stun, func NewRealm(string) Realm
+pkg github.com/gortc/stun, func NewShortTermIntegrity(string) MessageIntegrity
+pkg github.com/gortc/stun, func NewSoftware(string) Software
+pkg github.com/gortc/stun, func NewTransactionID() [12]uint8
+pkg github.com/gortc/stun, func NewTransactionIDSetter([12]uint8) Setter
+pkg github.com/gortc/stun, func NewType(Method, MessageClass) MessageType
+pkg github.com/gortc/stun, func NewUsername(string) Username
+pkg github.com/gortc/stun, method (*Agent) Close() error
+pkg github.com/gortc/stun, method (*Agent) Collect(time.Time) error
+pkg github.com/gortc/stun, method (*Agent) Process(*Message) error
+pkg github.com/gortc/stun, method (*Agent) Start([12]uint8, time.Time, Handler) error
+pkg github.com/gortc/stun, method (*Agent) Stop([12]uint8) error
+pkg github.com/gortc/stun, method (*Agent) StopWithError([12]uint8, error) error
+pkg github.com/gortc/stun, method (*AlternateServer) AddTo(*Message) error
+pkg github.com/gortc/stun, method (*AlternateServer) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*Client) Close() error
+pkg github.com/gortc/stun, method (*Client) Do(*Message, time.Time, func(Event)) error
+pkg github.com/gortc/stun, method (*Client) Indicate(*Message) error
+pkg github.com/gortc/stun, method (*Client) Start(*Message, time.Time, Handler) error
+pkg github.com/gortc/stun, method (*ErrorCodeAttribute) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*MappedAddress) AddTo(*Message) error
+pkg github.com/gortc/stun, method (*MappedAddress) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*Message) Add(AttrType, []uint8)
+pkg github.com/gortc/stun, method (*Message) AddTo(*Message) error
+pkg github.com/gortc/stun, method (*Message) Build(...Setter) error
+pkg github.com/gortc/stun, method (*Message) Check(...Checker) error
+pkg github.com/gortc/stun, method (*Message) CloneTo(*Message) error
+pkg github.com/gortc/stun, method (*Message) Contains(AttrType) bool
+pkg github.com/gortc/stun, method (*Message) Decode() error
+pkg github.com/gortc/stun, method (*Message) Encode()
+pkg github.com/gortc/stun, method (*Message) Equal(*Message) bool
+pkg github.com/gortc/stun, method (*Message) ForEach(AttrType, func(*Message) error) error
+pkg github.com/gortc/stun, method (*Message) Get(AttrType) ([]uint8, error)
+pkg github.com/gortc/stun, method (*Message) NewTransactionID() error
+pkg github.com/gortc/stun, method (*Message) Parse(...Getter) error
+pkg github.com/gortc/stun, method (*Message) ReadFrom(io.Reader) (int64, error)
+pkg github.com/gortc/stun, method (*Message) Reset()
+pkg github.com/gortc/stun, method (*Message) SetType(MessageType)
+pkg github.com/gortc/stun, method (*Message) String() string
+pkg github.com/gortc/stun, method (*Message) Write([]uint8) (int, error)
+pkg github.com/gortc/stun, method (*Message) WriteAttributes()
+pkg github.com/gortc/stun, method (*Message) WriteHeader()
+pkg github.com/gortc/stun, method (*Message) WriteLength()
+pkg github.com/gortc/stun, method (*Message) WriteTo(io.Writer) (int64, error)
+pkg github.com/gortc/stun, method (*Message) WriteTransactionID()
+pkg github.com/gortc/stun, method (*Message) WriteType()
+pkg github.com/gortc/stun, method (*MessageType) ReadValue(uint16)
+pkg github.com/gortc/stun, method (*Nonce) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*Realm) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*Software) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*TextAttribute) GetFromAs(*Message, AttrType) error
+pkg github.com/gortc/stun, method (*UnknownAttributes) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*Username) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*XORMappedAddress) GetFrom(*Message) error
+pkg github.com/gortc/stun, method (*XORMappedAddress) GetFromAs(*Message, AttrType) error
+pkg github.com/gortc/stun, method (AttrType) Optional() bool
+pkg github.com/gortc/stun, method (AttrType) Required() bool
+pkg github.com/gortc/stun, method (AttrType) String() string
+pkg github.com/gortc/stun, method (AttrType) Value() uint16
+pkg github.com/gortc/stun, method (Attributes) Get(AttrType) (RawAttribute, bool)
+pkg github.com/gortc/stun, method (CloseErr) Error() string
+pkg github.com/gortc/stun, method (DecodeErr) Error() string
+pkg github.com/gortc/stun, method (DecodeErr) IsInvalidCookie() bool
+pkg github.com/gortc/stun, method (DecodeErr) IsPlace(DecodeErrPlace) bool
+pkg github.com/gortc/stun, method (DecodeErr) IsPlaceChildren(string) bool
+pkg github.com/gortc/stun, method (DecodeErr) IsPlaceParent(string) bool
+pkg github.com/gortc/stun, method (DecodeErrPlace) String() string
+pkg github.com/gortc/stun, method (ErrorCode) AddTo(*Message) error
+pkg github.com/gortc/stun, method (ErrorCodeAttribute) AddTo(*Message) error
+pkg github.com/gortc/stun, method (ErrorCodeAttribute) String() string
+pkg github.com/gortc/stun, method (FingerprintAttr) AddTo(*Message) error
+pkg github.com/gortc/stun, method (FingerprintAttr) Check(*Message) error
+pkg github.com/gortc/stun, method (HandlerFunc) HandleEvent(Event)
+pkg github.com/gortc/stun, method (MappedAddress) String() string
+pkg github.com/gortc/stun, method (MessageClass) String() string
+pkg github.com/gortc/stun, method (MessageIntegrity) AddTo(*Message) error
+pkg github.com/gortc/stun, method (MessageIntegrity) Check(*Message) error
+pkg github.com/gortc/stun, method (MessageIntegrity) String() string
+pkg github.com/gortc/stun, method (MessageType) AddTo(*Message) error
+pkg github.com/gortc/stun, method (MessageType) String() string
+pkg github.com/gortc/stun, method (MessageType) Value() uint16
+pkg github.com/gortc/stun, method (Method) String() string
+pkg github.com/gortc/stun, method (Nonce) AddTo(*Message) error
+pkg github.com/gortc/stun, method (Nonce) String() string
+pkg github.com/gortc/stun, method (RawAttribute) Equal(RawAttribute) bool
+pkg github.com/gortc/stun, method (RawAttribute) String() string
+pkg github.com/gortc/stun, method (Realm) AddTo(*Message) error
+pkg github.com/gortc/stun, method (Realm) String() string
+pkg github.com/gortc/stun, method (Software) AddTo(*Message) error
+pkg github.com/gortc/stun, method (Software) String() string
+pkg github.com/gortc/stun, method (StopErr) Error() string
+pkg github.com/gortc/stun, method (TextAttribute) AddToAs(*Message, AttrType, int) error
+pkg github.com/gortc/stun, method (UnknownAttributes) AddTo(*Message) error
+pkg github.com/gortc/stun, method (UnknownAttributes) String() string
+pkg github.com/gortc/stun, method (Username) AddTo(*Message) error
+pkg github.com/gortc/stun, method (Username) String() string
+pkg github.com/gortc/stun, method (XORMappedAddress) AddTo(*Message) error
+pkg github.com/gortc/stun, method (XORMappedAddress) AddToAs(*Message, AttrType) error
+pkg github.com/gortc/stun, method (XORMappedAddress) String() string
+pkg github.com/gortc/stun, type Agent struct
+pkg github.com/gortc/stun, type AgentOptions struct
+pkg github.com/gortc/stun, type AgentOptions struct, Handler Handler
+pkg github.com/gortc/stun, type AlternateServer struct
+pkg github.com/gortc/stun, type AlternateServer struct, IP net.IP
+pkg github.com/gortc/stun, type AlternateServer struct, Port int
+pkg github.com/gortc/stun, type AttrType uint16
+pkg github.com/gortc/stun, type Attributes []RawAttribute
+pkg github.com/gortc/stun, type Checker interface { Check }
+pkg github.com/gortc/stun, type Checker interface, Check(*Message) error
+pkg github.com/gortc/stun, type Client struct
+pkg github.com/gortc/stun, type ClientAgent interface { Close, Collect, Process, Start, Stop }
+pkg github.com/gortc/stun, type ClientAgent interface, Close() error
+pkg github.com/gortc/stun, type ClientAgent interface, Collect(time.Time) error
+pkg github.com/gortc/stun, type ClientAgent interface, Process(*Message) error
+pkg github.com/gortc/stun, type ClientAgent interface, Start([12]uint8, time.Time, Handler) error
+pkg github.com/gortc/stun, type ClientAgent interface, Stop([12]uint8) error
+pkg github.com/gortc/stun, type ClientOptions struct
+pkg github.com/gortc/stun, type ClientOptions struct, Agent ClientAgent
+pkg github.com/gortc/stun, type ClientOptions struct, Connection Connection
+pkg github.com/gortc/stun, type ClientOptions struct, TimeoutRate time.Duration
+pkg github.com/gortc/stun, type CloseErr struct
+pkg github.com/gortc/stun, type CloseErr struct, AgentErr error
+pkg github.com/gortc/stun, type CloseErr struct, ConnectionErr error
+pkg github.com/gortc/stun, type Connection interface { Close, Read, Write }
+pkg github.com/gortc/stun, type Connection interface, Close() error
+pkg github.com/gortc/stun, type Connection interface, Read([]uint8) (int, error)
+pkg github.com/gortc/stun, type Connection interface, Write([]uint8) (int, error)
+pkg github.com/gortc/stun, type DecodeErr struct
+pkg github.com/gortc/stun, type DecodeErr struct, Message string
+pkg github.com/gortc/stun, type DecodeErr struct, Place DecodeErrPlace
+pkg github.com/gortc/stun, type DecodeErrPlace struct
+pkg github.com/gortc/stun, type DecodeErrPlace struct, Children string
+pkg github.com/gortc/stun, type DecodeErrPlace struct, Parent string
+pkg github.com/gortc/stun, type ErrorCode int
+pkg github.com/gortc/stun, type ErrorCodeAttribute struct
+pkg github.com/gortc/stun, type ErrorCodeAttribute struct, Code ErrorCode
+pkg github.com/gortc/stun, type ErrorCodeAttribute struct, Reason []uint8
+pkg github.com/gortc/stun, type Event struct
+pkg github.com/gortc/stun, type Event struct, Error error
+pkg github.com/gortc/stun, type Event struct, Message *Message
+pkg github.com/gortc/stun, type FingerprintAttr struct
+pkg github.com/gortc/stun, type Getter interface { GetFrom }
+pkg github.com/gortc/stun, type Getter interface, GetFrom(*Message) error
+pkg github.com/gortc/stun, type Handler interface { HandleEvent }
+pkg github.com/gortc/stun, type Handler interface, HandleEvent(Event)
+pkg github.com/gortc/stun, type HandlerFunc func(Event)
+pkg github.com/gortc/stun, type MappedAddress struct
+pkg github.com/gortc/stun, type MappedAddress struct, IP net.IP
+pkg github.com/gortc/stun, type MappedAddress struct, Port int
+pkg github.com/gortc/stun, type Message struct
+pkg github.com/gortc/stun, type Message struct, Attributes Attributes
+pkg github.com/gortc/stun, type Message struct, Length uint32
+pkg github.com/gortc/stun, type Message struct, Raw []uint8
+pkg github.com/gortc/stun, type Message struct, TransactionID [12]uint8
+pkg github.com/gortc/stun, type Message struct, Type MessageType
+pkg github.com/gortc/stun, type MessageClass uint8
+pkg github.com/gortc/stun, type MessageIntegrity []uint8
+pkg github.com/gortc/stun, type MessageType struct
+pkg github.com/gortc/stun, type MessageType struct, Class MessageClass
+pkg github.com/gortc/stun, type MessageType struct, Method Method
+pkg github.com/gortc/stun, type Method uint16
+pkg github.com/gortc/stun, type Nonce []uint8
+pkg github.com/gortc/stun, type RawAttribute struct
+pkg github.com/gortc/stun, type RawAttribute struct, Length uint16
+pkg github.com/gortc/stun, type RawAttribute struct, Type AttrType
+pkg github.com/gortc/stun, type RawAttribute struct, Value []uint8
+pkg github.com/gortc/stun, type Realm []uint8
+pkg github.com/gortc/stun, type Setter interface { AddTo }
+pkg github.com/gortc/stun, type Setter interface, AddTo(*Message) error
+pkg github.com/gortc/stun, type Software []uint8
+pkg github.com/gortc/stun, type StopErr struct
+pkg github.com/gortc/stun, type StopErr struct, Cause error
+pkg github.com/gortc/stun, type StopErr struct, Err error
+pkg github.com/gortc/stun, type TextAttribute []uint8
+pkg github.com/gortc/stun, type UnknownAttributes []AttrType
+pkg github.com/gortc/stun, type Username []uint8
+pkg github.com/gortc/stun, type XORMappedAddress struct
+pkg github.com/gortc/stun, type XORMappedAddress struct, IP net.IP
+pkg github.com/gortc/stun, type XORMappedAddress struct, Port int
+pkg github.com/gortc/stun, var BindingError MessageType
+pkg github.com/gortc/stun, var BindingRequest MessageType
+pkg github.com/gortc/stun, var BindingSuccess MessageType
+pkg github.com/gortc/stun, var ErrAgentClosed error
+pkg github.com/gortc/stun, var ErrAttrSizeInvalid error
+pkg github.com/gortc/stun, var ErrAttributeNotFound error
+pkg github.com/gortc/stun, var ErrAttributeSizeInvalid error
+pkg github.com/gortc/stun, var ErrAttributeSizeOverflow error
+pkg github.com/gortc/stun, var ErrBadIPLength error
+pkg github.com/gortc/stun, var ErrBadUnknownAttrsSize error
+pkg github.com/gortc/stun, var ErrClientClosed error
+pkg github.com/gortc/stun, var ErrClientNotInitialized error
+pkg github.com/gortc/stun, var ErrDecodeToNil error
+pkg github.com/gortc/stun, var ErrFingerprintBeforeIntegrity error
+pkg github.com/gortc/stun, var ErrFingerprintMismatch error
+pkg github.com/gortc/stun, var ErrIntegrityMismatch error
+pkg github.com/gortc/stun, var ErrNoConnection error
+pkg github.com/gortc/stun, var ErrNoDefaultReason error
+pkg github.com/gortc/stun, var ErrTransactionExists error
+pkg github.com/gortc/stun, var ErrTransactionNotExists error
+pkg github.com/gortc/stun, var ErrTransactionStopped error
+pkg github.com/gortc/stun, var ErrTransactionTimeOut error
+pkg github.com/gortc/stun, var ErrUnexpectedHeaderEOF error
+pkg github.com/gortc/stun, var Fingerprint FingerprintAttr
+pkg github.com/gortc/stun, var TransactionID Setter

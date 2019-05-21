@@ -1,0 +1,18 @@
+Value,Name,Reference
+0x000,Reserved,[RFC5389]
+0x001,Binding,[RFC5389]
+0x002,Reserved; was SharedSecret,[RFC5389]
+0x003,Allocate,[RFC5766]
+0x004,Refresh,[RFC5766]
+0x005,Unassigned,
+0x006,Send,[RFC5766]
+0x007,Data,[RFC5766]
+0x008,CreatePermission,[RFC5766]
+0x009,ChannelBind,[RFC5766]
+0x00A,Connect,[RFC6062]
+0x00B,ConnectionBind,[RFC6062]
+0x00C,ConnectionAttempt,[RFC6062]
+0x00D-0x0FF,Unassigned,
+0x100-0xFFF,"Reserved (For DTLS-SRTP multiplexing collision avoidance, see 
+        [RFC7983]. 
+        Cannot be made available for assignment without IETF Review.)",[RFC7983]

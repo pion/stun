@@ -1,383 +1,592 @@
 package stun
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
 	"fmt"
-	"math/rand"
-	"net"
-
-	"github.com/pkg/errors"
+	"io"
 )
-
-// MessageClass of 0b00 is a request, a class of 0b01 is an
-//   indication, a class of 0b10 is a success response, and a class of
-//   0b11 is an error response.
-// https://tools.ietf.org/html/rfc5389#section-6
-type MessageClass byte
 
 const (
-	// ClassRequest describes a request method type
-	ClassRequest MessageClass = 0x00
-	// ClassIndication describes an indication method type
-	ClassIndication MessageClass = 0x01
-	// ClassSuccessResponse describes an success response method type
-	ClassSuccessResponse MessageClass = 0x02
-	// ClassErrorResponse describes an error response method type
-	ClassErrorResponse MessageClass = 0x03
+	// magicCookie is fixed value that aids in distinguishing STUN packets
+	// from packets of other protocols when STUN is multiplexed with those
+	// other protocols on the same Port.
+	//
+	// The magic cookie field MUST contain the fixed value 0x2112A442 in
+	// network byte order.
+	//
+	// Defined in "STUN Message Structure", section 6.
+	magicCookie         = 0x2112A442
+	attributeHeaderSize = 4
+	messageHeaderSize   = 20
+
+	// TransactionIDSize is length of transaction id array (in bytes).
+	TransactionIDSize = 12 // 96 bit
 )
 
-// Method is selector which can be select MethodType
-type Method uint16
-
-//Method Type
-const (
-	MethodBinding          Method = 0x01 // STUN
-	MethodSharedSecret     Method = 0x02 // STUN
-	MethodAllocate         Method = 0x03 // TURN (Req/Rsp)
-	MethodRefresh          Method = 0x04 // TURN (Req/Rsp)
-	MethodSend             Method = 0x06 // TURN (Ind)
-	MethodData             Method = 0x07 // TURN (Ind)
-	MethodCreatePermission Method = 0x08 // TURN (Req/Rsp)
-	MethodChannelBind      Method = 0x09 // TURN (Req/Rsp)
-)
-
-var messageClassName = map[MessageClass]string{
-	ClassRequest:         "REQUEST",
-	ClassIndication:      "INDICATION",
-	ClassSuccessResponse: "SUCCESS-RESPONSE",
-	ClassErrorResponse:   "ERROR-RESPONSE",
+// NewTransactionID returns new random transaction ID using crypto/rand
+// as source.
+func NewTransactionID() (b [TransactionIDSize]byte) {
+	readFullOrPanic(rand.Reader, b[:])
+	return b
 }
 
-// String prints the known class names and a hex format for unknown class names
-func (m MessageClass) String() string {
-	s, err := messageClassName[m]
-	if !err {
-		// Falling back to hex representation.
-		s = fmt.Sprintf("Unk 0x%x", uint16(m))
+// IsMessage returns true if b looks like STUN message.
+// Useful for multiplexing. IsMessage does not guarantee
+// that decoding will be successful.
+func IsMessage(b []byte) bool {
+	return len(b) >= messageHeaderSize && bin.Uint32(b[4:8]) == magicCookie
+}
+
+// New returns *Message with pre-allocated Raw.
+func New() *Message {
+	const defaultRawCapacity = 120
+	return &Message{
+		Raw: make([]byte, messageHeaderSize, defaultRawCapacity),
 	}
-	return s
 }
 
-var methodName = map[Method]string{
-	MethodBinding:          "BINDING",
-	MethodSharedSecret:     "SHARED-SECRET",
-	MethodAllocate:         "ALLOCATE",
-	MethodRefresh:          "REFRESH",
-	MethodSend:             "SEND",
-	MethodData:             "DATA",
-	MethodCreatePermission: "CREATE-PERMISSION",
-	MethodChannelBind:      "CHANNEL-BIND",
-}
+// ErrDecodeToNil occurs on Decode(data, nil) call.
+var ErrDecodeToNil = errors.New("attempt to decode to nil message")
 
-// String prints the known method names and a hex format for unknown method names
-func (m Method) String() string {
-	s, err := methodName[m]
-	if !err {
-		s = fmt.Sprintf("Unk 0x%x", uint16(m))
+// Decode decodes Message from data to m, returning error if any.
+func Decode(data []byte, m *Message) error {
+	if m == nil {
+		return ErrDecodeToNil
 	}
-	return s
+	m.Raw = append(m.Raw[:0], data...)
+	return m.Decode()
 }
 
-//       0                   1                   2                   3
-//       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//      |0 0|     STUN Message Type     |         Message Length        |
-//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//      |                         Magic Cookie                          |
-//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//      |                                                               |
-//      |                     Transaction ID (96 bits)                  |
-//      |                                                               |
-//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// Message represents a single STUN packet. It uses aggressive internal
+// buffering to enable zero-allocation encoding and decoding,
+// so there are some usage constraints:
 //
-
-const (
-	messageHeaderStart  int = 0
-	messageHeaderLength int = 20
-	messageLengthStart  int = 2
-	messageLengthLength int = 2
-	magicCookieStart    int = 4
-	magicCookieLength   int = 4
-	transactionIDStart  int = 4
-	transactionIDLength int = 16
-
-	// TransactionIDSize is the size of the transaction according to RFC 5389: 96 bits
-	TransactionIDSize = 96 / 8
-)
-
-// Message structs
+// 	Message, its fields, results of m.Get or any attribute a.GetFrom
+//	are valid only until Message.Raw is not modified.
 type Message struct {
-	Class         MessageClass
-	Method        Method
-	Length        uint16
-	TransactionID []byte
-	Attributes    []*RawAttribute
+	Type          MessageType
+	Length        uint32 // len(Raw) not including header
+	TransactionID [TransactionIDSize]byte
+	Attributes    Attributes
 	Raw           []byte
 }
 
-// The most significant 2 bits of every STUN message MUST be zeroes.
-// This can be used to differentiate STUN packets from other protocols
-// when STUN is multiplexed with other protocols on the same port.
-// https://tools.ietf.org/html/rfc5389#section-6
-func verifyStunHeaderMostSignificant2Bits(header []byte) bool {
-	return (header[0] >> 6) == 0
+// AddTo sets b.TransactionID to m.TransactionID.
+//
+// Implements Setter to aid in crafting responses.
+func (m *Message) AddTo(b *Message) error {
+	b.TransactionID = m.TransactionID
+	b.WriteTransactionID()
+	return nil
 }
 
-func verifyMagicCookie(header []byte) error {
-	const magicCookie = 0x2112A442
-	c := header[magicCookieStart : magicCookieStart+magicCookieLength]
-	if enc.Uint32(c) != magicCookie {
-		return errors.Errorf("stun header magic cookie invalid; %v != %v (expected)", enc.Uint32(c), magicCookie)
+// NewTransactionID sets m.TransactionID to random value from crypto/rand
+// and returns error if any.
+func (m *Message) NewTransactionID() error {
+	_, err := io.ReadFull(rand.Reader, m.TransactionID[:])
+	if err == nil {
+		m.WriteTransactionID()
+	}
+	return err
+}
+
+func (m *Message) String() string {
+	tID := base64.StdEncoding.EncodeToString(m.TransactionID[:])
+	return fmt.Sprintf("%s l=%d attrs=%d id=%s", m.Type, m.Length, len(m.Attributes), tID)
+}
+
+// Reset resets Message, attributes and underlying buffer length.
+func (m *Message) Reset() {
+	m.Raw = m.Raw[:0]
+	m.Length = 0
+	m.Attributes = m.Attributes[:0]
+}
+
+// grow ensures that internal buffer will fit v more bytes and
+// increases it capacity if necessary.
+func (m *Message) grow(v int) {
+	// Not performing any optimizations here
+	// (e.g. preallocate len(buf) * 2 to reduce allocations)
+	// because they are already done by []byte implementation.
+	n := len(m.Raw) + v
+	for cap(m.Raw) < n {
+		m.Raw = append(m.Raw, 0)
+	}
+	m.Raw = m.Raw[:n]
+}
+
+// Add appends new attribute to message. Not goroutine-safe.
+//
+// Value of attribute is copied to internal buffer so
+// it is safe to reuse v.
+func (m *Message) Add(t AttrType, v []byte) {
+	// Allocating buffer for TLV (type-length-value).
+	// T = t, L = len(v), V = v.
+	// m.Raw will look like:
+	// [0:20]                               <- message header
+	// [20:20+m.Length]                     <- existing message attributes
+	// [20+m.Length:20+m.Length+len(v) + 4] <- allocated buffer for new TLV
+	// [first:last]                         <- same as previous
+	// [0 1|2 3|4    4 + len(v)]            <- mapping for allocated buffer
+	//   T   L        V
+	allocSize := attributeHeaderSize + len(v)  // ~ len(TLV) = len(TL) + len(V)
+	first := messageHeaderSize + int(m.Length) // first byte number
+	last := first + allocSize                  // last byte number
+	m.grow(last)                               // growing cap(Raw) to fit TLV
+	m.Raw = m.Raw[:last]                       // now len(Raw) = last
+	m.Length += uint32(allocSize)              // rendering length change
+
+	// Sub-slicing internal buffer to simplify encoding.
+	buf := m.Raw[first:last]           // slice for TLV
+	value := buf[attributeHeaderSize:] // slice for V
+	attr := RawAttribute{
+		Type:   t,              // T
+		Length: uint16(len(v)), // L
+		Value:  value,          // V
+	}
+
+	// Encoding attribute TLV to allocated buffer.
+	bin.PutUint16(buf[0:2], attr.Type.Value()) // T
+	bin.PutUint16(buf[2:4], attr.Length)       // L
+	copy(value, v)                             // V
+
+	// Checking that attribute value needs padding.
+	if attr.Length%padding != 0 {
+		// Performing padding.
+		bytesToAdd := nearestPaddedValueLength(len(v)) - len(v)
+		last += bytesToAdd
+		m.grow(last)
+		// setting all padding bytes to zero
+		// to prevent data leak from previous
+		// data in next bytesToAdd bytes
+		buf = m.Raw[last-bytesToAdd : last]
+		for i := range buf {
+			buf[i] = 0
+		}
+		m.Raw = m.Raw[:last]           // increasing buffer length
+		m.Length += uint32(bytesToAdd) // rendering length change
+	}
+	m.Attributes = append(m.Attributes, attr)
+	m.WriteLength()
+}
+
+func attrSliceEqual(a, b Attributes) bool {
+	for _, attr := range a {
+		found := false
+		for _, attrB := range b {
+			if attrB.Type != attr.Type {
+				continue
+			}
+			if attrB.Equal(attr) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func attrEqual(a, b Attributes) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	if !attrSliceEqual(a, b) {
+		return false
+	}
+	if !attrSliceEqual(b, a) {
+		return false
+	}
+	return true
+}
+
+// Equal returns true if Message b equals to m.
+// Ignores m.Raw.
+func (m *Message) Equal(b *Message) bool {
+	if m == nil && b == nil {
+		return true
+	}
+	if m == nil || b == nil {
+		return false
+	}
+	if m.Type != b.Type {
+		return false
+	}
+	if m.TransactionID != b.TransactionID {
+		return false
+	}
+	if m.Length != b.Length {
+		return false
+	}
+	if !attrEqual(m.Attributes, b.Attributes) {
+		return false
+	}
+	return true
+}
+
+// WriteLength writes m.Length to m.Raw. Call is valid only if len(m.Raw) >= 4.
+func (m *Message) WriteLength() {
+	_ = m.Raw[4] // early bounds check to guarantee safety of writes below
+	bin.PutUint16(m.Raw[2:4], uint16(m.Length))
+}
+
+// WriteHeader writes header to underlying buffer. Not goroutine-safe.
+func (m *Message) WriteHeader() {
+	if len(m.Raw) < messageHeaderSize {
+		// Making WriteHeader call valid even when m.Raw
+		// is nil or len(m.Raw) is less than needed for header.
+		m.grow(messageHeaderSize)
+	}
+	_ = m.Raw[:messageHeaderSize] // early bounds check to guarantee safety of writes below
+
+	m.WriteType()
+	m.WriteLength()
+	bin.PutUint32(m.Raw[4:8], magicCookie)               // magic cookie
+	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
+}
+
+// WriteTransactionID writes m.TransactionID to m.Raw.
+func (m *Message) WriteTransactionID() {
+	copy(m.Raw[8:messageHeaderSize], m.TransactionID[:]) // transaction ID
+}
+
+// WriteAttributes encodes all m.Attributes to m.
+func (m *Message) WriteAttributes() {
+	attributes := m.Attributes
+	m.Attributes = attributes[:0]
+	for _, a := range attributes {
+		m.Add(a.Type, a.Value)
+	}
+	m.Attributes = attributes
+}
+
+// WriteType writes m.Type to m.Raw.
+func (m *Message) WriteType() {
+	bin.PutUint16(m.Raw[0:2], m.Type.Value()) // message type
+}
+
+// SetType sets m.Type and writes it to m.Raw.
+func (m *Message) SetType(t MessageType) {
+	m.Type = t
+	m.WriteType()
+}
+
+// Encode re-encodes message into m.Raw.
+func (m *Message) Encode() {
+	m.Raw = m.Raw[:0]
+	m.WriteHeader()
+	m.Length = 0
+	m.WriteAttributes()
+}
+
+// WriteTo implements WriterTo via calling Write(m.Raw) on w and returning
+// call result.
+func (m *Message) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(m.Raw)
+	return int64(n), err
+}
+
+// ReadFrom implements ReaderFrom. Reads message from r into m.Raw,
+// Decodes it and return error if any. If m.Raw is too small, will return
+// ErrUnexpectedEOF, ErrUnexpectedHeaderEOF or *DecodeErr.
+//
+// Can return *DecodeErr while decoding too.
+func (m *Message) ReadFrom(r io.Reader) (int64, error) {
+	tBuf := m.Raw[:cap(m.Raw)]
+	var (
+		n   int
+		err error
+	)
+	if n, err = r.Read(tBuf); err != nil {
+		return int64(n), err
+	}
+	m.Raw = tBuf[:n]
+	return int64(n), m.Decode()
+}
+
+// ErrUnexpectedHeaderEOF means that there were not enough bytes in
+// m.Raw to read header.
+var ErrUnexpectedHeaderEOF = errors.New("unexpected EOF: not enough bytes to read header")
+
+// Decode decodes m.Raw into m.
+func (m *Message) Decode() error {
+	// decoding message header
+	buf := m.Raw
+	if len(buf) < messageHeaderSize {
+		return ErrUnexpectedHeaderEOF
+	}
+	var (
+		t        = bin.Uint16(buf[0:2])      // first 2 bytes
+		size     = int(bin.Uint16(buf[2:4])) // second 2 bytes
+		cookie   = bin.Uint32(buf[4:8])      // last 4 bytes
+		fullSize = messageHeaderSize + size  // len(m.Raw)
+	)
+	if cookie != magicCookie {
+		msg := fmt.Sprintf("%x is invalid magic cookie (should be %x)", cookie, magicCookie)
+		return newDecodeErr("message", "cookie", msg)
+	}
+	if len(buf) < fullSize {
+		msg := fmt.Sprintf("buffer length %d is less than %d (expected message size)", len(buf), fullSize)
+		return newAttrDecodeErr("message", msg)
+	}
+	// saving header data
+	m.Type.ReadValue(t)
+	m.Length = uint32(size)
+	copy(m.TransactionID[:], buf[8:messageHeaderSize])
+
+	m.Attributes = m.Attributes[:0]
+	var (
+		offset = 0
+		b      = buf[messageHeaderSize:fullSize]
+	)
+	for offset < size {
+		// checking that we have enough bytes to read header
+		if len(b) < attributeHeaderSize {
+			msg := fmt.Sprintf("buffer length %d is less than %d (expected header size)", len(b), attributeHeaderSize)
+			return newAttrDecodeErr("header", msg)
+		}
+		var (
+			a = RawAttribute{
+				Type:   AttrType(bin.Uint16(b[0:2])), // first 2 bytes
+				Length: bin.Uint16(b[2:4]),           // second 2 bytes
+			}
+			aL     = int(a.Length)                // attribute length
+			aBuffL = nearestPaddedValueLength(aL) // expected buffer length (with padding)
+		)
+		b = b[attributeHeaderSize:] // slicing again to simplify value read
+		offset += attributeHeaderSize
+		if len(b) < aBuffL { // checking size
+			msg := fmt.Sprintf("buffer length %d is less than %d (expected value size for %s)", len(b), aBuffL, a.Type)
+			return newAttrDecodeErr("value", msg)
+		}
+		a.Value = b[:aL]
+		offset += aBuffL
+		b = b[aBuffL:]
+
+		m.Attributes = append(m.Attributes, a)
 	}
 	return nil
 }
 
-// The message length MUST contain the size, in bytes, of the message
-// not including the 20-byte STUN header.  Since all STUN attributes are
-// padded to a multiple of 4 bytes, the last 2 bits of this field are
-// always zero.  This provides another way to distinguish STUN packets
-// from packets of other protocols.
-// https://tools.ietf.org/html/rfc5389#section-6
-func getMessageLength(header []byte) (uint16, error) {
-	messageLength := enc.Uint16(header[messageLengthStart : messageLengthStart+messageLengthLength])
-	if messageLength%4 != 0 {
-		return 0, errors.Errorf("stun header message length must be a factor of 4 (%d)", messageLength)
-	}
-
-	return messageLength, nil
+// Write decodes message and return error if any.
+//
+// Any error is unrecoverable, but message could be partially decoded.
+func (m *Message) Write(tBuf []byte) (int, error) {
+	m.Raw = append(m.Raw[:0], tBuf...)
+	return len(tBuf), m.Decode()
 }
 
-//  0                 1
-//  2  3  4 5 6 7 8 9 0 1 2 3 4 5
-//
-// +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
-// |M |M |M|M|M|C|M|M|M|C|M|M|M|M|
-// |11|10|9|8|7|1|6|5|4|0|3|2|1|0|
-// +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
-const (
-	c0Mask   = 0x10 // 0b10000
-	c1Mask   = 0x01 // 0b00001
-	c0ShiftR = 4    // R 0b10000 -> 0b00001
-	c1ShiftL = 1    // L 0b00001 -> 0b00010
+// CloneTo clones m to b securing any further m mutations.
+func (m *Message) CloneTo(b *Message) error {
+	// TODO(ar): implement low-level copy.
+	b.Raw = append(b.Raw[:0], m.Raw...)
+	return b.Decode()
+}
 
-	m0Mask   = 0x0F // 0b00001111
-	m4Mask   = 0xE0 // 0b11100000
-	m7Mask   = 0x3E // 0b00111110
-	m4ShiftR = 1    // R 0b01110000 -> 0b00111000
-	m7ShiftL = 5    // L 0b00111110 -> 0b0000011111000000
+// MessageClass is 8-bit representation of 2-bit class of STUN Message Class.
+type MessageClass byte
+
+// Possible values for message class in STUN Message Type.
+const (
+	ClassRequest         MessageClass = 0x00 // 0b00
+	ClassIndication      MessageClass = 0x01 // 0b01
+	ClassSuccessResponse MessageClass = 0x02 // 0b10
+	ClassErrorResponse   MessageClass = 0x03 // 0b11
 )
 
-func setMessageType(header []byte, class MessageClass, method Method) {
-	m := uint16(method)
-	c := uint16(class)
+// Common STUN message types.
+var (
+	// Binding request message type.
+	BindingRequest = NewType(MethodBinding, ClassRequest)
+	// Binding success response message type
+	BindingSuccess = NewType(MethodBinding, ClassSuccessResponse)
+	// Binding error response message type.
+	BindingError = NewType(MethodBinding, ClassErrorResponse)
+)
 
-	mt := m & m0Mask
-	// Make room for c0
-	mt |= (m & (m4Mask >> m4ShiftR)) << 1
-	mt |= (m & (m7Mask << 6)) << 2
-	mt |= (c & 0x1) << 4
-	mt |= (c >> 1) << 8
-
-	enc.PutUint16(header[messageHeaderStart:], mt)
+func (c MessageClass) String() string {
+	switch c {
+	case ClassRequest:
+		return "request"
+	case ClassIndication:
+		return "indication"
+	case ClassSuccessResponse:
+		return "success response"
+	case ClassErrorResponse:
+		return "error response"
+	default:
+		panic("unknown message class")
+	}
 }
 
-func getMessageType(header []byte) (MessageClass, Method) {
-	mByte0 := header[0]
-	mByte1 := header[1]
+// Method is uint16 representation of 12-bit STUN method.
+type Method uint16
 
-	c0 := (mByte1 & c0Mask) >> c0ShiftR
-	c1 := (mByte0 & c1Mask) << c1ShiftL
+// Possible methods for STUN Message.
+const (
+	MethodBinding          Method = 0x001
+	MethodAllocate         Method = 0x003
+	MethodRefresh          Method = 0x004
+	MethodSend             Method = 0x006
+	MethodData             Method = 0x007
+	MethodCreatePermission Method = 0x008
+	MethodChannelBind      Method = 0x009
+)
 
-	class := MessageClass(c1 | c0)
+// Methods from RFC 6062.
+const (
+	MethodConnect           Method = 0x000a
+	MethodConnectionBind    Method = 0x000b
+	MethodConnectionAttempt Method = 0x000c
+)
 
-	m := (uint16(mByte0) & m7Mask) << m7ShiftL
-	m |= uint16(mByte1 & m0Mask)
-	m |= uint16((mByte1 & m4Mask) >> m4ShiftR)
+var methodName = map[Method]string{
+	MethodBinding:          "Binding",
+	MethodAllocate:         "Allocate",
+	MethodRefresh:          "Refresh",
+	MethodSend:             "Send",
+	MethodData:             "Data",
+	MethodCreatePermission: "CreatePermission",
+	MethodChannelBind:      "ChannelBind",
 
-	method := Method(m)
-
-	return class, method
+	// RFC 6062.
+	MethodConnect:           "Connect",
+	MethodConnectionBind:    "ConnectionBind",
+	MethodConnectionAttempt: "ConnectionAttempt",
 }
 
-//  0                   1                   2                   3
-//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |         Type                  |            Length             |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |                         Value (variable)                ....
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-func getAttribute(attribute []byte, offset int) *RawAttribute {
-	typ := AttrType(enc.Uint16(attribute))
-	len := enc.Uint16(attribute[attrLengthStart : attrLengthStart+attrLengthLength])
-	pad := (attrLengthMultiple - (len % attrLengthMultiple)) % attrLengthMultiple
-	return &RawAttribute{typ, len, attribute[attrValueStart : attrValueStart+len], pad, offset}
+func (m Method) String() string {
+	s, ok := methodName[m]
+	if !ok {
+		// Falling back to hex representation.
+		s = fmt.Sprintf("0x%x", uint16(m))
+	}
+	return s
 }
 
-// IsSTUN determines if a package is likely a STUN package
-// Used for de-multiplexing STUN packages
-func IsSTUN(packet []byte) bool {
-	if len(packet) < 20 {
-		return false
-	}
-
-	header := packet[messageHeaderStart : messageHeaderStart+messageHeaderLength]
-
-	if !verifyStunHeaderMostSignificant2Bits(header) {
-		return false
-	}
-
-	return verifyMagicCookie(header) == nil
+// MessageType is STUN Message Type Field.
+type MessageType struct {
+	Method Method       // e.g. binding
+	Class  MessageClass // e.g. request
 }
 
-// NewMessage parses a binary STUN message into a Message struct
-// TODO Break this apart, too big
-func NewMessage(packet []byte) (*Message, error) {
-	buf := make([]byte, len(packet))
-	copy(buf, packet)
-	if len(buf) < 20 {
-		return nil, errors.Errorf("stun header must be at least 20 bytes, was %d", len(buf))
-	}
-
-	header := buf[messageHeaderStart : messageHeaderStart+messageHeaderLength]
-
-	if !verifyStunHeaderMostSignificant2Bits(header) {
-		return nil, errors.New("stun header most significant 2 bits must equal 0b00")
-	}
-
-	err := verifyMagicCookie(header)
-	if err != nil {
-		return nil, errors.Wrap(err, "stun header invalid")
-	}
-
-	ml, err := getMessageLength(header)
-	if err != nil {
-		return nil, errors.Wrap(err, "stun header invalid")
-	}
-
-	if len(buf) != messageHeaderLength+int(ml) {
-		return nil, errors.Errorf("stun header length invalid; %d != %d (expected)", messageHeaderLength+int(ml), len(buf))
-	}
-
-	t := header[transactionIDStart : transactionIDStart+transactionIDLength]
-
-	class, method := getMessageType(header)
-
-	ra := []*RawAttribute{}
-	// TODO Check attr length <= attr slice remaining
-	attr := buf[messageHeaderLength:]
-	for len(attr) > 0 {
-		a := getAttribute(attr, cap(buf)-cap(attr))
-		attr = attr[attrValueStart+a.Length+a.Pad:]
-		ra = append(ra, a)
-	}
-
-	m := Message{}
-	m.Class = class
-	m.Method = method
-	m.Length = ml
-	m.TransactionID = t[0:transactionIDLength]
-	m.Attributes = ra
-	m.Raw = buf
-
-	return &m, nil
-}
-
-// GetOneAttribute can get a RawAttribute which adopts attrbute type
-func (m *Message) GetOneAttribute(attrType AttrType) (*RawAttribute, bool) {
-	for _, v := range m.Attributes {
-		if v.Type == attrType {
-			return v, true
-		}
-	}
-
-	return nil, false
-}
-
-// GetAllAttributes can get all RawAttributes which adopt attrbute type
-func (m *Message) GetAllAttributes(attrType AttrType) ([]*RawAttribute, bool) {
-	var attrs []*RawAttribute
-	for _, v := range m.Attributes {
-		if v.Type == attrType {
-			attrs = append(attrs, v)
-		}
-	}
-
-	return attrs, len(attrs) > 0
-}
-
-// CommitLength returns message length
-func (m *Message) CommitLength() {
-	enc.PutUint16(m.Raw[messageLengthStart:], m.Length)
-}
-
-// AddAttribute append bytes formatted RawAttribute to message
-func (m *Message) AddAttribute(attrType AttrType, v []byte) {
-
-	ra := RawAttribute{
-		Type:   attrType,
-		Value:  v,
-		Pad:    uint16(getAttrPadding(len(v))),
-		Length: uint16(len(v)),
-		Offset: int(m.Length),
-	}
-
-	a := make([]byte, attrHeaderLength+ra.Length+ra.Pad)
-
-	enc.PutUint16(a, uint16(ra.Type))
-	enc.PutUint16(a[attrLengthStart:attrLengthStart+attrLengthLength], ra.Length)
-
-	copy(a[attrValueStart:], ra.Value)
-
-	m.Attributes = append(m.Attributes, &ra)
-	m.Raw = append(m.Raw, a...)
-	m.Length += uint16(len(a))
-	m.CommitLength()
-}
-
-// Pack returns Message.Raw
-func (m *Message) Pack() []byte {
-
-	setMessageType(m.Raw[messageHeaderStart:2], m.Class, m.Method)
-	m.CommitLength()
-	copy(m.Raw[transactionIDStart:], m.TransactionID)
-
-	return m.Raw
-}
-
-// BuildAndSend is building message, pack using attribute and send
-func BuildAndSend(conn net.PacketConn, addr *TransportAddr, class MessageClass, method Method, transactionID []byte, attrs ...Attribute) error {
-	rsp, err := Build(class, method, transactionID, attrs...)
-	if err != nil {
-		return err
-	}
-
-	b := rsp.Pack()
-	l, err := conn.WriteTo(b, addr.Addr())
-	if err != nil {
-		return errors.Wrap(err, "failed writing to socket")
-	}
-
-	if l != len(b) {
-		return errors.Errorf("packet write smaller than packet %d != %d (expected)", l, len(b))
-	}
-
+// AddTo sets m type to t.
+func (t MessageType) AddTo(m *Message) error {
+	m.SetType(t)
 	return nil
 }
 
-// GenerateTransactionID returns 16bytes ids
-func GenerateTransactionID() []byte {
-	randSeq := func(n int) string {
-		letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-		b := make([]rune, n)
-		for i := range b {
-			b[i] = letters[rand.Intn(len(letters))]
-		}
-		return string(b)
+// NewType returns new message type with provided method and class.
+func NewType(method Method, class MessageClass) MessageType {
+	return MessageType{
+		Method: method,
+		Class:  class,
 	}
+}
 
-	transactionID := []byte(randSeq(16))
-	transactionID[0] = 33
-	transactionID[1] = 18
-	transactionID[2] = 164
-	transactionID[3] = 66
-	return transactionID
+const (
+	methodABits = 0xf   // 0b0000000000001111
+	methodBBits = 0x70  // 0b0000000001110000
+	methodDBits = 0xf80 // 0b0000111110000000
+
+	methodBShift = 1
+	methodDShift = 2
+
+	firstBit  = 0x1
+	secondBit = 0x2
+
+	c0Bit = firstBit
+	c1Bit = secondBit
+
+	classC0Shift = 4
+	classC1Shift = 7
+)
+
+// Value returns bit representation of messageType.
+func (t MessageType) Value() uint16 {
+	//	 0                 1
+	//	 2  3  4 5 6 7 8 9 0 1 2 3 4 5
+	//	+--+--+-+-+-+-+-+-+-+-+-+-+-+-+
+	//	|M |M |M|M|M|C|M|M|M|C|M|M|M|M|
+	//	|11|10|9|8|7|1|6|5|4|0|3|2|1|0|
+	//	+--+--+-+-+-+-+-+-+-+-+-+-+-+-+
+	// Figure 3: Format of STUN Message Type Field
+
+	// Warning: Abandon all hope ye who enter here.
+	// Splitting M into A(M0-M3), B(M4-M6), D(M7-M11).
+	m := uint16(t.Method)
+	a := m & methodABits // A = M * 0b0000000000001111 (right 4 bits)
+	b := m & methodBBits // B = M * 0b0000000001110000 (3 bits after A)
+	d := m & methodDBits // D = M * 0b0000111110000000 (5 bits after B)
+
+	// Shifting to add "holes" for C0 (at 4 bit) and C1 (8 bit).
+	m = a + (b << methodBShift) + (d << methodDShift)
+
+	// C0 is zero bit of C, C1 is first bit.
+	// C0 = C * 0b01, C1 = (C * 0b10) >> 1
+	// Ct = C0 << 4 + C1 << 8.
+	// Optimizations: "((C * 0b10) >> 1) << 8" as "(C * 0b10) << 7"
+	// We need C0 shifted by 4, and C1 by 8 to fit "11" and "7" positions
+	// (see figure 3).
+	c := uint16(t.Class)
+	c0 := (c & c0Bit) << classC0Shift
+	c1 := (c & c1Bit) << classC1Shift
+	class := c0 + c1
+
+	return m + class
+}
+
+// ReadValue decodes uint16 into MessageType.
+func (t *MessageType) ReadValue(v uint16) {
+	// Decoding class.
+	// We are taking first bit from v >> 4 and second from v >> 7.
+	c0 := (v >> classC0Shift) & c0Bit
+	c1 := (v >> classC1Shift) & c1Bit
+	class := c0 + c1
+	t.Class = MessageClass(class)
+
+	// Decoding method.
+	a := v & methodABits                   // A(M0-M3)
+	b := (v >> methodBShift) & methodBBits // B(M4-M6)
+	d := (v >> methodDShift) & methodDBits // D(M7-M11)
+	m := a + b + d
+	t.Method = Method(m)
+}
+
+func (t MessageType) String() string {
+	return fmt.Sprintf("%s %s", t.Method, t.Class)
+}
+
+// Contains return true if message contain t attribute.
+func (m *Message) Contains(t AttrType) bool {
+	for _, a := range m.Attributes {
+		if a.Type == t {
+			return true
+		}
+	}
+	return false
+}
+
+type transactionIDValueSetter [TransactionIDSize]byte
+
+// NewTransactionIDSetter returns new Setter that sets message transaction id
+// to provided value.
+func NewTransactionIDSetter(value [TransactionIDSize]byte) Setter {
+	return transactionIDValueSetter(value)
+}
+
+func (t transactionIDValueSetter) AddTo(m *Message) error {
+	m.TransactionID = t
+	m.WriteTransactionID()
+	return nil
 }

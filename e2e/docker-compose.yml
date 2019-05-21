@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  stun-client:
+    depends_on:
+      - stun-server
+    links:
+      - stun-server
+    build:
+      context: ..
+      dockerfile: e2e/Dockerfile
+      args:
+        CI_GO_VERSION: ${CI_GO_VERSION}
+  stun-server:
+    image: gortc/coturn
+    volumes:
+    - ./turnserver.conf:/etc/turnserver.conf
+
+networks:
+  default:
+    external:
+      name: stun_e2e_coturn
