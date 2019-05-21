@@ -1,1 +1,1 @@
-pkg github.com/gortc/stun, var WithNoConnClose ClientOption
+pkg github.com/pion/stun, var WithNoConnClose ClientOption

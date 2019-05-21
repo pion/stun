@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gortc/stun"
+	"github.com/pion/stun"
 )
 
 func test(network string) {

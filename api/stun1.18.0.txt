@@ -1,1 +1,1 @@
-pkg github.com/gortc/stun, method (RawAttribute) AddTo(*Message) error
+pkg github.com/pion/stun, method (RawAttribute) AddTo(*Message) error

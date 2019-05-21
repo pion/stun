@@ -1,20 +1,46 @@
-[![Build Status](https://travis-ci.com/gortc/stun.svg)](https://travis-ci.com/gortc/stun)
-[![Master status](https://tc.gortc.io/app/rest/builds/buildType:(id:stun_MasterStatus)/statusIcon.svg)](https://tc.gortc.io/project.html?projectId=stun&tab=projectOverview&guest=1)
-[![Build status](https://ci.appveyor.com/api/projects/status/fw3drn3k52mf5ghw/branch/master?svg=true)](https://ci.appveyor.com/project/ernado/stun-j08g0/branch/master)
-[![GoDoc](https://godoc.org/github.com/gortc/stun?status.svg)](http://godoc.org/github.com/gortc/stun)
-[![codecov](https://codecov.io/gh/gortc/stun/branch/master/graph/badge.svg)](https://codecov.io/gh/gortc/stun)
-[![Go Report](https://goreportcard.com/badge/github.com/gortc/stun?camo=retarded)](http://goreportcard.com/report/gortc/stun)
-[![stability-mature](https://img.shields.io/badge/stability-mature-008000.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature)
-![GitHub tag](https://img.shields.io/github/tag/gortc/stun.svg)
+<h1 align="center">
+  <br>
+  Pion STUN
+  <br>
+</h1>
+<h4 align="center">A Go implementation of STUN</h4>
+<p align="center">
+  <a href="https://pion.ly"><img src="https://img.shields.io/badge/pion-stun-gray.svg?longCache=true&colorB=brightgreen" alt="Pion stun"></a>
+  <!--<a href="https://sourcegraph.com/github.com/pion/webrtc?badge"><img src="https://sourcegraph.com/github.com/pion/webrtc/-/badge.svg" alt="Sourcegraph Widget"></a>-->
+  <a href="https://pion.ly/slack"><img src="https://img.shields.io/badge/join-us%20on%20slack-gray.svg?longCache=true&logo=slack&colorB=brightgreen" alt="Slack Widget"></a>
+  <br>
+  <a href="https://travis-ci.org/pion/stun"><img src="https://travis-ci.org/pion/stun.svg?branch=master" alt="Build Status"></a>
+  <a href="https://godoc.org/github.com/pion/stun"><img src="https://godoc.org/github.com/pion/stun?status.svg" alt="GoDoc"></a>
+  <a href="https://coveralls.io/github/pion/stun"><img src="https://coveralls.io/repos/github/pion/stun/badge.svg" alt="Coverage Status"></a>
+  <a href="https://goreportcard.com/report/github.com/pion/stun"><img src="https://goreportcard.com/badge/github.com/pion/stun" alt="Go Report Card"></a>
+  <!--<a href="https://www.codacy.com/app/Sean-Der/webrtc"><img src="https://api.codacy.com/project/badge/Grade/18f4aec384894e6aac0b94effe51961d" alt="Codacy Badge"></a>-->
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+<br>
+
+### Roadmap
+The library is used as a part of our WebRTC implementation. Please refer to that [roadmap](https://github.com/pion/webrtc/issues/9) to track our major milestones.
+
+### Community
+Pion has an active community on the [Golang Slack](https://invite.slack.golangbridge.org/). Sign up and join the **#pion** channel for discussions and support. You can also use [Pion mailing list](https://groups.google.com/forum/#!forum/pion).
+
+We are always looking to support **your projects**. Please reach out if you have something to build!
+
+If you need commercial support or don't want to use public methods you can contact us at [team@pion.ly](mailto:team@pion.ly)
+
+### Contributing
+Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contributing)** to join the group of amazing people making this project possible:
+
+* [Sean DuBois](https://github.com/Sean-Der) - *Original Author*
+* [Raphael Randschau](https://github.com/nicolai86) - *STUN client*
+* [Michiel De Backker](https://github.com/backkem) - *Minor fixes*
+* [Y.Horie](https://github.com/u5surf) - *Fix lint issues*
+* [Aleksandr Razumov](https://github.com/ernad) - *The v1 version*
+
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
-protocol and [client](https://godoc.org/github.com/gortc/stun#Client) with no external dependencies and zero allocations in hot paths.
-Client [supports](https://godoc.org/github.com/gortc/stun#WithRTO) automatic request retransmissions.
-Complies to [gortc principles](https://gortc.io/#principles) as core package.
-
-See [example](https://godoc.org/github.com/gortc/stun#example-Message) and [stun server](https://github.com/gortc/stund) for simple usage.
-Also see [gortc/turn](https://github.com/gortc/turn) for TURN [[RFC5766](https://tools.ietf.org/html/rfc5766)] implementation and
-[gortcd](https://github.com/gortc/gortcd) for TURN and STUN server.
+protocol and [client](https://godoc.org/github.com/pion/stun#Client) with no external dependencies and zero allocations in hot paths.
+Client [supports](https://godoc.org/github.com/pion/stun#WithRTO) automatic request retransmissions.
 
 # Example
 You can get your current IP address from any STUN server by sending
@@ -25,7 +51,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/gortc/stun"
+	"github.com/pion/stun"
 )
 
 func main() {
@@ -59,8 +85,8 @@ func main() {
 - [x] [RFC 6062](https://tools.ietf.org/html/rfc6062) — TURN extensions for TCP allocations
 - [x] [RFC 7064](https://tools.ietf.org/html/rfc7064) — STUN URI
 - [x] (TLS-over-)TCP client support
-- [ ] [ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) support [#48](https://github.com/gortc/stun/issues/48)
-- [ ] [RFC 5780](https://tools.ietf.org/html/rfc5780) — NAT Behavior Discovery Using STUN [#49](https://github.com/gortc/stun/issues/49)
+- [ ] [ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) support [#48](https://github.com/pion/stun/issues/48)
+- [ ] [RFC 5780](https://tools.ietf.org/html/rfc5780) — NAT Behavior Discovery Using STUN [#49](https://github.com/pion/stun/issues/49)
 
 # Stability
 Package is currently stable, no backward incompatible changes are expected
@@ -74,7 +100,7 @@ RFC 5389 obsoletes RFC 3489, so implementation was ignored by purpose, however,
 RFC 3489 can be easily implemented as separate package.
 
 # Requirements
-Go 1.10 is currently supported and tested in CI. Should work on 1.9 and tip.
+Go 1.12 is currently supported and tested in CI.
 
 # Testing
 Client behavior is tested and verified in many ways:
@@ -96,7 +122,7 @@ Intel(R) Core(TM) i7-8700K:
 version: 1.16.5
 goos: linux
 goarch: amd64
-pkg: github.com/gortc/stun
+pkg: github.com/pion/stun
 PASS
 benchmark                                         iter       time/iter      throughput   bytes alloc        allocs
 ---------                                         ----       ---------      ----------   -----------        ------
@@ -142,9 +168,8 @@ BenchmarkXORSafe-12                            3000000    515.00 ns/op    1988.0
 BenchmarkXORFast-12                           20000000     73.40 ns/op   13959.30 MB/s        0 B/op   0 allocs/op
 BenchmarkXORMappedAddress_AddTo-12            20000000     56.70 ns/op                        0 B/op   0 allocs/op
 BenchmarkXORMappedAddress_GetFrom-12          50000000     37.40 ns/op                        0 B/op   0 allocs/op
-ok  	github.com/gortc/stun	76.868s
+ok  	github.com/pion/stun	76.868s
 ```
 
-
-## License
-BSD 3-Clause License
+### License
+MIT License - see [LICENSE](LICENSE) for full text

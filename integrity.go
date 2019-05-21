@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gortc/stun/internal/hmac"
+	"github.com/pion/stun/internal/hmac"
 )
 
 // separator for credentials.

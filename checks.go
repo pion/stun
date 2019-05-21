@@ -2,7 +2,7 @@
 
 package stun
 
-import "github.com/gortc/stun/internal/hmac"
+import "github.com/pion/stun/internal/hmac"
 
 // CheckSize returns ErrAttrSizeInvalid if got is not equal to expected.
 func CheckSize(_ AttrType, got, expected int) error {
