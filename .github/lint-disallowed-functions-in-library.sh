@@ -3,7 +3,7 @@ set -e
 
 # Disallow usages of functions that cause the program to exit in the library code
 SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
-EXCLUDE_DIRECTORIES="--exclude-dir=examples --exclude-dir=e2e --exclude-dir=cmd --exclude-dir=.git --exclude-dir=.github --exclude-dir=test"
+EXCLUDE_DIRECTORIES="--exclude-dir=examples --exclude-dir=e2e --exclude-dir=cmd --exclude-dir=.git --exclude-dir=.github --exclude-dir=test --exclude=README.md --exclude fuzz.go --exclude client.go"
 # TODO(ar): Add back panic
 DISALLOWED_FUNCTIONS=('os.Exit(' 'Fatal(' 'Fatalf(' 'Fatalln(' 'fmt.Println(' 'fmt.Printf(' 'log.Print(' 'log.Println(' 'log.Printf(')
 
