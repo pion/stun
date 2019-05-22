@@ -29,7 +29,7 @@ trap 'cleanup ; printf "${RED}Tests Failed For Unexpected Reasons${NC}\n"'\
 
 # PREPARING NETWORK CAPTURE
 docker network create stun_e2e_coturn --internal
-docker build -t gortc/tcpdump -f tcpdump.Dockerfile .
+docker build -t pion/tcpdump -f tcpdump.Dockerfile .
 
 NETWORK_ID=`docker network inspect stun_e2e_coturn -f "{{.Id}}"`
 NETWORK_SUBNET=`docker network inspect stun_e2e_coturn -f "{{(index .IPAM.Config 0).Subnet}}"`
@@ -39,7 +39,7 @@ echo "will capture traffic on $CAPTURE_INTERFACE$"
 
 docker run -e INTERFACE=${CAPTURE_INTERFACE} -e SUBNET=${NETWORK_SUBNET} -d \
     -v $(pwd):/root/dump \
-    --name ci_stun-tcpdump --net=host gortc/tcpdump
+    --name ci_stun-tcpdump --net=host pion/tcpdump
 
 
 # build and run the composed services

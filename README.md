@@ -35,7 +35,10 @@ Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contribu
 * [Raphael Randschau](https://github.com/nicolai86) - *STUN client*
 * [Michiel De Backker](https://github.com/backkem) - *Minor fixes*
 * [Y.Horie](https://github.com/u5surf) - *Fix lint issues*
-* [Aleksandr Razumov](https://github.com/ernad) - *The v1 version*
+* [Aleksandr Razumov](https://github.com/ernado) - *The v0.3 version*
+* [songjiayang](https://github.com/songjiayang)
+* [Adam Kiss](https://github.com/masterada)
+
 
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
