@@ -49,8 +49,12 @@ docker-build:
 	docker build -t gortc/stun .
 test-integration:
 	@cd e2e && bash ./test.sh
-prepush: test lint test-integration
+prepush: assert test lint test-integration
 check-api:
 	@cd api && bash ./check.sh
+assert:
+	bash .github/assert-contributors.sh
+	bash .github/lint-disallowed-functions-in-library.sh
+	bash .github/lint-commit-message.sh
 test:
 	@./go.test.sh
