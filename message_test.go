@@ -825,7 +825,7 @@ func TestMessageFullSize(t *testing.T) {
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
-		NewSoftware("gortc/stun"),
+		NewSoftware("pion/stun"),
 		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
 	); err != nil {
@@ -846,7 +846,7 @@ func TestMessage_CloneTo(t *testing.T) {
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
-		NewSoftware("gortc/stun"),
+		NewSoftware("pion/stun"),
 		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
 	); err != nil {
@@ -878,7 +878,7 @@ func BenchmarkMessage_CloneTo(b *testing.B) {
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
-		NewSoftware("gortc/stun"),
+		NewSoftware("pion/stun"),
 		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
 	); err != nil {
