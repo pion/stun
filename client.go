@@ -187,10 +187,10 @@ type ClientAgent interface {
 
 // Client simulates "connection" to STUN server.
 type Client struct {
+	rto         int64 // time.Duration
 	a           ClientAgent
 	c           Connection
 	close       chan struct{}
-	rto         int64 // time.Duration
 	rtoRate     time.Duration
 	maxAttempts int32
 	closed      bool
