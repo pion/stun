@@ -106,9 +106,11 @@ func (m *Message) Reset() {
 
 // grow ensures that internal buffer has n length.
 func (m *Message) grow(n int) {
-	for len(m.Raw) < n {
-		m.Raw = append(m.Raw, 0)
+	if cap(m.Raw) >= n {
+		m.Raw = m.Raw[:n]
+		return
 	}
+	m.Raw = append(m.Raw, make([]byte, n-len(m.Raw))...)
 }
 
 // Add appends new attribute to message. Not goroutine-safe.
