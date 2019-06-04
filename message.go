@@ -104,17 +104,11 @@ func (m *Message) Reset() {
 	m.Attributes = m.Attributes[:0]
 }
 
-// grow ensures that internal buffer will fit v more bytes and
-// increases it capacity if necessary.
-func (m *Message) grow(v int) {
-	// Not performing any optimizations here
-	// (e.g. preallocate len(buf) * 2 to reduce allocations)
-	// because they are already done by []byte implementation.
-	n := len(m.Raw) + v
-	for cap(m.Raw) < n {
+// grow ensures that internal buffer has n length.
+func (m *Message) grow(n int) {
+	for len(m.Raw) < n {
 		m.Raw = append(m.Raw, 0)
 	}
-	m.Raw = m.Raw[:n]
 }
 
 // Add appends new attribute to message. Not goroutine-safe.
