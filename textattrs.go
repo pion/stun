@@ -124,6 +124,6 @@ func (v *TextAttribute) GetFromAs(m *Message, t AttrType) error {
 	if err != nil {
 		return err
 	}
-	*v = append((*v)[:0], a...)
+	*v = a
 	return nil
 }
