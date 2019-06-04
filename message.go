@@ -106,6 +106,9 @@ func (m *Message) Reset() {
 
 // grow ensures that internal buffer has n length.
 func (m *Message) grow(n int) {
+	if len(m.Raw) >= n {
+		return
+	}
 	if cap(m.Raw) >= n {
 		m.Raw = m.Raw[:n]
 		return
