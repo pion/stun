@@ -472,7 +472,7 @@ func TestMessage_Equal(t *testing.T) {
 func TestMessageGrow(t *testing.T) {
 	m := New()
 	m.grow(512)
-	if len(m.Raw) < 532 {
+	if len(m.Raw) < 512 {
 		t.Error("Bad length", len(m.Raw))
 	}
 }
@@ -480,10 +480,10 @@ func TestMessageGrow(t *testing.T) {
 func TestMessageGrowSmaller(t *testing.T) {
 	m := New()
 	m.grow(2)
-	if cap(m.Raw) < 22 {
+	if cap(m.Raw) < 20 {
 		t.Error("Bad capacity", cap(m.Raw))
 	}
-	if len(m.Raw) < 22 {
+	if len(m.Raw) < 20 {
 		t.Error("Bad length", len(m.Raw))
 	}
 }
