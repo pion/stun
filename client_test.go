@@ -1341,9 +1341,7 @@ func TestClient_HandleProcessError(t *testing.T) {
 	connL, connR := net.Pipe()
 	defer connL.Close()
 	collector := new(manualCollector)
-	clock := callbackClock(func() time.Time {
-		return time.Now()
-	})
+	clock := callbackClock(time.Now)
 	agent := &manualAgent{}
 	gotWrites := make(chan struct{})
 	processCalled := make(chan struct{}, 1)
