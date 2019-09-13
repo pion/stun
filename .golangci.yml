@@ -82,6 +82,7 @@ linters:
     - prealloc
     - gochecknoglobals
     - scopelint
+    - funlen
 
 run:
   skip-dirs:

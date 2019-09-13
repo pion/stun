@@ -3,6 +3,7 @@
 benchmark.*.write
 *.test
 *.out
+*.sw[poe]
 bench.go-*
 PACKAGES
 cmd/stun-cli/stun-cli

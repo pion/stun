@@ -356,8 +356,8 @@ func (m *Message) Decode() error {
 		}
 		var (
 			a = RawAttribute{
-				Type:   AttrType(bin.Uint16(b[0:2])), // first 2 bytes
-				Length: bin.Uint16(b[2:4]),           // second 2 bytes
+				Type:   compatAttrType(bin.Uint16(b[0:2])), // first 2 bytes
+				Length: bin.Uint16(b[2:4]),                 // second 2 bytes
 			}
 			aL     = int(a.Length)                // attribute length
 			aBuffL = nearestPaddedValueLength(aL) // expected buffer length (with padding)
