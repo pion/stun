@@ -75,7 +75,10 @@ func MustBuild(setters ...Setter) *Message {
 // Build wraps Message.Build method.
 func Build(setters ...Setter) (*Message, error) {
 	m := new(Message)
-	return m, m.Build(setters...)
+	if err := m.Build(setters...); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // ForEach is helper that iterates over message attributes allowing to call

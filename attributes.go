@@ -206,3 +206,13 @@ func nearestPaddedValueLength(l int) int {
 	}
 	return n
 }
+
+// This method converts uint16 vlue to AttrType. If it finds an old attribute
+// type value, it also translates it to the new value to enable backward
+// compatibility. (See: https://github.com/pion/stun/issues/21)
+func compatAttrType(val uint16) AttrType {
+	if val == 0x8020 {
+		return AttrXORMappedAddress // new: 0x0020
+	}
+	return AttrType(val)
+}
