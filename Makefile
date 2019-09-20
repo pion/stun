@@ -58,3 +58,4 @@ assert:
 	bash .github/lint-commit-message.sh
 test:
 	@./go.test.sh
+clean:
