@@ -104,6 +104,8 @@ func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 }
 func BenchmarkMessageIntegrity_Check(b *testing.B) {
 	m := new(Message)
+	// TODO: Find a way to make this test zero-alloc without excessive pre-alloc.
+	m.Raw = make([]byte, 0, 1024)
 	NewSoftware("software").AddTo(m)
 	integrity := NewShortTermIntegrity("password")
 	b.ReportAllocs()
