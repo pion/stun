@@ -233,19 +233,15 @@ func (m *Message) Equal(b *Message) bool {
 	return true
 }
 
-// WriteLength writes m.Length to m.Raw. Call is valid only if len(m.Raw) >= 4.
+// WriteLength writes m.Length to m.Raw.
 func (m *Message) WriteLength() {
-	_ = m.Raw[4] // early bounds check to guarantee safety of writes below
+	m.grow(4)
 	bin.PutUint16(m.Raw[2:4], uint16(m.Length))
 }
 
 // WriteHeader writes header to underlying buffer. Not goroutine-safe.
 func (m *Message) WriteHeader() {
-	if len(m.Raw) < messageHeaderSize {
-		// Making WriteHeader call valid even when m.Raw
-		// is nil or len(m.Raw) is less than needed for header.
-		m.grow(messageHeaderSize)
-	}
+	m.grow(messageHeaderSize)
 	_ = m.Raw[:messageHeaderSize] // early bounds check to guarantee safety of writes below
 
 	m.WriteType()
@@ -271,6 +267,7 @@ func (m *Message) WriteAttributes() {
 
 // WriteType writes m.Type to m.Raw.
 func (m *Message) WriteType() {
+	m.grow(2)
 	bin.PutUint16(m.Raw[0:2], m.Type.Value()) // message type
 }
 
