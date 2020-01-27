@@ -186,7 +186,7 @@ var ErrAttributeNotFound = errors.New("attribute not found")
 func (m *Message) Get(t AttrType) ([]byte, error) {
 	v, ok := m.Attributes.Get(t)
 	if !ok {
-		return nil, ErrAttributeNotFound
+		return nil, errors.New("attribute not found " + t.String())
 	}
 	return v.Value, nil
 }
