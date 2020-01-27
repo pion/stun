@@ -413,24 +413,6 @@ var (
 	BindingError = NewType(MethodBinding, ClassErrorResponse)
 )
 
-var (
-	// Connect request message type.
-	ConnectRequest = NewType(MethodConnect, ClassRequest)
-	// Connect success response message type
-	ConnectSuccess = NewType(MethodConnect, ClassSuccessResponse)
-	// Connect error response message type.
-	ConnectError = NewType(MethodConnect, ClassErrorResponse)
-)
-
-var (
-	// ConnectionBind request message type.
-	ConnectionBindRequest = NewType(MethodConnect, ClassRequest)
-	// ConnectionBind success response message type
-	ConnectionBindSuccess = NewType(MethodConnectionBind, ClassSuccessResponse)
-	// ConnectionBind error response message type.
-	ConnectionBindError = NewType(MethodConnectionBind, ClassErrorResponse)
-)
-
 func (c MessageClass) String() string {
 	switch c {
 	case ClassRequest:
