@@ -8,7 +8,7 @@ branches:
 
 skip_tags: true
 
-clone_folder: c:\gopath\src\github.com\gortc\stun
+clone_folder: c:\gopath\src\github.com\pion\stun
 
 environment:
   GOPATH: c:\gopath
