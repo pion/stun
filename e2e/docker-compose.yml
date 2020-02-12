@@ -14,7 +14,7 @@ services:
   stun-server:
     build:
       context: ..
-      dockerfile: e2e/client.Dockerfile
+      dockerfile: e2e/server.Dockerfile
     volumes:
     - ./turnserver.conf:/etc/turnserver.conf
 
