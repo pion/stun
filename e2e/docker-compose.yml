@@ -8,11 +8,13 @@ services:
       - stun-server
     build:
       context: ..
-      dockerfile: e2e/Dockerfile
+      dockerfile: e2e/client.Dockerfile
       args:
         CI_GO_VERSION: ${CI_GO_VERSION}
   stun-server:
-    image: gortc/coturn
+    build:
+      context: ..
+      dockerfile: e2e/client.Dockerfile
     volumes:
     - ./turnserver.conf:/etc/turnserver.conf
 
