@@ -192,9 +192,7 @@ func TestMessage_ForEach(t *testing.T) {
 			m = newMessage()
 			var realm Realm
 			testutil.ShouldNotAllocate(t, func() {
-				if err := m.ForEach(AttrRealm, func(m *Message) error {
-					return realm.GetFrom(m)
-				}); err != nil {
+				if err := m.ForEach(AttrRealm, realm.GetFrom); err != nil {
 					t.Fatal(err)
 				}
 			})
