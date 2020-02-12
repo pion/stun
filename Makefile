@@ -46,7 +46,7 @@ install:
 	go get gortc.io/api
 	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 docker-build:
-	docker build -t gortc/stun .
+	docker build -t pion/stun .
 test-integration:
 	@cd e2e && bash ./test.sh
 prepush: assert test lint test-integration
