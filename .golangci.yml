@@ -71,6 +71,9 @@ issues:
     - path: ^cmd/
       linters:
         - gocyclo
+        - gocognit
+        - gomnd
+        
     - path: ^cmd/
       text: "(unnamedResult|exitAfterDefer)"
       linters:
