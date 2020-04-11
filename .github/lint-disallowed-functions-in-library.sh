@@ -10,7 +10,12 @@ set -e
 
 # Disallow usages of functions that cause the program to exit in the library code
 SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
-EXCLUDE_DIRECTORIES="cmd examples"
+if [ -f ${SCRIPT_PATH}/.ci.conf ]
+then
+  . ${SCRIPT_PATH}/.ci.conf
+fi
+
+EXCLUDE_DIRECTORIES=${DISALLOWED_FUNCTIONS_EXCLUDED_DIRECTORIES:-"examples"}
 DISALLOWED_FUNCTIONS=('os.Exit(' 'panic(' 'Fatal(' 'Fatalf(' 'Fatalln(' 'fmt.Println(' 'fmt.Printf(' 'log.Print(' 'log.Println(' 'log.Printf(')
 
 files=$(
