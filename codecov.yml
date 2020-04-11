@@ -7,3 +7,6 @@ coverage:
         target: 98
         threshold: null
         base: auto
+ignore:
+  - "e2e/**/*"
+  - "stuntest/**/*"
