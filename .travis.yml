@@ -54,7 +54,7 @@ _test_job: &test_job
     - |
       go test \
         -coverpkg=${coverpkgs} -coverprofile=cover.out -covermode=atomic \
-        -tags quic \
+        ${TEST_EXTRA_ARGS:-} \
         -v -race ${testpkgs}
     - if [ -n "${TEST_HOOK}" ]; then ${TEST_HOOK}; fi
   after_success:
@@ -78,7 +78,7 @@ _test_i386_job: &test_i386_job
         -w /go/src/github.com/pion/$(basename ${PWD}) \
         -it i386/golang:${GO_VERSION}-alpine \
         /usr/local/go/bin/go test \
-          -tags quic \
+          ${TEST_EXTRA_ARGS:-} \
           -v ${testpkgs}
 _test_wasm_job: &test_wasm_job
   env: CACHE_NAME=wasm
