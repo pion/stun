@@ -17,6 +17,11 @@ fi
 SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
 EXCLUDED_CONTIBUTORS=('John R. Bradley' 'renovate[bot]' 'Renovate Bot' 'Pion Bot')
+while read name
+do
+  EXCLUDED_CONTIBUTORS+=("${name}")
+done < <(find . -name .excluded-contributors | xargs -r cat)
+
 MISSING_CONTIBUTORS=()
 
 shouldBeIncluded () {
