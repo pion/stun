@@ -79,10 +79,11 @@ issues:
 linters:
   enable-all: true
   disable:
-    - prealloc
-    - gochecknoglobals
-    - scopelint
     - funlen
+    - gochecknoglobals
+    - godox
+    - prealloc
+    - scopelint
 
 run:
   skip-dirs:

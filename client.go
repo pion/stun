@@ -161,10 +161,10 @@ func clientFinalizer(c *Client) {
 		return
 	}
 	if err == nil {
-		log.Println("client: called finalizer on non-closed client")
+		log.Println("client: called finalizer on non-closed client") // nolint
 		return
 	}
-	log.Println("client: called finalizer on non-closed client:", err)
+	log.Println("client: called finalizer on non-closed client:", err) // nolint
 }
 
 // Connection wraps Reader, Writer and Closer interfaces.
@@ -333,7 +333,7 @@ func closedOrPanic(err error) {
 	if err == nil || err == ErrAgentClosed {
 		return
 	}
-	panic(err)
+	panic(err) // nolint
 }
 
 type tickerCollector struct {
@@ -425,7 +425,7 @@ type callbackWaitHandler struct {
 func (s *callbackWaitHandler) HandleEvent(e Event) {
 	s.cond.L.Lock()
 	if s.callback == nil {
-		panic("s.callback is nil")
+		panic("s.callback is nil") // nolint
 	}
 	s.callback(e)
 	s.processed = true
@@ -445,7 +445,7 @@ func (s *callbackWaitHandler) wait() {
 
 func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 	if f == nil {
-		panic("f is nil")
+		panic("f is nil") // nolint
 	}
 	s.cond.L.Lock()
 	s.callback = f
