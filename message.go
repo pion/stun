@@ -424,7 +424,7 @@ func (c MessageClass) String() string {
 	case ClassErrorResponse:
 		return "error response"
 	default:
-		panic("unknown message class")
+		panic("unknown message class") // nolint: never happens unless wrongly casted
 	}
 }
 

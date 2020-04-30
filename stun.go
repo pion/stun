@@ -22,7 +22,7 @@ var bin = binary.BigEndian
 func readFullOrPanic(r io.Reader, v []byte) int {
 	n, err := io.ReadFull(r, v)
 	if err != nil {
-		panic(err)
+		panic(err) // nolint
 	}
 	return n
 }
@@ -30,7 +30,7 @@ func readFullOrPanic(r io.Reader, v []byte) int {
 func writeOrPanic(w io.Writer, v []byte) int {
 	n, err := w.Write(v)
 	if err != nil {
-		panic(err)
+		panic(err) // nolint
 	}
 	return n
 }
