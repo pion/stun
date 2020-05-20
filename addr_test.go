@@ -115,6 +115,34 @@ func TestAlternateServer(t *testing.T) {
 	})
 }
 
+func TestOtherAddress(t *testing.T) {
+	m := new(Message)
+	addr := &OtherAddress{
+		IP:   net.ParseIP("122.12.34.5"),
+		Port: 5412,
+	}
+	t.Run("AddTo", func(t *testing.T) {
+		if err := addr.AddTo(m); err != nil {
+			t.Error(err)
+		}
+		t.Run("GetFrom", func(t *testing.T) {
+			got := new(OtherAddress)
+			if err := got.GetFrom(m); err != nil {
+				t.Error(err)
+			}
+			if !got.IP.Equal(addr.IP) {
+				t.Error("got bad IP: ", got.IP)
+			}
+			t.Run("Not found", func(t *testing.T) {
+				message := new(Message)
+				if err := got.GetFrom(message); err != ErrAttributeNotFound {
+					t.Error("should be not found: ", err)
+				}
+			})
+		})
+	})
+}
+
 func BenchmarkMappedAddress_AddTo(b *testing.B) {
 	m := new(Message)
 	b.ReportAllocs()

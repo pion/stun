@@ -74,6 +74,12 @@ const (
 	AttrReservationToken   AttrType = 0x0022 // RESERVATION-TOKEN
 )
 
+// Attributes from RFC 5780 NAT Behavior Discovery
+const (
+	AttrOtherAddress  AttrType = 0x802C // OTHER-ADDRESS
+	AttrChangeRequest AttrType = 0x0003 // CHANGE-REQUEST
+)
+
 // Attributes from RFC 6062 TURN Extensions for TCP Allocations.
 const (
 	AttrConnectionID AttrType = 0x002a // CONNECTION-ID
@@ -105,6 +111,8 @@ var attrNames = map[AttrType]string{
 	AttrXORMappedAddress:       "XOR-MAPPED-ADDRESS",
 	AttrSoftware:               "SOFTWARE",
 	AttrAlternateServer:        "ALTERNATE-SERVER",
+	AttrOtherAddress:           "OTHER-ADDRESS",
+	AttrChangeRequest:          "CHANGE-REQUEST",
 	AttrFingerprint:            "FINGERPRINT",
 	AttrPriority:               "PRIORITY",
 	AttrUseCandidate:           "USE-CANDIDATE",

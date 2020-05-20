@@ -26,6 +26,14 @@ type AlternateServer struct {
 	Port int
 }
 
+// OtherAddress represents OTHER-ADDRESS attribute.
+//
+// RFC 5780 Section 7.4
+type OtherAddress struct {
+	IP   net.IP
+	Port int
+}
+
 // AddTo adds ALTERNATE-SERVER attribute to message.
 func (s *AlternateServer) AddTo(m *Message) error {
 	a := (*MappedAddress)(s)
@@ -107,4 +115,20 @@ func (a *MappedAddress) AddTo(m *Message) error {
 // GetFrom decodes MAPPED-ADDRESS from message.
 func (a *MappedAddress) GetFrom(m *Message) error {
 	return a.getAs(m, AttrMappedAddress)
+}
+
+// AddTo adds OTHER-ADDRESS attribute to message.
+func (o *OtherAddress) AddTo(m *Message) error {
+	a := (*MappedAddress)(o)
+	return a.addAs(m, AttrOtherAddress)
+}
+
+// GetFrom decodes OTHER-ADDRESS from message.
+func (o *OtherAddress) GetFrom(m *Message) error {
+	a := (*MappedAddress)(o)
+	return a.getAs(m, AttrOtherAddress)
+}
+
+func (o OtherAddress) String() string {
+	return net.JoinHostPort(o.IP.String(), strconv.Itoa(o.Port))
 }
