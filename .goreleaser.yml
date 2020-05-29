@@ -24,8 +24,8 @@ changelog:
     - '^test:'
 
 builds:
-  - binary: stun-not-behavior
-    id: stun-not-behavior
+  - binary: stun-nat-behaviour
+    id: stun-nat-behaviour
     goos:
       - darwin
       - windows
@@ -36,4 +36,4 @@ builds:
       - 386
     env:
       - CGO_ENABLED=0
-    main: ./cmd/stun-nat-behavior
+    main: ./cmd/stun-nat-behaviour
