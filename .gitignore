@@ -11,6 +11,8 @@ cmd/stun-decode/stun-decode
 cmd/stun-bench/stun-bench
 cmd/stun-nat-behaviour/stun-nat-behaviour
 
+dist
+
 coverage.txt
 
 e2e/dump.pcap
