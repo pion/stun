@@ -23,7 +23,7 @@ func (c *StunServerConn) Close() {
 }
 
 var (
-	addrStrPtr  = flag.String("server", "stun.l.google.com:19302", "STUN server address")
+	addrStrPtr  = flag.String("server", "stun.voip.blackberry.com:3478", "STUN server address")
 	ErrTimedOut = errors.New("timed out waiting for response")
 )
 
