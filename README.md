@@ -45,6 +45,7 @@ Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contribu
 * [Atsushi Watanabe](https://github.com/at-wat)
 * [Cecylia Bocovich](https://github.com/cohosh)
 * [Christian Muehlhaeuser](https://github.com/muesli)
+* [Will LE](https://github.com/bixycler)
 
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
@@ -95,7 +96,7 @@ func main() {
 - [x] [RFC 7064](https://tools.ietf.org/html/rfc7064) — STUN URI
 - [x] (TLS-over-)TCP client support
 - [ ] [ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) support [#48](https://github.com/pion/stun/issues/48)
-- [ ] [RFC 5780](https://tools.ietf.org/html/rfc5780) — NAT Behavior Discovery Using STUN [#49](https://github.com/pion/stun/issues/49)
+- [x] [RFC 5780](https://tools.ietf.org/html/rfc5780) — NAT Behavior Discovery Using STUN via [cmd/stun-nat-behaviour](cmd/stun-nat-behaviour)
 
 # Stability
 Package is currently stable, no backward incompatible changes are expected
