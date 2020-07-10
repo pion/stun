@@ -76,8 +76,19 @@ const (
 
 // Attributes from RFC 5780 NAT Behavior Discovery
 const (
-	AttrOtherAddress  AttrType = 0x802C // OTHER-ADDRESS
-	AttrChangeRequest AttrType = 0x0003 // CHANGE-REQUEST
+	AttrChangeRequest  AttrType = 0x0003 // CHANGE-REQUEST
+	AttrPadding        AttrType = 0x0026 // PADDING
+	AttrResponsePort   AttrType = 0x0027 // RESPONSE-PORT
+	AttrCacheTimeout   AttrType = 0x8027 // CACHE-TIMEOUT
+	AttrResponseOrigin AttrType = 0x802b // RESPONSE-ORIGIN
+	AttrOtherAddress   AttrType = 0x802C // OTHER-ADDRESS
+)
+
+// Attributes from RFC 3489, removed by RFC 5389,
+//  but still used by RFC5389-implementing software like Vovida.org, reTURNServer, etc.
+const (
+	AttrSourceAddress  AttrType = 0x0004 // SOURCE-ADDRESS
+	AttrChangedAddress AttrType = 0x0005 // CHANGED-ADDRESS
 )
 
 // Attributes from RFC 6062 TURN Extensions for TCP Allocations.
@@ -111,8 +122,14 @@ var attrNames = map[AttrType]string{
 	AttrXORMappedAddress:       "XOR-MAPPED-ADDRESS",
 	AttrSoftware:               "SOFTWARE",
 	AttrAlternateServer:        "ALTERNATE-SERVER",
-	AttrOtherAddress:           "OTHER-ADDRESS",
 	AttrChangeRequest:          "CHANGE-REQUEST",
+	AttrPadding:                "PADDING",
+	AttrResponsePort:           "RESPONSE-PORT",
+	AttrCacheTimeout:           "CACHE-TIMEOUT",
+	AttrResponseOrigin:         "RESPONSE-ORIGIN",
+	AttrOtherAddress:           "OTHER-ADDRESS",
+	AttrSourceAddress:          "SOURCE-ADDRESS",
+	AttrChangedAddress:         "CHANGED-ADDRESS",
 	AttrFingerprint:            "FINGERPRINT",
 	AttrPriority:               "PRIORITY",
 	AttrUseCandidate:           "USE-CANDIDATE",
@@ -219,8 +236,8 @@ func nearestPaddedValueLength(l int) int {
 // type value, it also translates it to the new value to enable backward
 // compatibility. (See: https://github.com/pion/stun/issues/21)
 func compatAttrType(val uint16) AttrType {
-	if val == 0x8020 {
-		return AttrXORMappedAddress // new: 0x0020
+	if val == 0x8020 { // draft-ietf-behave-rfc3489bis-02, MS-TURN
+		return AttrXORMappedAddress // new: 0x0020 (from draft-ietf-behave-rfc3489bis-03 on)
 	}
 	return AttrType(val)
 }
