@@ -9,8 +9,14 @@ behaviour.
 ### Usage
 ```sh
 $ go get github.com/pion/stun/cmd/stun-nat-behaviour
-$ stun-nat-behaviour [options] [--server IP:port]
+$ $GOPATH/bin/stun-nat-behaviour [options] [--server IP:port]
 ```
+
+If `$GOPATH` is unset it defaults to `~/go`
+
+The default value `--server` is stun.voip.blackberry.com:3478
+
+Use `-h` to see all options
 
 ### Output
 For a successful run you will see output like the following.

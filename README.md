@@ -46,6 +46,7 @@ Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contribu
 * [Cecylia Bocovich](https://github.com/cohosh)
 * [Christian Muehlhaeuser](https://github.com/muesli)
 * [Will LE](https://github.com/bixycler)
+* [David-dp-](https://github.com/David-dp-)
 
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
