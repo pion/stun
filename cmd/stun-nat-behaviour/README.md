@@ -9,8 +9,9 @@ behaviour.
 ### Usage
 ```sh
 $ go get github.com/pion/stun/cmd/stun-nat-behaviour
-$ stun-nat-behaviour [options] [--server IP:port]
+$ ./go/bin/stun-nat-behaviour [options] [--server IP:port]
 ```
+The default option is STUN. The default IP:port is stun.voip.blackberry.com:3478
 
 ### Output
 For a successful run you will see output like the following.
