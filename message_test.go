@@ -263,7 +263,7 @@ func BenchmarkMessage_WriteTo(b *testing.B) {
 	buf := new(bytes.Buffer)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		m.WriteTo(buf)
+		m.WriteTo(buf) //nolint: errcheck
 		buf.Reset()
 	}
 }
@@ -499,7 +499,7 @@ func TestMessage_String(t *testing.T) {
 
 func TestIsMessage(t *testing.T) {
 	m := New()
-	NewSoftware("software").AddTo(m)
+	NewSoftware("software").AddTo(m) //nolint: errcheck
 	m.WriteHeader()
 
 	var tt = [...]struct {
@@ -526,7 +526,7 @@ func BenchmarkIsMessage(b *testing.B) {
 	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
-	NewSoftware("cydev/stun test").AddTo(m)
+	NewSoftware("cydev/stun test").AddTo(m) //nolint: errcheck
 	m.WriteHeader()
 
 	b.SetBytes(int64(messageHeaderSize))
@@ -625,7 +625,7 @@ func BenchmarkMessageFull(b *testing.B) {
 		addAttr(b, m, &s)
 		m.WriteAttributes()
 		m.WriteHeader()
-		Fingerprint.AddTo(m)
+		Fingerprint.AddTo(m) //nolint: errcheck
 		m.WriteHeader()
 		m.Reset()
 	}
@@ -679,7 +679,7 @@ func TestMessage_Contains(t *testing.T) {
 func ExampleMessage() {
 	buf := new(bytes.Buffer)
 	m := new(Message)
-	m.Build(BindingRequest,
+	m.Build(BindingRequest, //nolint: errcheck
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
@@ -705,11 +705,11 @@ func ExampleMessage() {
 	decoded.Raw = make([]byte, 0, 1024) // for ReadFrom that reuses m.Raw
 	// ReadFrom does not allocate internal buffer for reading from io.Reader,
 	// instead it uses m.Raw, expanding it length to capacity.
-	decoded.ReadFrom(buf)
+	decoded.ReadFrom(buf) //nolint: errcheck
 	fmt.Println("has software:", decoded.Contains(AttrSoftware))
 	fmt.Println("has nonce:", decoded.Contains(AttrNonce))
 	var software Software
-	decoded.Parse(&software) // or software.GetFrom(decoded)
+	decoded.Parse(&software) //nolint: errcheck
 	// Rule for Parse method is same as for Build.
 	fmt.Println("software:", software)
 	if err := Fingerprint.Check(decoded); err == nil {
@@ -888,7 +888,7 @@ func BenchmarkMessage_CloneTo(b *testing.B) {
 	}
 	b.SetBytes(int64(len(m.Raw)))
 	a := new(Message)
-	m.CloneTo(a)
+	m.CloneTo(a) //nolint: errcheck
 	for i := 0; i < b.N; i++ {
 		if err := m.CloneTo(a); err != nil {
 			b.Fatal(err)
@@ -917,7 +917,7 @@ func TestMessage_AddTo(t *testing.T) {
 	if b.Equal(m) {
 		t.Fatal("should not be equal")
 	}
-	m.AddTo(b)
+	m.AddTo(b) //nolint: errcheck
 	if !b.Equal(m) {
 		t.Fatal("should be equal")
 	}
@@ -935,7 +935,7 @@ func BenchmarkMessage_AddTo(b *testing.B) {
 		b.Fatal(err)
 	}
 	a := new(Message)
-	m.CloneTo(a)
+	m.CloneTo(a) //nolint: errcheck
 	for i := 0; i < b.N; i++ {
 		if err := m.AddTo(a); err != nil {
 			b.Fatal(err)

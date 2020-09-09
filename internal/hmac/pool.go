@@ -23,7 +23,7 @@ func (h *hmac) resetTo(key []byte) {
 	setZeroes(h.opad)
 	if len(key) > h.blocksize {
 		// If key is too big, hash it.
-		h.outer.Write(key)
+		h.outer.Write(key) //nolint: errcheck
 		key = h.outer.Sum(nil)
 	}
 	copy(h.ipad, key)
@@ -34,7 +34,7 @@ func (h *hmac) resetTo(key []byte) {
 	for i := range h.opad {
 		h.opad[i] ^= 0x5c
 	}
-	h.inner.Write(h.ipad)
+	h.inner.Write(h.ipad) //nolint: errcheck
 }
 
 var hmacSHA1Pool = &sync.Pool{

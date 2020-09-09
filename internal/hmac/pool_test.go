@@ -14,7 +14,7 @@ func BenchmarkHMACSHA1_512(b *testing.B) {
 	h := AcquireSHA1(key)
 	b.SetBytes(int64(len(buf)))
 	for i := 0; i < b.N; i++ {
-		h.Write(buf)
+		h.Write(buf) //nolint: errcheck
 		h.Reset()
 		mac := h.Sum(nil)
 		buf[0] = mac[0]
@@ -29,7 +29,7 @@ func BenchmarkHMACSHA1_512_Pool(b *testing.B) {
 	b.SetBytes(int64(len(buf)))
 	for i := 0; i < b.N; i++ {
 		h := AcquireSHA1(key)
-		h.Write(buf)
+		h.Write(buf) //nolint: errcheck
 		h.Reset()
 		mac := h.Sum(tBuf)
 		buf[0] = mac[0]

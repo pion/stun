@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	server = flag.String("server", fmt.Sprintf("pion.ly:3478"), "Stun server address")
+	server = flag.String("server", "pion.ly:3478", "Stun server address")
 )
 
 const (
