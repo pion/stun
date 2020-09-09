@@ -83,7 +83,7 @@ func BenchmarkClient_Do(b *testing.B) {
 			}
 		}()
 		m := New()
-		m.NewTransactionID()
+		m.NewTransactionID() //nolint: errcheck
 		m.Encode()
 		for pb.Next() {
 			if err := client.Do(m, noopF); err != nil {
@@ -1426,7 +1426,7 @@ func TestClientImmediateTimeout(t *testing.T) {
 		}
 		gotReads <- struct{}{}
 	}()
-	c.Start(MustBuild(response, BindingRequest), func(e Event) {
+	c.Start(MustBuild(response, BindingRequest), func(e Event) { //nolint: errcheck
 		if e.Error == ErrTransactionTimeOut {
 			t.Error("unexpected error")
 		}
