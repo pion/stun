@@ -384,7 +384,6 @@ func (m *Message) Write(tBuf []byte) (int, error) {
 
 // CloneTo clones m to b securing any further m mutations.
 func (m *Message) CloneTo(b *Message) error {
-	// TODO(ar): implement low-level copy.
 	b.Raw = append(b.Raw[:0], m.Raw...)
 	return b.Decode()
 }
@@ -403,11 +402,11 @@ const (
 // Common STUN message types.
 var (
 	// Binding request message type.
-	BindingRequest = NewType(MethodBinding, ClassRequest)
+	BindingRequest = NewType(MethodBinding, ClassRequest) // nolint:gochecknoglobals
 	// Binding success response message type
-	BindingSuccess = NewType(MethodBinding, ClassSuccessResponse)
+	BindingSuccess = NewType(MethodBinding, ClassSuccessResponse) // nolint:gochecknoglobals
 	// Binding error response message type.
-	BindingError = NewType(MethodBinding, ClassErrorResponse)
+	BindingError = NewType(MethodBinding, ClassErrorResponse) // nolint:gochecknoglobals
 )
 
 func (c MessageClass) String() string {
@@ -446,23 +445,25 @@ const (
 	MethodConnectionAttempt Method = 0x000c
 )
 
-var methodName = map[Method]string{
-	MethodBinding:          "Binding",
-	MethodAllocate:         "Allocate",
-	MethodRefresh:          "Refresh",
-	MethodSend:             "Send",
-	MethodData:             "Data",
-	MethodCreatePermission: "CreatePermission",
-	MethodChannelBind:      "ChannelBind",
+func methodName() map[Method]string {
+	return map[Method]string{
+		MethodBinding:          "Binding",
+		MethodAllocate:         "Allocate",
+		MethodRefresh:          "Refresh",
+		MethodSend:             "Send",
+		MethodData:             "Data",
+		MethodCreatePermission: "CreatePermission",
+		MethodChannelBind:      "ChannelBind",
 
-	// RFC 6062.
-	MethodConnect:           "Connect",
-	MethodConnectionBind:    "ConnectionBind",
-	MethodConnectionAttempt: "ConnectionAttempt",
+		// RFC 6062.
+		MethodConnect:           "Connect",
+		MethodConnectionBind:    "ConnectionBind",
+		MethodConnectionAttempt: "ConnectionAttempt",
+	}
 }
 
 func (m Method) String() string {
-	s, ok := methodName[m]
+	s, ok := methodName()[m]
 	if !ok {
 		// Falling back to hex representation.
 		s = fmt.Sprintf("0x%x", uint16(m))

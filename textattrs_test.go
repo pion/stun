@@ -3,6 +3,7 @@
 package stun
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -43,7 +44,7 @@ func TestSoftware_AddTo_Invalid(t *testing.T) {
 	if err := s.AddTo(m); !IsAttrSizeOverflow(err) {
 		t.Errorf("AddTo should return *AttrOverflowErr, got: %v", err)
 	}
-	if err := s.GetFrom(m); err != ErrAttributeNotFound {
+	if err := s.GetFrom(m); !errors.Is(err, ErrAttributeNotFound) {
 		t.Errorf("GetFrom should return %q, got: %v", ErrAttributeNotFound, err)
 	}
 }
@@ -72,7 +73,7 @@ func BenchmarkUsername_AddTo(b *testing.B) {
 func BenchmarkUsername_GetFrom(b *testing.B) {
 	b.ReportAllocs()
 	m := new(Message)
-	Username("test").AddTo(m) //nolint: errcheck
+	Username("test").AddTo(m) // nolint:errcheck
 	var u Username
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -109,7 +110,7 @@ func TestUsername(t *testing.T) {
 			t.Run("Not found", func(t *testing.T) {
 				m := new(Message)
 				u := new(Username)
-				if err := u.GetFrom(m); err != ErrAttributeNotFound {
+				if err := u.GetFrom(m); !errors.Is(err, ErrAttributeNotFound) {
 					t.Error("Should error")
 				}
 			})
@@ -140,7 +141,7 @@ func TestRealm_GetFrom(t *testing.T) {
 		Raw: make([]byte, 0, 256),
 	}
 	r := new(Realm)
-	if err := r.GetFrom(m2); err != ErrAttributeNotFound {
+	if err := r.GetFrom(m2); !errors.Is(err, ErrAttributeNotFound) {
 		t.Errorf("GetFrom should return %q, got: %v", ErrAttributeNotFound, err)
 	}
 	if _, err := m2.ReadFrom(m.reader()); err != nil {
@@ -169,7 +170,7 @@ func TestRealm_AddTo_Invalid(t *testing.T) {
 	if err := r.AddTo(m); !IsAttrSizeOverflow(err) {
 		t.Errorf("AddTo should return *AttrOverflowErr, got: %v", err)
 	}
-	if err := r.GetFrom(m); err != ErrAttributeNotFound {
+	if err := r.GetFrom(m); !errors.Is(err, ErrAttributeNotFound) {
 		t.Errorf("GetFrom should return %q, got: %v", ErrAttributeNotFound, err)
 	}
 }
@@ -210,7 +211,7 @@ func TestNonce_AddTo_Invalid(t *testing.T) {
 	if err := n.AddTo(m); !IsAttrSizeOverflow(err) {
 		t.Errorf("AddTo should return *AttrOverflowErr, got: %v", err)
 	}
-	if err := n.GetFrom(m); err != ErrAttributeNotFound {
+	if err := n.GetFrom(m); !errors.Is(err, ErrAttributeNotFound) {
 		t.Errorf("GetFrom should return %q, got: %v", ErrAttributeNotFound, err)
 	}
 }
@@ -258,8 +259,8 @@ func BenchmarkNonce_GetFrom(b *testing.B) {
 	b.ReportAllocs()
 	m := New()
 	n := NewNonce("nonce")
-	n.AddTo(m) //nolint: errcheck
+	n.AddTo(m) // nolint:errcheck
 	for i := 0; i < b.N; i++ {
-		n.GetFrom(m) //nolint: errcheck
+		n.GetFrom(m) // nolint:errcheck
 	}
 }

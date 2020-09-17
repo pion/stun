@@ -4,12 +4,11 @@ package stun
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 )
 
-var (
-	m = New()
-)
+var m = New()
 
 // FuzzMessage is go-fuzz endpoint for message.
 func FuzzMessage(data []byte) int {
@@ -22,16 +21,16 @@ func FuzzMessage(data []byte) int {
 	}
 	m2 := New()
 	if _, err := m2.Write(m.Raw); err != nil {
-		panic(err) // nolint
+		fatal(err)
 	}
 	if m2.TransactionID != m.TransactionID {
-		panic("transaction ID mismatch") // nolint
+		fatal("transaction ID mismatch")
 	}
 	if m2.Type != m.Type {
-		panic("type missmatch") // nolint
+		fatal("type missmatch")
 	}
 	if len(m2.Attributes) != len(m.Attributes) {
-		panic("attributes length missmatch") // nolint
+		fatal("attributes length missmatch")
 	}
 	return 1
 }
@@ -44,12 +43,12 @@ func FuzzType(data []byte) int {
 	t.ReadValue(v)
 	v2 := t.Value()
 	if v != v2 {
-		panic("v != v2") // nolint
+		fatal("v != v2")
 	}
 	t2 := MessageType{}
 	t2.ReadValue(v2)
 	if t2 != t {
-		panic("t2 != t") // nolint
+		fatal("t2 != t")
 	}
 	return 0
 }
@@ -96,7 +95,7 @@ func FuzzSetters(data []byte) int {
 		{new(MappedAddress), AttrMappedAddress},
 		{new(Realm), AttrRealm},
 	}
-	var firstByte = byte(0)
+	firstByte := byte(0)
 	if len(data) > 0 {
 		firstByte = data[0]
 	}
@@ -108,9 +107,9 @@ func FuzzSetters(data []byte) int {
 	m1.WriteHeader()
 	m1.Add(a.t, value)
 	err := a.g.GetFrom(m1)
-	if err == ErrAttributeNotFound {
+	if errors.Is(err, ErrAttributeNotFound) {
 		fmt.Println("unexpected 404") // nolint
-		panic(err)                    // nolint
+		fatal(err)
 	}
 	if err != nil {
 		return 1
@@ -121,20 +120,20 @@ func FuzzSetters(data []byte) int {
 		// when their length is too big, but
 		// not encoding.
 		if !IsAttrSizeOverflow(err) {
-			panic(err) // nolint
+			fatal(err)
 		}
 		return 1
 	}
 	m3.WriteHeader()
 	v, err := m2.Get(a.t)
 	if err != nil {
-		panic(err) // nolint
+		fatal(err)
 	}
 	m3.Add(a.t, v)
 
 	if !m2.Equal(m3) {
 		fmt.Println(m2, "not equal", m3) // nolint
-		panic("not equal")               // nolint
+		fatal("not equal")
 	}
 	return 1
 }

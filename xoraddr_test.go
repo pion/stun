@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"io"
 	"net"
 	"testing"
@@ -18,7 +19,7 @@ func BenchmarkXORMappedAddress_AddTo(b *testing.B) {
 	ip := net.ParseIP("192.168.1.32")
 	for i := 0; i < b.N; i++ {
 		addr := &XORMappedAddress{IP: ip, Port: 3654}
-		addr.AddTo(m) //nolint: errcheck
+		addr.AddTo(m) // nolint:errcheck
 		m.Reset()
 	}
 }
@@ -71,7 +72,7 @@ func TestXORMappedAddress_GetFrom(t *testing.T) {
 		// {0, 1} is correct addr family.
 		m.Add(AttrXORMappedAddress, []byte{0, 1, 3, 4})
 		addr := new(XORMappedAddress)
-		if err = addr.GetFrom(m); err != io.ErrUnexpectedEOF {
+		if err = addr.GetFrom(m); !errors.Is(err, io.ErrUnexpectedEOF) {
 			t.Errorf("len(v) = 4 should render <%s> error, got <%s>",
 				io.ErrUnexpectedEOF, err,
 			)
@@ -105,7 +106,7 @@ func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
 
 	addr.IP = expectedIP
 	addr.Port = expectedPort
-	addr.AddTo(m) //nolint: errcheck
+	addr.AddTo(m) // nolint:errcheck
 	m.WriteHeader()
 
 	mRes := New()
@@ -163,7 +164,7 @@ func TestXORMappedAddress_AddTo_IPv6(t *testing.T) {
 		IP:   net.ParseIP("fe80::dc2b:44ff:fe20:6009"),
 		Port: 21254,
 	}
-	addr.AddTo(m) //nolint: errcheck
+	addr.AddTo(m) // nolint:errcheck
 	m.WriteHeader()
 
 	mRes := New()
@@ -188,7 +189,7 @@ func TestXORMappedAddress_AddTo_Invalid(t *testing.T) {
 		IP:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		Port: 21254,
 	}
-	if err := addr.AddTo(m); err != ErrBadIPLength {
+	if err := addr.AddTo(m); !errors.Is(err, ErrBadIPLength) {
 		t.Errorf("AddTo should return %q, got: %v", ErrBadIPLength, err)
 	}
 }

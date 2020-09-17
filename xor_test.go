@@ -87,8 +87,8 @@ func BenchmarkXOR(b *testing.B) {
 	rand.Seed(666)
 	a := make([]byte, 1024)
 	c := make([]byte, 1024)
-	rand.Read(a)
-	rand.Read(c)
+	rand.Read(a) // nolint:gosec
+	rand.Read(c) // nolint:gosec
 	b.SetBytes(1024)
 	b.RunParallel(func(pb *testing.PB) {
 		dst := make([]byte, len(a))
@@ -102,8 +102,8 @@ func BenchmarkXORSafe(b *testing.B) {
 	rand.Seed(666)
 	a := make([]byte, 1024)
 	c := make([]byte, 1024)
-	rand.Read(a)
-	rand.Read(c)
+	rand.Read(a) // nolint:gosec
+	rand.Read(c) // nolint:gosec
 	b.SetBytes(1024)
 	b.RunParallel(func(pb *testing.PB) {
 		dst := make([]byte, len(a))
@@ -120,8 +120,8 @@ func BenchmarkXORFast(b *testing.B) {
 	rand.Seed(666)
 	a := make([]byte, 1024)
 	c := make([]byte, 1024)
-	rand.Read(a)
-	rand.Read(c)
+	rand.Read(a) // nolint:gosec
+	rand.Read(c) // nolint:gosec
 	b.SetBytes(1024)
 	b.RunParallel(func(pb *testing.PB) {
 		dst := make([]byte, len(a))

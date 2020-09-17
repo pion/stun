@@ -19,14 +19,14 @@ func BenchmarkBuildOverhead(b *testing.B) {
 		b.ReportAllocs()
 		m := new(Message)
 		for i := 0; i < b.N; i++ {
-			m.Build(&t, &username, &nonce, &realm, &Fingerprint) //nolint: errcheck
+			m.Build(&t, &username, &nonce, &realm, &Fingerprint) // nolint:errcheck
 		}
 	})
 	b.Run("BuildNonPointer", func(b *testing.B) {
 		b.ReportAllocs()
 		m := new(Message)
 		for i := 0; i < b.N; i++ {
-			m.Build(t, username, nonce, realm, Fingerprint) //nolint: errcheck //nolint: errcheck
+			m.Build(t, username, nonce, realm, Fingerprint) // nolint:errcheck // nolint:errcheck
 		}
 	})
 	b.Run("Raw", func(b *testing.B) {
@@ -36,10 +36,10 @@ func BenchmarkBuildOverhead(b *testing.B) {
 			m.Reset()
 			m.WriteHeader()
 			m.SetType(t)
-			username.AddTo(m)    //nolint: errcheck
-			nonce.AddTo(m)       //nolint: errcheck
-			realm.AddTo(m)       //nolint: errcheck
-			Fingerprint.AddTo(m) //nolint: errcheck
+			username.AddTo(m)    // nolint:errcheck
+			nonce.AddTo(m)       // nolint:errcheck
+			realm.AddTo(m)       // nolint:errcheck
+			Fingerprint.AddTo(m) // nolint:errcheck
 		}
 	})
 }
@@ -49,7 +49,7 @@ func TestMessage_Apply(t *testing.T) {
 		integrity = NewShortTermIntegrity("password")
 		decoded   = new(Message)
 	)
-	m, err := Build(BindingRequest, TransactionID,
+	m, err := Build(BindingRequest, TransactionID(),
 		NewUsername("username"),
 		NewNonce("nonce"),
 		NewRealm("example.org"),
@@ -77,6 +77,8 @@ type errReturner struct {
 	Err error
 }
 
+var errTError = errors.New("tError")
+
 func (e errReturner) AddTo(m *Message) error {
 	return e.Err
 }
@@ -91,14 +93,14 @@ func (e errReturner) GetFrom(m *Message) error {
 
 func TestHelpersErrorHandling(t *testing.T) {
 	m := New()
-	e := errReturner{Err: errors.New("tError")}
-	if err := m.Build(e); err != e.Err {
+	e := errReturner{Err: errTError}
+	if err := m.Build(e); !errors.Is(err, e.Err) {
 		t.Error(err, "!=", e.Err)
 	}
-	if err := m.Check(e); err != e.Err {
+	if err := m.Check(e); !errors.Is(err, e.Err) {
 		t.Error(err, "!=", e.Err)
 	}
-	if err := m.Parse(e); err != e.Err {
+	if err := m.Parse(e); !errors.Is(err, e.Err) {
 		t.Error(err, "!=", e.Err)
 	}
 	t.Run("MustBuild", func(t *testing.T) {
@@ -106,7 +108,7 @@ func TestHelpersErrorHandling(t *testing.T) {
 			MustBuild(NewTransactionIDSetter(transactionID{}))
 		})
 		defer func() {
-			if p := recover(); p != e.Err {
+			if p := recover(); !errors.Is(p.(error), e.Err) {
 				t.Errorf("%s != %s",
 					p, e.Err,
 				)
@@ -156,7 +158,7 @@ func TestMessage_ForEach(t *testing.T) {
 			}
 			calls++
 			return ErrAttributeNotFound
-		}); err != ErrAttributeNotFound {
+		}); !errors.Is(err, ErrAttributeNotFound) {
 			t.Fatal(err)
 		}
 		if !m.Equal(initial) {

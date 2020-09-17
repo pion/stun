@@ -1,7 +1,7 @@
 package hmac
 
-import (
-	"crypto/sha1"
+import ( // nolint:gci
+	"crypto/sha1" // nolint:gosec
 	"crypto/sha256"
 	"fmt"
 	"testing"
@@ -14,7 +14,7 @@ func BenchmarkHMACSHA1_512(b *testing.B) {
 	h := AcquireSHA1(key)
 	b.SetBytes(int64(len(buf)))
 	for i := 0; i < b.N; i++ {
-		h.Write(buf) //nolint: errcheck
+		h.Write(buf) // nolint:errcheck
 		h.Reset()
 		mac := h.Sum(nil)
 		buf[0] = mac[0]
@@ -29,7 +29,7 @@ func BenchmarkHMACSHA1_512_Pool(b *testing.B) {
 	b.SetBytes(int64(len(buf)))
 	for i := 0; i < b.N; i++ {
 		h := AcquireSHA1(key)
-		h.Write(buf) //nolint: errcheck
+		h.Write(buf) // nolint:errcheck
 		h.Reset()
 		mac := h.Sum(tBuf)
 		buf[0] = mac[0]
@@ -38,7 +38,7 @@ func BenchmarkHMACSHA1_512_Pool(b *testing.B) {
 }
 
 func TestHMACReset(t *testing.T) {
-	for i, tt := range hmacTests {
+	for i, tt := range hmacTests() {
 		h := New(tt.hash, tt.key)
 		h.(*hmac).resetTo(tt.key)
 		if s := h.Size(); s != tt.size {
@@ -68,8 +68,8 @@ func TestHMACReset(t *testing.T) {
 	}
 }
 
-func TestHMACPool_SHA1(t *testing.T) {
-	for i, tt := range hmacTests {
+func TestHMACPool_SHA1(t *testing.T) { // nolint:dupl
+	for i, tt := range hmacTests() {
 		if tt.blocksize != sha1.BlockSize || tt.size != sha1.Size {
 			continue
 		}
@@ -102,8 +102,8 @@ func TestHMACPool_SHA1(t *testing.T) {
 	}
 }
 
-func TestHMACPool_SHA256(t *testing.T) {
-	for i, tt := range hmacTests {
+func TestHMACPool_SHA256(t *testing.T) { // nolint:dupl
+	for i, tt := range hmacTests() {
 		if tt.blocksize != sha256.BlockSize || tt.size != sha256.Size {
 			continue
 		}

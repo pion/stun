@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"net"
 	"os"
@@ -26,10 +27,10 @@ func (c *StunServerConn) Close() {
 }
 
 var (
-	addrStrPtr = flag.String("server", "stun.voip.blackberry.com:3478", "STUN server address")
-	timeoutPtr = flag.Int("timeout", 3, "the number of seconds to wait for STUN server's response")
-	verbose    = flag.Int("verbose", 1, "the verbosity level")
-	log        logging.LeveledLogger
+	addrStrPtr = flag.String("server", "stun.voip.blackberry.com:3478", "STUN server address")      // nolint:gochecknoglobals
+	timeoutPtr = flag.Int("timeout", 3, "the number of seconds to wait for STUN server's response") // nolint:gochecknoglobals
+	verbose    = flag.Int("verbose", 1, "the verbosity level")                                      // nolint:gochecknoglobals
+	log        logging.LeveledLogger                                                                // nolint:gochecknoglobals
 )
 
 type Error string
@@ -78,7 +79,7 @@ func MappingTests(addrStr string) error {
 
 	// Test I: Regular binding request
 	log.Info("Mapping Test I: Regular binding request")
-	request := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
+	request := stun.MustBuild(stun.TransactionID(), stun.BindingRequest)
 
 	resp, err := mapTestConn.roundTrip(request, mapTestConn.RemoteAddr)
 	if err != nil {
@@ -152,10 +153,10 @@ func FilteringTests(addrStr string) error {
 
 	// Test I: Regular binding request
 	log.Info("Filtering Test I: Regular binding request")
-	request := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
+	request := stun.MustBuild(stun.TransactionID(), stun.BindingRequest)
 
 	resp, err := mapTestConn.roundTrip(request, mapTestConn.RemoteAddr)
-	if err != nil || err == ErrTimedOut {
+	if err != nil || errors.Is(err, ErrTimedOut) {
 		return err
 	}
 	resps := parse(resp)
@@ -180,7 +181,7 @@ func FilteringTests(addrStr string) error {
 		parse(resp) // just to print out the resp
 		log.Warn("=> NAT filtering behavior: endpoint independent")
 		return nil
-	} else if err != ErrTimedOut {
+	} else if !errors.Is(err, ErrTimedOut) {
 		return err // something else went wrong
 	}
 
@@ -193,7 +194,7 @@ func FilteringTests(addrStr string) error {
 	if err == nil {
 		parse(resp) // just to print out the resp
 		log.Warn("=> NAT filtering behavior: address dependent")
-	} else if err == ErrTimedOut {
+	} else if errors.Is(err, ErrTimedOut) {
 		log.Warn("=> NAT filtering behavior: address and port dependent")
 	}
 
