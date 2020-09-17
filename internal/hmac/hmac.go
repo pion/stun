@@ -45,8 +45,8 @@ func (h *hmac) Sum(in []byte) []byte {
 	origLen := len(in)
 	in = h.inner.Sum(in)
 	h.outer.Reset()
-	h.outer.Write(h.opad)       //nolint: errcheck
-	h.outer.Write(in[origLen:]) //nolint: errcheck
+	h.outer.Write(h.opad)       // nolint:errcheck
+	h.outer.Write(in[origLen:]) // nolint:errcheck
 	return h.outer.Sum(in[:origLen])
 }
 
@@ -60,7 +60,7 @@ func (h *hmac) BlockSize() int { return h.blocksize }
 
 func (h *hmac) Reset() {
 	h.inner.Reset()
-	h.inner.Write(h.ipad) //nolint: errcheck
+	h.inner.Write(h.ipad) // nolint:errcheck
 }
 
 // New returns a new HMAC hash using the given hash.Hash type and key.
@@ -77,7 +77,7 @@ func New(h func() hash.Hash, key []byte) hash.Hash {
 	hm.opad = make([]byte, hm.blocksize)
 	if len(key) > hm.blocksize {
 		// If key is too big, hash it.
-		hm.outer.Write(key) //nolint: errcheck
+		hm.outer.Write(key) // nolint:errcheck
 		key = hm.outer.Sum(nil)
 	}
 	copy(hm.ipad, key)
@@ -88,7 +88,7 @@ func New(h func() hash.Hash, key []byte) hash.Hash {
 	for i := range hm.opad {
 		hm.opad[i] ^= 0x5c
 	}
-	hm.inner.Write(hm.ipad) //nolint: errcheck
+	hm.inner.Write(hm.ipad) // nolint:errcheck
 	return hm
 }
 

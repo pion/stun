@@ -1,8 +1,8 @@
 package stun
 
-import (
-	"crypto/md5"  // #nosec
-	"crypto/sha1" // #nosec
+import ( // nolint:gci
+	"crypto/md5"  // nolint:gosec
+	"crypto/sha1" // nolint:gosec
 	"errors"
 	"fmt"
 	"strings"
@@ -17,8 +17,7 @@ const credentialsSep = ":"
 // credentials. Password, username, and realm must be SASL-prepared.
 func NewLongTermIntegrity(username, realm, password string) MessageIntegrity {
 	k := strings.Join([]string{username, realm, password}, credentialsSep)
-	// #nosec
-	h := md5.New()
+	h := md5.New() // nolint:gosec
 	fmt.Fprint(h, k)
 	return MessageIntegrity(h.Sum(nil))
 }

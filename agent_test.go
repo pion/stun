@@ -1,6 +1,7 @@
 package stun
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -48,7 +49,7 @@ func TestAgent_Process(t *testing.T) {
 	if err := a.Close(); err != nil {
 		t.Error(err)
 	}
-	if err := a.Process(m); err != ErrAgentClosed {
+	if err := a.Process(m); !errors.Is(err, ErrAgentClosed) {
 		t.Errorf("closed agent should return <%s>, but got <%s>",
 			ErrAgentClosed, err,
 		)
@@ -62,7 +63,7 @@ func TestAgent_Start(t *testing.T) {
 	if err := a.Start(id, deadline); err != nil {
 		t.Errorf("failed to statt transaction: %s", err)
 	}
-	if err := a.Start(id, deadline); err != ErrTransactionExists {
+	if err := a.Start(id, deadline); !errors.Is(err, ErrTransactionExists) {
 		t.Errorf("duplicate start should return <%s>, got <%s>",
 			ErrTransactionExists, err,
 		)
@@ -71,12 +72,12 @@ func TestAgent_Start(t *testing.T) {
 		t.Error(err)
 	}
 	id = NewTransactionID()
-	if err := a.Start(id, deadline); err != ErrAgentClosed {
+	if err := a.Start(id, deadline); !errors.Is(err, ErrAgentClosed) {
 		t.Errorf("start on closed agent should return <%s>, got <%s>",
 			ErrAgentClosed, err,
 		)
 	}
-	if err := a.SetHandler(nil); err != ErrAgentClosed {
+	if err := a.SetHandler(nil); !errors.Is(err, ErrAgentClosed) {
 		t.Errorf("SetHandler on closed agent should return <%s>, got <%s>",
 			ErrAgentClosed, err,
 		)
@@ -88,7 +89,7 @@ func TestAgent_Stop(t *testing.T) {
 	a := NewAgent(func(e Event) {
 		called <- e
 	})
-	if err := a.Stop(transactionID{}); err != ErrTransactionNotExists {
+	if err := a.Stop(transactionID{}); !errors.Is(err, ErrTransactionNotExists) {
 		t.Fatalf("unexpected error: %s, should be %s", err, ErrTransactionNotExists)
 	}
 	id := NewTransactionID()
@@ -101,7 +102,7 @@ func TestAgent_Stop(t *testing.T) {
 	}
 	select {
 	case e := <-called:
-		if e.Error != ErrTransactionStopped {
+		if !errors.Is(e.Error, ErrTransactionStopped) {
 			t.Fatalf("unexpected error: %s, should be %s",
 				e.Error, ErrTransactionStopped,
 			)
@@ -112,10 +113,10 @@ func TestAgent_Stop(t *testing.T) {
 	if err := a.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Close(); err != ErrAgentClosed {
+	if err := a.Close(); !errors.Is(err, ErrAgentClosed) {
 		t.Fatalf("a.Close returned %s instead of %s", err, ErrAgentClosed)
 	}
-	if err := a.Stop(transactionID{}); err != ErrAgentClosed {
+	if err := a.Stop(transactionID{}); !errors.Is(err, ErrAgentClosed) {
 		t.Fatalf("unexpected error: %s, should be %s", err, ErrAgentClosed)
 	}
 }
@@ -129,16 +130,16 @@ func TestAgent_GC(t *testing.T) {
 	)
 	gcDeadline := deadline.Add(-time.Second)
 	deadlineNotGC := gcDeadline.AddDate(0, 0, -1)
-	a.SetHandler(func(e Event) { //nolint: errcheck
+	a.SetHandler(func(e Event) { // nolint:errcheck
 		id := e.TransactionID
 		shouldTimeOut, found := shouldTimeOutID[id]
 		if !found {
 			t.Error("unexpected transaction ID")
 		}
-		if shouldTimeOut && e.Error != ErrTransactionTimeOut {
+		if shouldTimeOut && !errors.Is(e.Error, ErrTransactionTimeOut) {
 			t.Errorf("%x should time out, but got %v", id, e.Error)
 		}
-		if !shouldTimeOut && e.Error == ErrTransactionTimeOut {
+		if !shouldTimeOut && errors.Is(e.Error, ErrTransactionTimeOut) {
 			t.Errorf("%x should not time out, but got %v", id, e.Error)
 		}
 	})
@@ -162,7 +163,7 @@ func TestAgent_GC(t *testing.T) {
 	if err := a.Close(); err != nil {
 		t.Error(err)
 	}
-	if err := a.Collect(gcDeadline); err != ErrAgentClosed {
+	if err := a.Collect(gcDeadline); !errors.Is(err, ErrAgentClosed) {
 		t.Errorf("should <%s>, but got <%s>", ErrAgentClosed, err)
 	}
 }
@@ -203,7 +204,7 @@ func BenchmarkAgent_Process(b *testing.B) {
 		}
 	}()
 	b.ReportAllocs()
-	m := MustBuild(TransactionID)
+	m := MustBuild(TransactionID())
 	for i := 0; i < b.N; i++ {
 		if err := a.Process(m); err != nil {
 			b.Fatal(err)

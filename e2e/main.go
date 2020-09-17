@@ -36,7 +36,7 @@ func test(network string) {
 		log.Fatal(err) // nolint
 	}
 	// First request should error.
-	request, err := stun.Build(stun.BindingRequest, stun.TransactionID, stun.Fingerprint)
+	request, err := stun.Build(stun.BindingRequest, stun.TransactionID(), stun.Fingerprint)
 	if err != nil {
 		log.Fatalln("failed to build:", err) // nolint
 	}
@@ -64,7 +64,7 @@ func test(network string) {
 	}
 
 	// Authenticating and sending second request.
-	request, err = stun.Build(stun.TransactionID, stun.BindingRequest,
+	request, err = stun.Build(stun.TransactionID(), stun.BindingRequest,
 		stun.NewUsername(username), nonce, realm,
 		stun.NewLongTermIntegrity(username, realm.String(), password),
 		stun.Fingerprint,

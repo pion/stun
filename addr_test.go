@@ -1,6 +1,7 @@
 package stun
 
 import (
+	"errors"
 	"io"
 	"net"
 	"testing"
@@ -37,7 +38,7 @@ func TestMappedAddress(t *testing.T) {
 			}
 			t.Run("Not found", func(t *testing.T) {
 				message := new(Message)
-				if err := got.GetFrom(message); err != ErrAttributeNotFound {
+				if err := got.GetFrom(message); !errors.Is(err, ErrAttributeNotFound) {
 					t.Error("should be not found: ", err)
 				}
 			})
@@ -51,7 +52,7 @@ func TestMappedAddress(t *testing.T) {
 			t.Run("Bad length", func(t *testing.T) {
 				message := new(Message)
 				message.Add(AttrMappedAddress, []byte{1, 2, 3})
-				if err := got.GetFrom(message); err != io.ErrUnexpectedEOF {
+				if err := got.GetFrom(message); !errors.Is(err, io.ErrUnexpectedEOF) {
 					t.Errorf("<%s> should be <%s>", err, io.ErrUnexpectedEOF)
 				}
 			})
@@ -59,7 +60,7 @@ func TestMappedAddress(t *testing.T) {
 	})
 }
 
-func TestMappedAddressV6(t *testing.T) {
+func TestMappedAddressV6(t *testing.T) { // nolint:dupl
 	m := new(Message)
 	addr := &MappedAddress{
 		IP:   net.ParseIP("::"),
@@ -79,7 +80,7 @@ func TestMappedAddressV6(t *testing.T) {
 			}
 			t.Run("Not found", func(t *testing.T) {
 				message := new(Message)
-				if err := got.GetFrom(message); err != ErrAttributeNotFound {
+				if err := got.GetFrom(message); !errors.Is(err, ErrAttributeNotFound) {
 					t.Error("should be not found: ", err)
 				}
 			})
@@ -87,7 +88,7 @@ func TestMappedAddressV6(t *testing.T) {
 	})
 }
 
-func TestAlternateServer(t *testing.T) {
+func TestAlternateServer(t *testing.T) { // nolint:dupl
 	m := new(Message)
 	addr := &AlternateServer{
 		IP:   net.ParseIP("122.12.34.5"),
@@ -107,7 +108,7 @@ func TestAlternateServer(t *testing.T) {
 			}
 			t.Run("Not found", func(t *testing.T) {
 				message := new(Message)
-				if err := got.GetFrom(message); err != ErrAttributeNotFound {
+				if err := got.GetFrom(message); !errors.Is(err, ErrAttributeNotFound) {
 					t.Error("should be not found: ", err)
 				}
 			})
@@ -115,7 +116,7 @@ func TestAlternateServer(t *testing.T) {
 	})
 }
 
-func TestOtherAddress(t *testing.T) {
+func TestOtherAddress(t *testing.T) { // nolint:dupl
 	m := new(Message)
 	addr := &OtherAddress{
 		IP:   net.ParseIP("122.12.34.5"),
@@ -135,7 +136,7 @@ func TestOtherAddress(t *testing.T) {
 			}
 			t.Run("Not found", func(t *testing.T) {
 				message := new(Message)
-				if err := got.GetFrom(message); err != ErrAttributeNotFound {
+				if err := got.GetFrom(message); !errors.Is(err, ErrAttributeNotFound) {
 					t.Error("should be not found: ", err)
 				}
 			})

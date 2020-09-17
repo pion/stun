@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"hash/crc64"
 	"io"
@@ -69,7 +70,7 @@ func BenchmarkMessage_Write(b *testing.B) {
 }
 
 func TestMessageType_Value(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		in  MessageType
 		out uint16
 	}{
@@ -87,7 +88,7 @@ func TestMessageType_Value(t *testing.T) {
 }
 
 func TestMessageType_ReadValue(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		in  uint16
 		out MessageType
 	}{
@@ -105,7 +106,7 @@ func TestMessageType_ReadValue(t *testing.T) {
 }
 
 func TestMessageType_ReadWriteValue(t *testing.T) {
-	var tests = []MessageType{
+	tests := []MessageType{
 		{Method: MethodBinding, Class: ClassRequest},
 		{Method: MethodBinding, Class: ClassSuccessResponse},
 		{Method: MethodBinding, Class: ClassErrorResponse},
@@ -202,8 +203,9 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 
 func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	messageAttribute := RawAttribute{Length: 4,
-		Value: []byte{1, 2, 3, 4}, Type: 0x1,
+	messageAttribute := RawAttribute{
+		Length: 4,
+		Value:  []byte{1, 2, 3, 4}, Type: 0x1,
 	}
 	messageAttributes := Attributes{
 		messageAttribute,
@@ -237,7 +239,7 @@ func (r unexpectedEOFReader) Read(b []byte) (int, error) {
 func TestMessage_ReadFromError(t *testing.T) {
 	mDecoded := New()
 	_, err := mDecoded.ReadFrom(unexpectedEOFReader{})
-	if err != io.ErrUnexpectedEOF {
+	if !errors.Is(err, io.ErrUnexpectedEOF) {
 		t.Error(err, "should be", io.ErrUnexpectedEOF)
 	}
 }
@@ -263,7 +265,7 @@ func BenchmarkMessage_WriteTo(b *testing.B) {
 	buf := new(bytes.Buffer)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		m.WriteTo(buf) //nolint: errcheck
+		m.WriteTo(buf) // nolint:errcheck
 		buf.Reset()
 	}
 }
@@ -499,10 +501,10 @@ func TestMessage_String(t *testing.T) {
 
 func TestIsMessage(t *testing.T) {
 	m := New()
-	NewSoftware("software").AddTo(m) //nolint: errcheck
+	NewSoftware("software").AddTo(m) // nolint:errcheck
 	m.WriteHeader()
 
-	var tt = [...]struct {
+	tt := [...]struct {
 		in  []byte
 		out bool
 	}{
@@ -511,9 +513,11 @@ func TestIsMessage(t *testing.T) {
 		{[]byte{1, 2, 4}, false},                    // 2
 		{[]byte{1, 2, 4, 5, 6, 7, 8, 9, 20}, false}, // 3
 		{m.Raw, true},                               // 5
-		{[]byte{0, 0, 0, 0, 33, 18,
+		{[]byte{
+			0, 0, 0, 0, 33, 18,
 			164, 66, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0}, true}, // 6
+			0, 0, 0, 0, 0, 0, 0, 0,
+		}, true}, // 6
 	}
 	for i, v := range tt {
 		if got := IsMessage(v.in); got != v.out {
@@ -526,7 +530,7 @@ func BenchmarkIsMessage(b *testing.B) {
 	m := New()
 	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
 	m.TransactionID = NewTransactionID()
-	NewSoftware("cydev/stun test").AddTo(m) //nolint: errcheck
+	NewSoftware("cydev/stun test").AddTo(m) // nolint:errcheck
 	m.WriteHeader()
 
 	b.SetBytes(int64(messageHeaderSize))
@@ -625,7 +629,7 @@ func BenchmarkMessageFull(b *testing.B) {
 		addAttr(b, m, &s)
 		m.WriteAttributes()
 		m.WriteHeader()
-		Fingerprint.AddTo(m) //nolint: errcheck
+		Fingerprint.AddTo(m) // nolint:errcheck
 		m.WriteHeader()
 		m.Reset()
 	}
@@ -679,7 +683,7 @@ func TestMessage_Contains(t *testing.T) {
 func ExampleMessage() {
 	buf := new(bytes.Buffer)
 	m := new(Message)
-	m.Build(BindingRequest, //nolint: errcheck
+	m.Build(BindingRequest, // nolint:errcheck
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
@@ -705,11 +709,11 @@ func ExampleMessage() {
 	decoded.Raw = make([]byte, 0, 1024) // for ReadFrom that reuses m.Raw
 	// ReadFrom does not allocate internal buffer for reading from io.Reader,
 	// instead it uses m.Raw, expanding it length to capacity.
-	decoded.ReadFrom(buf) //nolint: errcheck
+	decoded.ReadFrom(buf) // nolint:errcheck
 	fmt.Println("has software:", decoded.Contains(AttrSoftware))
 	fmt.Println("has nonce:", decoded.Contains(AttrNonce))
 	var software Software
-	decoded.Parse(&software) //nolint: errcheck
+	decoded.Parse(&software) // nolint:errcheck
 	// Rule for Parse method is same as for Build.
 	fmt.Println("software:", software)
 	if err := Fingerprint.Check(decoded); err == nil {
@@ -748,7 +752,7 @@ func TestAllocations(t *testing.T) {
 	// Not testing AttrMessageIntegrity because it allocates.
 	setters := []Setter{
 		BindingRequest,
-		TransactionID,
+		TransactionID(),
 		Fingerprint,
 		NewNonce("nonce"),
 		NewUsername("username"),
@@ -765,6 +769,8 @@ func TestAllocations(t *testing.T) {
 	}
 	m := New()
 	for i, s := range setters {
+		s := s
+		i := i
 		allocs := testing.AllocsPerRun(10, func() {
 			m.Reset()
 			m.WriteHeader()
@@ -782,7 +788,7 @@ func TestAllocationsGetters(t *testing.T) {
 	// Not testing AttrMessageIntegrity because it allocates.
 	setters := []Setter{
 		BindingRequest,
-		TransactionID,
+		TransactionID(),
 		NewNonce("nonce"),
 		NewUsername("username"),
 		XORMappedAddress{
@@ -810,6 +816,8 @@ func TestAllocationsGetters(t *testing.T) {
 		new(ErrorCodeAttribute),
 	}
 	for i, g := range getters {
+		g := g
+		i := i
 		allocs := testing.AllocsPerRun(10, func() {
 			if err := g.GetFrom(m); err != nil {
 				t.Errorf("[%d] failed to get", i)
@@ -888,7 +896,7 @@ func BenchmarkMessage_CloneTo(b *testing.B) {
 	}
 	b.SetBytes(int64(len(m.Raw)))
 	a := new(Message)
-	m.CloneTo(a) //nolint: errcheck
+	m.CloneTo(a) // nolint:errcheck
 	for i := 0; i < b.N; i++ {
 		if err := m.CloneTo(a); err != nil {
 			b.Fatal(err)
@@ -917,7 +925,7 @@ func TestMessage_AddTo(t *testing.T) {
 	if b.Equal(m) {
 		t.Fatal("should not be equal")
 	}
-	m.AddTo(b) //nolint: errcheck
+	m.AddTo(b) // nolint:errcheck
 	if !b.Equal(m) {
 		t.Fatal("should be equal")
 	}
@@ -935,7 +943,7 @@ func BenchmarkMessage_AddTo(b *testing.B) {
 		b.Fatal(err)
 	}
 	a := new(Message)
-	m.CloneTo(a) //nolint: errcheck
+	m.CloneTo(a) // nolint:errcheck
 	for i := 0; i < b.N; i++ {
 		if err := m.AddTo(a); err != nil {
 			b.Fatal(err)
@@ -945,7 +953,7 @@ func BenchmarkMessage_AddTo(b *testing.B) {
 
 func TestDecode(t *testing.T) {
 	t.Run("Nil", func(t *testing.T) {
-		if err := Decode(nil, nil); err != ErrDecodeToNil {
+		if err := Decode(nil, nil); !errors.Is(err, ErrDecodeToNil) {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})

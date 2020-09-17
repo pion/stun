@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
-	if err = c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
+	if err = c.Do(stun.MustBuild(stun.TransactionID(), stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
 			log.Fatalln(err)
 		}

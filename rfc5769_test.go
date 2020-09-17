@@ -82,7 +82,7 @@ func TestRFC5769(t *testing.T) {
 			if err := r.GetFrom(m); err != nil {
 				t.Error(err)
 			}
-			if r.String() != "example.org" {
+			if r.String() != "example.org" { // nolint:goconst
 				t.Error("bad realm")
 			}
 			// checking HMAC

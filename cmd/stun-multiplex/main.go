@@ -25,7 +25,7 @@ func keepAlive(c *stun.Client) {
 	// Keep-alive for NAT binding.
 	t := time.NewTicker(time.Second * 5)
 	for range t.C {
-		if err := c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
+		if err := c.Do(stun.MustBuild(stun.TransactionID(), stun.BindingRequest), func(res stun.Event) {
 			if res.Error != nil {
 				panic(res.Error)
 			}
@@ -78,7 +78,7 @@ func multiplex(conn *net.UDPConn, stunAddr net.Addr, stunConn io.Reader) {
 	}
 }
 
-var stunServer = flag.String("stun", "stun.l.google.com:19302", "STUN Server to use")
+var stunServer = flag.String("stun", "stun.l.google.com:19302", "STUN Server to use") // nolint:gochecknoglobals
 
 func main() {
 	flag.Parse()
@@ -119,7 +119,7 @@ func main() {
 	// This can fail if your NAT Server is strict and will use separate ports
 	// for application data and STUN
 	var gotAddr stun.XORMappedAddress
-	if err = c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
+	if err = c.Do(stun.MustBuild(stun.TransactionID(), stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
 			panic(res.Error)
 		}

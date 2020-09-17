@@ -18,7 +18,7 @@ func BenchmarkFingerprint_AddTo(b *testing.B) {
 	addAttr(b, m, s)
 	b.SetBytes(int64(len(m.Raw)))
 	for i := 0; i < b.N; i++ {
-		Fingerprint.AddTo(m) //nolint: errcheck
+		Fingerprint.AddTo(m) // nolint:errcheck
 		m.WriteLength()
 		m.Length -= attributeHeaderSize + fingerprintSize
 		m.Raw = m.Raw[:m.Length+messageHeaderSize]
@@ -30,7 +30,7 @@ func TestFingerprint_Check(t *testing.T) {
 	m := new(Message)
 	addAttr(t, m, NewSoftware("software"))
 	m.WriteHeader()
-	Fingerprint.AddTo(m) //nolint: errcheck
+	Fingerprint.AddTo(m) // nolint:errcheck
 	m.WriteHeader()
 	if err := Fingerprint.Check(m); err != nil {
 		t.Error(err)
@@ -64,7 +64,7 @@ func BenchmarkFingerprint_Check(b *testing.B) {
 	addAttr(b, m, addr)
 	addAttr(b, m, s)
 	m.WriteHeader()
-	Fingerprint.AddTo(m) //nolint: errcheck
+	Fingerprint.AddTo(m) // nolint:errcheck
 	m.WriteHeader()
 	b.SetBytes(int64(len(m.Raw)))
 	for i := 0; i < b.N; i++ {

@@ -1,7 +1,7 @@
 package hmac
 
-import (
-	"crypto/sha1"
+import ( // nolint:gci
+	"crypto/sha1" // nolint:gosec
 	"crypto/sha256"
 	"hash"
 	"sync"
@@ -23,7 +23,7 @@ func (h *hmac) resetTo(key []byte) {
 	setZeroes(h.opad)
 	if len(key) > h.blocksize {
 		// If key is too big, hash it.
-		h.outer.Write(key) //nolint: errcheck
+		h.outer.Write(key) // nolint:errcheck
 		key = h.outer.Sum(nil)
 	}
 	copy(h.ipad, key)
@@ -34,10 +34,10 @@ func (h *hmac) resetTo(key []byte) {
 	for i := range h.opad {
 		h.opad[i] ^= 0x5c
 	}
-	h.inner.Write(h.ipad) //nolint: errcheck
+	h.inner.Write(h.ipad) // nolint:errcheck
 }
 
-var hmacSHA1Pool = &sync.Pool{
+var hmacSHA1Pool = &sync.Pool{ // nolint:gochecknoglobals
 	New: func() interface{} {
 		h := New(sha1.New, make([]byte, sha1.BlockSize))
 		return h
@@ -59,7 +59,7 @@ func PutSHA1(h hash.Hash) {
 	hmacSHA1Pool.Put(hm)
 }
 
-var hmacSHA256Pool = &sync.Pool{
+var hmacSHA256Pool = &sync.Pool{ // nolint:gochecknoglobals
 	New: func() interface{} {
 		h := New(sha256.New, make([]byte, sha256.BlockSize))
 		return h
@@ -85,7 +85,7 @@ func PutSHA256(h hash.Hash) {
 //
 // Put and Acquire functions are internal functions to project, so
 // checking it via such assert is optimal.
-func assertHMACSize(h *hmac, size, blocksize int) {
+func assertHMACSize(h *hmac, size, blocksize int) { // nolint:unparam
 	if h.size != size || h.blocksize != blocksize {
 		panic("BUG: hmac size invalid") // nolint
 	}

@@ -40,7 +40,7 @@ func TestIANA(t *testing.T) {
 			t.Logf("value: 0x%x, name: %s", val, name)
 			m[name] = Method(val)
 		}
-		for val, name := range methodName {
+		for val, name := range methodName() {
 			mapped, ok := m[name]
 			if !ok {
 				t.Errorf("failed to find method %s in IANA", name)
@@ -74,7 +74,7 @@ func TestIANA(t *testing.T) {
 		} {
 			m[k] = v
 		}
-		for val, name := range attrNames {
+		for val, name := range attrNames() {
 			mapped, ok := m[name]
 			if !ok {
 				t.Errorf("failed to find attribute %s in IANA", name)

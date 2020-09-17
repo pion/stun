@@ -4,6 +4,7 @@ package stun
 
 import (
 	"encoding/base64"
+	"errors"
 	"io"
 	"testing"
 )
@@ -12,7 +13,7 @@ func BenchmarkErrorCode_AddTo(b *testing.B) {
 	m := New()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		CodeStaleNonce.AddTo(m) //nolint: errcheck
+		CodeStaleNonce.AddTo(m) // nolint:errcheck
 		m.Reset()
 	}
 }
@@ -25,7 +26,7 @@ func BenchmarkErrorCodeAttribute_AddTo(b *testing.B) {
 		Reason: []byte("not found!"),
 	}
 	for i := 0; i < b.N; i++ {
-		a.AddTo(m) //nolint: errcheck
+		a.AddTo(m) // nolint:errcheck
 		m.Reset()
 	}
 }
@@ -37,9 +38,9 @@ func BenchmarkErrorCodeAttribute_GetFrom(b *testing.B) {
 		Code:   404,
 		Reason: []byte("not found!"),
 	}
-	a.AddTo(m) //nolint: errcheck
+	a.AddTo(m) // nolint:errcheck
 	for i := 0; i < b.N; i++ {
-		a.GetFrom(m) //nolint: errcheck
+		a.GetFrom(m) // nolint:errcheck
 	}
 }
 
@@ -47,7 +48,7 @@ func TestErrorCodeAttribute_GetFrom(t *testing.T) {
 	m := New()
 	m.Add(AttrErrorCode, []byte{1})
 	c := new(ErrorCodeAttribute)
-	if err := c.GetFrom(m); err != io.ErrUnexpectedEOF {
+	if err := c.GetFrom(m); !errors.Is(err, io.ErrUnexpectedEOF) {
 		t.Errorf("GetFrom should return <%s>, but got <%s>",
 			io.ErrUnexpectedEOF, err,
 		)
@@ -63,7 +64,7 @@ func TestMessage_AddErrorCode(t *testing.T) {
 	copy(m.TransactionID[:], transactionID)
 	expectedCode := ErrorCode(438)
 	expectedReason := "Stale Nonce"
-	CodeStaleNonce.AddTo(m) //nolint: errcheck
+	CodeStaleNonce.AddTo(m) // nolint:errcheck
 	m.WriteHeader()
 
 	mRes := New()
@@ -96,7 +97,7 @@ func TestErrorCode(t *testing.T) {
 	}
 	m := New()
 	cod := ErrorCode(666)
-	if err := cod.AddTo(m); err != ErrNoDefaultReason {
+	if err := cod.AddTo(m); !errors.Is(err, ErrNoDefaultReason) {
 		t.Error("should be ErrNoDefaultReason", err)
 	}
 	if err := a.GetFrom(m); err == nil {

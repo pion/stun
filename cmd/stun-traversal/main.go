@@ -13,9 +13,7 @@ import (
 	"github.com/pion/stun"
 )
 
-var (
-	server = flag.String("server", "pion.ly:3478", "Stun server address")
-)
+var server = flag.String("server", "pion.ly:3478", "Stun server address") // nolint:gochecknoglobals
 
 const (
 	udp           = "udp4"
@@ -24,7 +22,7 @@ const (
 	timeoutMillis = 500
 )
 
-func main() {
+func main() { // nolint:gocognit
 	flag.Parse()
 
 	srvAddr, err := net.ResolveUDPAddr(udp, *server)
@@ -99,13 +97,13 @@ func main() {
 				}
 
 			default:
-				log.Fatalln("unknown message", message)
+				log.Panicln("unknown message", message)
 			}
 
 		case peerStr := <-peerAddrChan:
 			peerAddr, err = net.ResolveUDPAddr(udp, peerStr)
 			if err != nil {
-				log.Fatalln("resolve peeraddr:", err)
+				log.Panicln("resolve peeraddr:", err)
 			}
 
 		case <-keepalive:
@@ -120,7 +118,7 @@ func main() {
 			}
 
 			if err != nil {
-				log.Fatalln("keepalive:", err)
+				log.Panicln("keepalive:", err)
 			}
 
 		case <-quit:
@@ -167,11 +165,11 @@ func listen(conn *net.UDPConn) <-chan []byte {
 }
 
 func sendBindingRequest(conn *net.UDPConn, addr *net.UDPAddr) error {
-	m := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
+	m := stun.MustBuild(stun.TransactionID(), stun.BindingRequest)
 
 	err := send(m.Raw, conn, addr)
 	if err != nil {
-		return fmt.Errorf("binding: %v", err)
+		return fmt.Errorf("binding: %w", err)
 	}
 
 	return nil
@@ -180,7 +178,7 @@ func sendBindingRequest(conn *net.UDPConn, addr *net.UDPAddr) error {
 func send(msg []byte, conn *net.UDPConn, addr *net.UDPAddr) error {
 	_, err := conn.WriteToUDP(msg, addr)
 	if err != nil {
-		return fmt.Errorf("send: %v", err)
+		return fmt.Errorf("send: %w", err)
 	}
 
 	return nil

@@ -1,10 +1,13 @@
 package stuntest
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"testing"
 )
+
+var errUDPServerUnsupportedNetwork = errors.New("unsupported network")
 
 // NewUDPServer creates an udp server for testing. The supplied handler function will be called with the request
 // and should be used to emulate the server behavior.
@@ -21,7 +24,7 @@ func NewUDPServer(
 	case "udp6":
 		ip = "[::1]"
 	default:
-		return nil, nil, fmt.Errorf("unsupported network: %s", network)
+		return nil, nil, fmt.Errorf("%w: %s", errUDPServerUnsupportedNetwork, network)
 	}
 
 	udpConn, err := net.ListenUDP(network, &net.UDPAddr{IP: net.ParseIP(ip), Port: 0})
@@ -33,7 +36,7 @@ func NewUDPServer(
 	address := fmt.Sprintf("%s:%d", ip, udpConn.LocalAddr().(*net.UDPAddr).Port)
 	serverAddr, err := net.ResolveUDPAddr(network, address)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to resolve stun host: %s: %v", address, err)
+		return nil, nil, fmt.Errorf("failed to resolve stun host: %s: %w", address, err)
 	}
 
 	errCh := make(chan error, 1)

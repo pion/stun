@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -19,17 +20,17 @@ import (
 )
 
 var (
-	workers    = flag.Int("w", runtime.GOMAXPROCS(0), "concurrent workers")
-	addr       = flag.String("addr", "localhost", "target address")
-	port       = flag.Int("port", stun.DefaultPort, "target port")
-	duration   = flag.Duration("d", time.Minute, "benchmark duration")
-	network    = flag.String("net", "udp", "protocol to use (udp, tcp)")
-	cpuProfile = flag.String("cpuprofile", "", "file output of pprof cpu profile")
-	memProfile = flag.String("memprofile", "", "file output of pprof memory profile")
-	realRand   = flag.Bool("crypt", false, "use crypto/rand as random source")
+	workers    = flag.Int("w", runtime.GOMAXPROCS(0), "concurrent workers")           // nolint:gochecknoglobals
+	addr       = flag.String("addr", "localhost", "target address")                   // nolint:gochecknoglobals
+	port       = flag.Int("port", stun.DefaultPort, "target port")                    // nolint:gochecknoglobals
+	duration   = flag.Duration("d", time.Minute, "benchmark duration")                // nolint:gochecknoglobals
+	network    = flag.String("net", "udp", "protocol to use (udp, tcp)")              // nolint:gochecknoglobals
+	cpuProfile = flag.String("cpuprofile", "", "file output of pprof cpu profile")    // nolint:gochecknoglobals
+	memProfile = flag.String("memprofile", "", "file output of pprof memory profile") // nolint:gochecknoglobals
+	realRand   = flag.Bool("crypt", false, "use crypto/rand as random source")        // nolint:gochecknoglobals
 )
 
-func main() {
+func main() { // nolint:gocognit
 	flag.Parse()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
@@ -59,7 +60,7 @@ func main() {
 	if *memProfile != "" {
 		f, createErr := os.Create(*memProfile)
 		if createErr != nil {
-			log.Fatalln("failed to create memory profile output file:", createErr)
+			log.Panicln("failed to create memory profile output file:", createErr)
 		}
 		defer func() {
 			if pprofErr := pprof.Lookup("heap").WriteTo(f, 1); pprofErr != nil {
@@ -85,13 +86,13 @@ func main() {
 	for i := 0; i < *workers; i++ {
 		wConn, connErr := net.Dial(*network, fmt.Sprintf("%s:%d", *addr, *port))
 		if connErr != nil {
-			log.Fatalln("failed to dial:", wConn)
+			log.Panicln("failed to dial:", wConn)
 		}
 		c, clientErr := stun.NewClient(wConn)
 		if clientErr != nil {
-			log.Fatalln("failed to create client:", clientErr)
+			log.Panicln("failed to create client:", clientErr)
 		}
-		go func(client *stun.Client) {
+		go func() {
 			req := stun.New()
 			for {
 				if *realRand {
@@ -99,14 +100,14 @@ func main() {
 						log.Fatal("rand.Read failed:", err)
 					}
 				} else {
-					mathRand.Read(req.TransactionID[:])
+					mathRand.Read(req.TransactionID[:]) // nolint:gosec
 				}
 				req.Type = stun.BindingRequest
 				req.WriteHeader()
 				atomic.AddInt64(&request, 1)
 				if doErr := c.Do(req, func(event stun.Event) {
 					if event.Error != nil {
-						if event.Error != stun.ErrTransactionTimeOut {
+						if !errors.Is(event.Error, stun.ErrTransactionTimeOut) {
 							log.Println("event.Error error:", event.Error)
 						}
 						atomic.AddInt64(&requestErr, 1)
@@ -114,13 +115,13 @@ func main() {
 					}
 					atomic.AddInt64(&requestOK, 1)
 				}); doErr != nil {
-					if doErr != stun.ErrTransactionExists {
+					if !errors.Is(doErr, stun.ErrTransactionExists) {
 						log.Println("Do() error:", doErr)
 					}
 					atomic.AddInt64(&requestErr, 1)
 				}
 			}
-		}(c)
+		}()
 	}
 	fmt.Println("workers started")
 	<-ctx.Done()
