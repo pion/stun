@@ -165,7 +165,7 @@ func listen(conn *net.UDPConn) <-chan []byte {
 }
 
 func sendBindingRequest(conn *net.UDPConn, addr *net.UDPAddr) error {
-	m := stun.MustBuild(stun.TransactionID(), stun.BindingRequest)
+	m := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
 
 	err := send(m.Raw, conn, addr)
 	if err != nil {

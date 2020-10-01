@@ -79,7 +79,7 @@ func MappingTests(addrStr string) error {
 
 	// Test I: Regular binding request
 	log.Info("Mapping Test I: Regular binding request")
-	request := stun.MustBuild(stun.TransactionID(), stun.BindingRequest)
+	request := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
 
 	resp, err := mapTestConn.roundTrip(request, mapTestConn.RemoteAddr)
 	if err != nil {
@@ -153,7 +153,7 @@ func FilteringTests(addrStr string) error {
 
 	// Test I: Regular binding request
 	log.Info("Filtering Test I: Regular binding request")
-	request := stun.MustBuild(stun.TransactionID(), stun.BindingRequest)
+	request := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
 
 	resp, err := mapTestConn.roundTrip(request, mapTestConn.RemoteAddr)
 	if err != nil || errors.Is(err, ErrTimedOut) {
