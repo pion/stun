@@ -752,7 +752,7 @@ func TestAllocations(t *testing.T) {
 	// Not testing AttrMessageIntegrity because it allocates.
 	setters := []Setter{
 		BindingRequest,
-		TransactionID(),
+		TransactionID,
 		Fingerprint,
 		NewNonce("nonce"),
 		NewUsername("username"),
@@ -788,7 +788,7 @@ func TestAllocationsGetters(t *testing.T) {
 	// Not testing AttrMessageIntegrity because it allocates.
 	setters := []Setter{
 		BindingRequest,
-		TransactionID(),
+		TransactionID,
 		NewNonce("nonce"),
 		NewUsername("username"),
 		XORMappedAddress{

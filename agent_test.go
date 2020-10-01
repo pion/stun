@@ -204,7 +204,7 @@ func BenchmarkAgent_Process(b *testing.B) {
 		}
 	}()
 	b.ReportAllocs()
-	m := MustBuild(TransactionID())
+	m := MustBuild(TransactionID)
 	for i := 0; i < b.N; i++ {
 		if err := a.Process(m); err != nil {
 			b.Fatal(err)

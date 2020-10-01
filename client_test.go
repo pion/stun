@@ -157,7 +157,7 @@ func TestClosedOrPanic(t *testing.T) {
 }
 
 func TestClient_Start(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	write := make(chan struct{}, 1)
 	read := make(chan struct{}, 1)
@@ -196,7 +196,7 @@ func TestClient_Start(t *testing.T) {
 		if err := c.Close(); err == nil {
 			t.Error("second close should fail")
 		}
-		if err := c.Do(MustBuild(TransactionID()), nil); err == nil {
+		if err := c.Do(MustBuild(TransactionID), nil); err == nil {
 			t.Error("Do after Close should fail")
 		}
 	}()
@@ -230,7 +230,7 @@ func TestClient_Start(t *testing.T) {
 }
 
 func TestClient_Do(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	conn := &testConnection{
 		b: response.Raw,
@@ -249,7 +249,7 @@ func TestClient_Do(t *testing.T) {
 		if err := c.Close(); err == nil {
 			t.Error("second close should fail")
 		}
-		if err := c.Do(MustBuild(TransactionID()), nil); err == nil {
+		if err := c.Do(MustBuild(TransactionID), nil); err == nil {
 			t.Error("Do after Close should fail")
 		}
 	}()
@@ -263,7 +263,7 @@ func TestClient_Do(t *testing.T) {
 	}); err != nil {
 		t.Error(err)
 	}
-	m = MustBuild(TransactionID())
+	m = MustBuild(TransactionID)
 	if err := c.Do(m, nil); err != nil {
 		t.Error(err)
 	}
@@ -335,7 +335,7 @@ func (a errorAgent) Stop([TransactionIDSize]byte) error {
 }
 
 func TestClientAgentError(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	conn := &testConnection{
 		b: response.Raw,
@@ -384,7 +384,7 @@ func TestClientConnErr(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	m := MustBuild(TransactionID())
+	m := MustBuild(TransactionID)
 	if err := c.Do(m, nil); err == nil {
 		t.Error("error expected")
 	}
@@ -412,7 +412,7 @@ func TestClientConnErrStopErr(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	m := MustBuild(TransactionID())
+	m := MustBuild(TransactionID)
 	if err := c.Do(m, NoopHandler()); err == nil {
 		t.Error("error expected")
 	}
@@ -470,7 +470,7 @@ func TestDialError(t *testing.T) {
 }
 
 func TestClientCloseErr(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	conn := &testConnection{
 		b: response.Raw,
@@ -494,7 +494,7 @@ func TestClientCloseErr(t *testing.T) {
 }
 
 func TestWithNoConnClose(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	closeErr := errClientCloseError
 	conn := &testConnection{
@@ -548,7 +548,7 @@ func (a *gcWaitAgent) Start(id [TransactionIDSize]byte, deadline time.Time) erro
 }
 
 func TestClientGC(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	conn := &testConnection{
 		b: response.Raw,
@@ -614,7 +614,7 @@ func TestClientFinalizer(t *testing.T) {
 	}
 	clientFinalizer(c)
 	clientFinalizer(c)
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	conn = &testConnection{
 		b: response.Raw,
@@ -738,7 +738,7 @@ func (n *manualAgent) Stop(id [TransactionIDSize]byte) error {
 }
 
 func TestClientRetransmission(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer connL.Close()
@@ -801,7 +801,7 @@ func TestClientRetransmission(t *testing.T) {
 }
 
 func testClientDoConcurrent(t *testing.T, concurrency int) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer connL.Close()
@@ -847,7 +847,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if doErr := c.Do(MustBuild(TransactionID(), BindingRequest), func(event Event) {
+			if doErr := c.Do(MustBuild(TransactionID, BindingRequest), func(event Event) {
 				if event.Error != nil {
 					t.Error("failed")
 				}
@@ -989,7 +989,7 @@ func TestClientClosedStart(t *testing.T) {
 }
 
 func TestWithNoRetransmit(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer connL.Close()
@@ -1052,7 +1052,7 @@ func (c callbackClock) Now() time.Time {
 }
 
 func TestClientRTOStartErr(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer connL.Close()
@@ -1164,7 +1164,7 @@ func TestClientRTOStartErr(t *testing.T) {
 }
 
 func TestClientRTOWriteErr(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer connL.Close()
@@ -1285,7 +1285,7 @@ func TestClientRTOWriteErr(t *testing.T) {
 }
 
 func TestClientRTOAgentErr(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer connL.Close()
@@ -1349,7 +1349,7 @@ func TestClientRTOAgentErr(t *testing.T) {
 }
 
 func TestClient_HandleProcessError(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer connL.Close()
@@ -1391,7 +1391,7 @@ func TestClient_HandleProcessError(t *testing.T) {
 }
 
 func TestClientImmediateTimeout(t *testing.T) {
-	response := MustBuild(TransactionID(), BindingSuccess)
+	response := MustBuild(TransactionID, BindingSuccess)
 	connL, connR := net.Pipe()
 	defer connL.Close()
 	collector := new(manualCollector)

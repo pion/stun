@@ -49,7 +49,7 @@ func TestMessage_Apply(t *testing.T) {
 		integrity = NewShortTermIntegrity("password")
 		decoded   = new(Message)
 	)
-	m, err := Build(BindingRequest, TransactionID(),
+	m, err := Build(BindingRequest, TransactionID,
 		NewUsername("username"),
 		NewNonce("nonce"),
 		NewRealm("example.org"),

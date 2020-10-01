@@ -48,6 +48,4 @@ func (transactionIDSetter) AddTo(m *Message) error {
 }
 
 // TransactionID is Setter for m.TransactionID.
-func TransactionID() Setter {
-	return transactionIDSetter{}
-}
+var TransactionID Setter = transactionIDSetter{} //nolint:gochecknoglobals
