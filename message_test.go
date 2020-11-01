@@ -625,8 +625,12 @@ func BenchmarkMessageFull(b *testing.B) {
 		IP: net.IPv4(213, 1, 223, 5),
 	}
 	for i := 0; i < b.N; i++ {
-		addAttr(b, m, addr)
-		addAttr(b, m, &s)
+		if err := addr.AddTo(m); err != nil {
+			b.Fatal(err)
+		}
+		if err := s.AddTo(m); err != nil {
+			b.Fatal(err)
+		}
 		m.WriteAttributes()
 		m.WriteHeader()
 		Fingerprint.AddTo(m) // nolint:errcheck,gosec
