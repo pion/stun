@@ -7,21 +7,16 @@ import ( // nolint:gci
 	"sync"
 )
 
-// setZeroes sets all bytes from b to zeroes.
-//
-// See https://github.com/golang/go/issues/5373
-func setZeroes(b []byte) {
-	for i := range b {
-		b[i] = 0
-	}
-}
-
 func (h *hmac) resetTo(key []byte) {
 	h.outer.Reset()
 	h.inner.Reset()
-	setZeroes(h.ipad)
-	setZeroes(h.opad)
-	if len(key) > h.blocksize {
+	blocksize := h.inner.BlockSize()
+
+	// Reset size and zero of ipad and opad.
+	h.ipad = append(h.ipad[:0], make([]byte, blocksize)...)
+	h.opad = append(h.opad[:0], make([]byte, blocksize)...)
+
+	if len(key) > blocksize {
 		// If key is too big, hash it.
 		h.outer.Write(key) // nolint:errcheck,gosec
 		key = h.outer.Sum(nil)
@@ -34,7 +29,9 @@ func (h *hmac) resetTo(key []byte) {
 	for i := range h.opad {
 		h.opad[i] ^= 0x5c
 	}
-	h.inner.Write(h.ipad) // nolint:errcheck,gosec
+	h.inner.Write(h.ipad) //nolint: errcheck,gosec
+
+	h.marshaled = false
 }
 
 var hmacSHA1Pool = &sync.Pool{ // nolint:gochecknoglobals
@@ -85,8 +82,8 @@ func PutSHA256(h hash.Hash) {
 //
 // Put and Acquire functions are internal functions to project, so
 // checking it via such assert is optimal.
-func assertHMACSize(h *hmac, size, blocksize int) { // nolint:unparam
-	if h.size != size || h.blocksize != blocksize {
-		panic("BUG: hmac size invalid") // nolint
+func assertHMACSize(h *hmac, size, blocksize int) { //nolint: unparam
+	if h.Size() != size || h.BlockSize() != blocksize {
+		panic("BUG: hmac size invalid")
 	}
 }
