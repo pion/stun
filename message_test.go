@@ -1003,3 +1003,32 @@ func BenchmarkDecode(b *testing.B) {
 		}
 	}
 }
+
+func TestMessage_MarshalBinary(t *testing.T) {
+	m := MustBuild(
+		NewSoftware("software"),
+		&XORMappedAddress{
+			IP: net.IPv4(213, 1, 223, 5),
+		},
+	)
+	data, err := m.MarshalBinary()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Reset m.Raw to check retention.
+	for i := range m.Raw {
+		m.Raw[i] = 0
+	}
+	if err := m.UnmarshalBinary(data); err != nil {
+		t.Fatal(err)
+	}
+
+	// Reset data to check retention.
+	for i := range data {
+		data[i] = 0
+	}
+	if err := m.Decode(); err != nil {
+		t.Fatal(err)
+	}
+}
