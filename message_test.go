@@ -1032,3 +1032,32 @@ func TestMessage_MarshalBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestMessage_GobDecode(t *testing.T) {
+	m := MustBuild(
+		NewSoftware("software"),
+		&XORMappedAddress{
+			IP: net.IPv4(213, 1, 223, 5),
+		},
+	)
+	data, err := m.GobEncode()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Reset m.Raw to check retention.
+	for i := range m.Raw {
+		m.Raw[i] = 0
+	}
+	if err := m.GobDecode(data); err != nil {
+		t.Fatal(err)
+	}
+
+	// Reset data to check retention.
+	for i := range data {
+		data[i] = 0
+	}
+	if err := m.Decode(); err != nil {
+		t.Fatal(err)
+	}
+}
