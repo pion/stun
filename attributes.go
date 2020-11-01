@@ -106,6 +106,15 @@ const (
 	AttrOrigin AttrType = 0x802F
 )
 
+// Attributes from RFC 8489 STUN.
+const (
+	AttrMessageIntegritySHA256 AttrType = 0x001C // MESSAGE-INTEGRITY-SHA256
+	AttrPasswordAlgorithm      AttrType = 0x001D // PASSWORD-ALGORITHM
+	AttrUserhash               AttrType = 0x001E // USERHASH
+	AttrPasswordAlgorithms     AttrType = 0x8002 // PASSWORD-ALGORITHMS
+	AttrAlternateDomain        AttrType = 0x8003 // ALTERNATE-DOMAIN
+)
+
 // Value returns uint16 representation of attribute type.
 func (t AttrType) Value() uint16 {
 	return uint16(t)
@@ -123,14 +132,6 @@ func attrNames() map[AttrType]string {
 		AttrXORMappedAddress:       "XOR-MAPPED-ADDRESS",
 		AttrSoftware:               "SOFTWARE",
 		AttrAlternateServer:        "ALTERNATE-SERVER",
-		AttrChangeRequest:          "CHANGE-REQUEST",
-		AttrPadding:                "PADDING",
-		AttrResponsePort:           "RESPONSE-PORT",
-		AttrCacheTimeout:           "CACHE-TIMEOUT",
-		AttrResponseOrigin:         "RESPONSE-ORIGIN",
-		AttrOtherAddress:           "OTHER-ADDRESS",
-		AttrSourceAddress:          "SOURCE-ADDRESS",
-		AttrChangedAddress:         "CHANGED-ADDRESS",
 		AttrFingerprint:            "FINGERPRINT",
 		AttrPriority:               "PRIORITY",
 		AttrUseCandidate:           "USE-CANDIDATE",
@@ -147,7 +148,11 @@ func attrNames() map[AttrType]string {
 		AttrReservationToken:       "RESERVATION-TOKEN",
 		AttrConnectionID:           "CONNECTION-ID",
 		AttrRequestedAddressFamily: "REQUESTED-ADDRESS-FAMILY",
-		AttrOrigin:                 "ORIGIN",
+		AttrMessageIntegritySHA256: "MESSAGE-INTEGRITY-SHA256",
+		AttrPasswordAlgorithm:      "PASSWORD-ALGORITHM",
+		AttrUserhash:               "USERHASH",
+		AttrPasswordAlgorithms:     "PASSWORD-ALGORITHMS",
+		AttrAlternateDomain:        "ALTERNATE-DOMAIN",
 	}
 }
 
