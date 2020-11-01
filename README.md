@@ -131,56 +131,57 @@ artifacts for build.
 Intel(R) Core(TM) i7-8700K:
 
 ```
-version: 1.16.5
+version: 1.22.2
 goos: linux
 goarch: amd64
 pkg: github.com/pion/stun
 PASS
 benchmark                                         iter       time/iter      throughput   bytes alloc        allocs
 ---------                                         ----       ---------      ----------   -----------        ------
-BenchmarkMappedAddress_AddTo-12               30000000     36.40 ns/op                        0 B/op   0 allocs/op
-BenchmarkAlternateServer_AddTo-12             50000000     36.70 ns/op                        0 B/op   0 allocs/op
-BenchmarkAgent_GC-12                            500000   2552.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkAgent_Process-12                     50000000     38.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_GetNotFound-12              200000000      6.90 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_Get-12                      200000000      7.61 ns/op                        0 B/op   0 allocs/op
-BenchmarkClient_Do-12                          2000000   1072.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkErrorCode_AddTo-12                   20000000     67.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkErrorCodeAttribute_AddTo-12          30000000     52.20 ns/op                        0 B/op   0 allocs/op
-BenchmarkErrorCodeAttribute_GetFrom-12       100000000     12.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkFingerprint_AddTo-12                 20000000    102.00 ns/op     430.08 MB/s        0 B/op   0 allocs/op
-BenchmarkFingerprint_Check-12                 30000000     54.80 ns/op     948.38 MB/s        0 B/op   0 allocs/op
-BenchmarkBuildOverhead/Build-12                5000000    333.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkBuildOverhead/BuildNonPointer-12      3000000    536.00 ns/op                      100 B/op   4 allocs/op
-BenchmarkBuildOverhead/Raw-12                 10000000    181.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessageIntegrity_AddTo-12             1000000   1053.00 ns/op      18.98 MB/s        0 B/op   0 allocs/op
-BenchmarkMessageIntegrity_Check-12             1000000   1135.00 ns/op      28.17 MB/s        0 B/op   0 allocs/op
-BenchmarkMessage_Write-12                    100000000     27.70 ns/op    1011.09 MB/s        0 B/op   0 allocs/op
-BenchmarkMessageType_Value-12               2000000000      0.49 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_WriteTo-12                  100000000     12.80 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_ReadFrom-12                  50000000     25.00 ns/op     801.19 MB/s        0 B/op   0 allocs/op
-BenchmarkMessage_ReadBytes-12                100000000     18.00 ns/op    1113.03 MB/s        0 B/op   0 allocs/op
-BenchmarkIsMessage-12                       2000000000      1.08 ns/op   18535.57 MB/s        0 B/op   0 allocs/op
-BenchmarkMessage_NewTransactionID-12           2000000    673.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessageFull-12                        5000000    316.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessageFullHardcore-12               20000000     88.90 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_WriteHeader-12              200000000      8.18 ns/op                        0 B/op   0 allocs/op
-BenchmarkMessage_CloneTo-12                   30000000     37.90 ns/op    1795.32 MB/s        0 B/op   0 allocs/op
-BenchmarkMessage_AddTo-12                    300000000      4.77 ns/op                        0 B/op   0 allocs/op
-BenchmarkDecode-12                           100000000     22.00 ns/op                        0 B/op   0 allocs/op
-BenchmarkUsername_AddTo-12                    50000000     23.20 ns/op                        0 B/op   0 allocs/op
-BenchmarkUsername_GetFrom-12                 100000000     17.90 ns/op                        0 B/op   0 allocs/op
-BenchmarkNonce_AddTo-12                       50000000     34.40 ns/op                        0 B/op   0 allocs/op
-BenchmarkNonce_AddTo_BadLength-12            200000000      8.29 ns/op                        0 B/op   0 allocs/op
-BenchmarkNonce_GetFrom-12                    100000000     17.50 ns/op                        0 B/op   0 allocs/op
-BenchmarkUnknownAttributes/AddTo-12           30000000     48.10 ns/op                        0 B/op   0 allocs/op
-BenchmarkUnknownAttributes/GetFrom-12        100000000     20.90 ns/op                        0 B/op   0 allocs/op
-BenchmarkXOR-12                               50000000     25.80 ns/op   39652.86 MB/s        0 B/op   0 allocs/op
-BenchmarkXORSafe-12                            3000000    515.00 ns/op    1988.04 MB/s        0 B/op   0 allocs/op
-BenchmarkXORFast-12                           20000000     73.40 ns/op   13959.30 MB/s        0 B/op   0 allocs/op
-BenchmarkXORMappedAddress_AddTo-12            20000000     56.70 ns/op                        0 B/op   0 allocs/op
-BenchmarkXORMappedAddress_GetFrom-12          50000000     37.40 ns/op                        0 B/op   0 allocs/op
-ok  	github.com/pion/stun	76.868s
+BenchmarkMappedAddress_AddTo-12               32489450     38.30 ns/op                        0 B/op   0 allocs/op
+BenchmarkAlternateServer_AddTo-12             31230991     39.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkAgent_GC-12                            431390   2918.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkAgent_Process-12                     35901940     36.20 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_GetNotFound-12              242004358      5.19 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_Get-12                      230520343      5.21 ns/op                        0 B/op   0 allocs/op
+BenchmarkClient_Do-12                          1282231    943.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCode_AddTo-12                   16318916     75.50 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCodeAttribute_AddTo-12          21584140     54.80 ns/op                        0 B/op   0 allocs/op
+BenchmarkErrorCodeAttribute_GetFrom-12       100000000     11.10 ns/op                        0 B/op   0 allocs/op
+BenchmarkFingerprint_AddTo-12                 19368768     64.00 ns/op     687.81 MB/s        0 B/op   0 allocs/op
+BenchmarkFingerprint_Check-12                 24167007     49.10 ns/op    1057.99 MB/s        0 B/op   0 allocs/op
+BenchmarkBuildOverhead/Build-12                5486252    224.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkBuildOverhead/BuildNonPointer-12      2496544    517.00 ns/op                      100 B/op   4 allocs/op
+BenchmarkBuildOverhead/Raw-12                  6652118    181.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_ForEach-12                   28254212     35.90 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageIntegrity_AddTo-12             1000000   1179.00 ns/op      16.96 MB/s        0 B/op   0 allocs/op
+BenchmarkMessageIntegrity_Check-12              975954   1219.00 ns/op      26.24 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_Write-12                     41040598     30.40 ns/op     922.13 MB/s        0 B/op   0 allocs/op
+BenchmarkMessageType_Value-12               1000000000      0.53 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_WriteTo-12                   94942935     11.30 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_ReadFrom-12                  43437718     29.30 ns/op     682.87 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_ReadBytes-12                 74693397     15.90 ns/op    1257.42 MB/s        0 B/op   0 allocs/op
+BenchmarkIsMessage-12                       1000000000      1.20 ns/op   16653.64 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_NewTransactionID-12            521121   2450.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageFull-12                        5389495    221.00 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessageFullHardcore-12               12715876     94.40 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_WriteHeader-12              100000000     11.60 ns/op                        0 B/op   0 allocs/op
+BenchmarkMessage_CloneTo-12                   30199020     41.80 ns/op    1626.66 MB/s        0 B/op   0 allocs/op
+BenchmarkMessage_AddTo-12                    415257625      2.97 ns/op                        0 B/op   0 allocs/op
+BenchmarkDecode-12                            49573747     23.60 ns/op                        0 B/op   0 allocs/op
+BenchmarkUsername_AddTo-12                    56282674     22.50 ns/op                        0 B/op   0 allocs/op
+BenchmarkUsername_GetFrom-12                 100000000     10.10 ns/op                        0 B/op   0 allocs/op
+BenchmarkNonce_AddTo-12                       39419097     35.80 ns/op                        0 B/op   0 allocs/op
+BenchmarkNonce_AddTo_BadLength-12            196291666      6.04 ns/op                        0 B/op   0 allocs/op
+BenchmarkNonce_GetFrom-12                    120857732      9.93 ns/op                        0 B/op   0 allocs/op
+BenchmarkUnknownAttributes/AddTo-12           28881430     37.20 ns/op                        0 B/op   0 allocs/op
+BenchmarkUnknownAttributes/GetFrom-12         64907534     19.80 ns/op                        0 B/op   0 allocs/op
+BenchmarkXOR-12                               32868506     32.20 ns/op   31836.66 MB/s
+BenchmarkXORSafe-12                            5185776    234.00 ns/op    4378.74 MB/s
+BenchmarkXORFast-12                           30975679     32.50 ns/op   31525.28 MB/s
+BenchmarkXORMappedAddress_AddTo-12            21518028     54.50 ns/op                        0 B/op   0 allocs/op
+BenchmarkXORMappedAddress_GetFrom-12          35597667     34.40 ns/op                        0 B/op   0 allocs/op
+ok      github.com/pion/stun   60.973s
 ```
 
 ### License
