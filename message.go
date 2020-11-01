@@ -73,6 +73,32 @@ type Message struct {
 	Raw           []byte
 }
 
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (m Message) MarshalBinary() (data []byte, err error) {
+	// We can't return m.Raw, allocation is expected by implicit interface
+	// contract induced by other implementations.
+	b := make([]byte, len(m.Raw))
+	copy(b, m.Raw)
+	return b, nil
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (m *Message) UnmarshalBinary(data []byte) error {
+	// We can't retain data, copy is expected by interface contract.
+	m.Raw = append(m.Raw[:0], data...)
+	return m.Decode()
+}
+
+// GobEncode implements the gob.GobEncoder interface.
+func (m Message) GobEncode() ([]byte, error) {
+	return m.MarshalBinary()
+}
+
+// GobDecode implements the gob.GobDecoder interface.
+func (m *Message) GobDecode(data []byte) error {
+	return m.UnmarshalBinary(data)
+}
+
 // AddTo sets b.TransactionID to m.TransactionID.
 //
 // Implements Setter to aid in crafting responses.
