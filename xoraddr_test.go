@@ -19,7 +19,7 @@ func BenchmarkXORMappedAddress_AddTo(b *testing.B) {
 	ip := net.ParseIP("192.168.1.32")
 	for i := 0; i < b.N; i++ {
 		addr := &XORMappedAddress{IP: ip, Port: 3654}
-		addr.AddTo(m) // nolint:errcheck
+		addr.AddTo(m) // nolint:errcheck,gosec
 		m.Reset()
 	}
 }
@@ -106,7 +106,7 @@ func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
 
 	addr.IP = expectedIP
 	addr.Port = expectedPort
-	addr.AddTo(m) // nolint:errcheck
+	addr.AddTo(m) // nolint:errcheck,gosec
 	m.WriteHeader()
 
 	mRes := New()
@@ -164,7 +164,7 @@ func TestXORMappedAddress_AddTo_IPv6(t *testing.T) {
 		IP:   net.ParseIP("fe80::dc2b:44ff:fe20:6009"),
 		Port: 21254,
 	}
-	addr.AddTo(m) // nolint:errcheck
+	addr.AddTo(m) // nolint:errcheck,gosec
 	m.WriteHeader()
 
 	mRes := New()

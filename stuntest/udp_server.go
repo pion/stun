@@ -1,3 +1,4 @@
+// Package stuntest contains helpers for testing STUN clients
 package stuntest
 
 import (

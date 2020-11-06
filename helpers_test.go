@@ -19,14 +19,14 @@ func BenchmarkBuildOverhead(b *testing.B) {
 		b.ReportAllocs()
 		m := new(Message)
 		for i := 0; i < b.N; i++ {
-			m.Build(&t, &username, &nonce, &realm, &Fingerprint) // nolint:errcheck
+			m.Build(&t, &username, &nonce, &realm, &Fingerprint) // nolint:errcheck,gosec
 		}
 	})
 	b.Run("BuildNonPointer", func(b *testing.B) {
 		b.ReportAllocs()
 		m := new(Message)
 		for i := 0; i < b.N; i++ {
-			m.Build(t, username, nonce, realm, Fingerprint) // nolint:errcheck // nolint:errcheck
+			m.Build(t, username, nonce, realm, Fingerprint) // nolint:errcheck,gosec // nolint:errcheck,gosec
 		}
 	})
 	b.Run("Raw", func(b *testing.B) {
@@ -36,10 +36,10 @@ func BenchmarkBuildOverhead(b *testing.B) {
 			m.Reset()
 			m.WriteHeader()
 			m.SetType(t)
-			username.AddTo(m)    // nolint:errcheck
-			nonce.AddTo(m)       // nolint:errcheck
-			realm.AddTo(m)       // nolint:errcheck
-			Fingerprint.AddTo(m) // nolint:errcheck
+			username.AddTo(m)    // nolint:errcheck,gosec
+			nonce.AddTo(m)       // nolint:errcheck,gosec
+			realm.AddTo(m)       // nolint:errcheck,gosec
+			Fingerprint.AddTo(m) // nolint:errcheck,gosec
 		}
 	})
 }

@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-const wordSize = int(unsafe.Sizeof(uintptr(0)))
+const wordSize = int(unsafe.Sizeof(uintptr(0))) // nolint: gosec
 
 var supportsUnaligned = runtime.GOARCH == "386" || runtime.GOARCH == "amd64" // nolint:gochecknoglobals
 
@@ -23,9 +23,9 @@ func fastXORBytes(dst, a, b []byte) int {
 
 	w := n / wordSize
 	if w > 0 {
-		dw := *(*[]uintptr)(unsafe.Pointer(&dst))
-		aw := *(*[]uintptr)(unsafe.Pointer(&a))
-		bw := *(*[]uintptr)(unsafe.Pointer(&b))
+		dw := *(*[]uintptr)(unsafe.Pointer(&dst)) // nolint: gosec
+		aw := *(*[]uintptr)(unsafe.Pointer(&a))   // nolint: gosec
+		bw := *(*[]uintptr)(unsafe.Pointer(&b))   // nolint: gosec
 		for i := 0; i < w; i++ {
 			dw[i] = aw[i] ^ bw[i]
 		}

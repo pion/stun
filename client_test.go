@@ -83,7 +83,12 @@ func BenchmarkClient_Do(b *testing.B) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
+
 	noopF := func(event Event) {
 		// pass
 	}
@@ -94,7 +99,7 @@ func BenchmarkClient_Do(b *testing.B) {
 			}
 		}()
 		m := New()
-		m.NewTransactionID() // nolint:errcheck
+		m.NewTransactionID() // nolint:errcheck,gosec
 		m.Encode()
 		for pb.Next() {
 			if err := client.Do(m, noopF); err != nil {
@@ -741,7 +746,11 @@ func TestClientRetransmission(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
@@ -804,7 +813,11 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
@@ -992,7 +1005,11 @@ func TestWithNoRetransmit(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
@@ -1055,7 +1072,11 @@ func TestClientRTOStartErr(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	shouldWait := false
 	shouldWaitMux := new(sync.RWMutex)
@@ -1167,7 +1188,11 @@ func TestClientRTOWriteErr(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	shouldWait := false
 	shouldWaitMux := new(sync.RWMutex)
@@ -1222,7 +1247,9 @@ func TestClientRTOWriteErr(t *testing.T) {
 				t.Log("clock locked")
 				<-clockLocked
 				t.Log("closing connection")
-				connL.Close()
+				if closeErr := connL.Close(); closeErr != nil {
+					panic(closeErr)
+				}
 				t.Log("connection closed, unlocking clock")
 				clockWait <- struct{}{}
 				t.Log("clock unlocked")
@@ -1288,7 +1315,11 @@ func TestClientRTOAgentErr(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	clock := callbackClock(time.Now)
 	agent := &manualAgent{}
@@ -1352,7 +1383,11 @@ func TestClient_HandleProcessError(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	clock := callbackClock(time.Now)
 	agent := &manualAgent{}
@@ -1393,7 +1428,11 @@ func TestClient_HandleProcessError(t *testing.T) {
 func TestClientImmediateTimeout(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	connL, connR := net.Pipe()
-	defer connL.Close()
+	defer func() {
+		if closeErr := connL.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
 	rto := time.Second * 1
@@ -1439,7 +1478,7 @@ func TestClientImmediateTimeout(t *testing.T) {
 		}
 		gotReads <- struct{}{}
 	}()
-	c.Start(MustBuild(response, BindingRequest), func(e Event) { // nolint:errcheck
+	c.Start(MustBuild(response, BindingRequest), func(e Event) { // nolint:errcheck,gosec
 		if errors.Is(e.Error, ErrTransactionTimeOut) {
 			t.Error("unexpected error")
 		}
