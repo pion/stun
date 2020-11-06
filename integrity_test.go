@@ -21,7 +21,7 @@ func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 		if err := i.AddTo(m); err != nil {
 			t.Error(err)
 		}
-		NewSoftware("software").AddTo(m) // nolint:errcheck
+		NewSoftware("software").AddTo(m) // nolint:errcheck,gosec
 		m.WriteHeader()
 		dM := new(Message)
 		dM.Raw = m.Raw
@@ -42,7 +42,7 @@ func TestMessageIntegrityWithFingerprint(t *testing.T) {
 	m := new(Message)
 	m.TransactionID = [TransactionIDSize]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 	m.WriteHeader()
-	NewSoftware("software").AddTo(m) // nolint:errcheck
+	NewSoftware("software").AddTo(m) // nolint:errcheck,gosec
 	i := NewShortTermIntegrity("pwd")
 	if i.String() != "KEY: 0x707764" {
 		t.Error("bad string", i)
@@ -81,7 +81,7 @@ func TestMessageIntegrity(t *testing.T) {
 func TestMessageIntegrityBeforeFingerprint(t *testing.T) {
 	m := new(Message)
 	m.WriteHeader()
-	Fingerprint.AddTo(m) // nolint:errcheck
+	Fingerprint.AddTo(m) // nolint:errcheck,gosec
 	i := NewShortTermIntegrity("password")
 	if err := i.AddTo(m); err == nil {
 		t.Error("should error")
@@ -106,7 +106,7 @@ func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 func BenchmarkMessageIntegrity_Check(b *testing.B) {
 	m := new(Message)
 	m.Raw = make([]byte, 0, 1024)
-	NewSoftware("software").AddTo(m) // nolint:errcheck
+	NewSoftware("software").AddTo(m) // nolint:errcheck,gosec
 	integrity := NewShortTermIntegrity("password")
 	b.ReportAllocs()
 	m.WriteHeader()

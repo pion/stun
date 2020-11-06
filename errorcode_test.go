@@ -13,7 +13,7 @@ func BenchmarkErrorCode_AddTo(b *testing.B) {
 	m := New()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		CodeStaleNonce.AddTo(m) // nolint:errcheck
+		CodeStaleNonce.AddTo(m) // nolint:errcheck,gosec
 		m.Reset()
 	}
 }
@@ -26,7 +26,7 @@ func BenchmarkErrorCodeAttribute_AddTo(b *testing.B) {
 		Reason: []byte("not found!"),
 	}
 	for i := 0; i < b.N; i++ {
-		a.AddTo(m) // nolint:errcheck
+		a.AddTo(m) // nolint:errcheck,gosec
 		m.Reset()
 	}
 }
@@ -38,9 +38,9 @@ func BenchmarkErrorCodeAttribute_GetFrom(b *testing.B) {
 		Code:   404,
 		Reason: []byte("not found!"),
 	}
-	a.AddTo(m) // nolint:errcheck
+	a.AddTo(m) // nolint:errcheck,gosec
 	for i := 0; i < b.N; i++ {
-		a.GetFrom(m) // nolint:errcheck
+		a.GetFrom(m) // nolint:errcheck,gosec
 	}
 }
 
@@ -64,7 +64,7 @@ func TestMessage_AddErrorCode(t *testing.T) {
 	copy(m.TransactionID[:], transactionID)
 	expectedCode := ErrorCode(438)
 	expectedReason := "Stale Nonce"
-	CodeStaleNonce.AddTo(m) // nolint:errcheck
+	CodeStaleNonce.AddTo(m) // nolint:errcheck,gosec
 	m.WriteHeader()
 
 	mRes := New()

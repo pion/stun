@@ -130,7 +130,7 @@ func TestAgent_GC(t *testing.T) {
 	)
 	gcDeadline := deadline.Add(-time.Second)
 	deadlineNotGC := gcDeadline.AddDate(0, 0, -1)
-	a.SetHandler(func(e Event) { // nolint:errcheck
+	a.SetHandler(func(e Event) { // nolint:errcheck,gosec
 		id := e.TransactionID
 		shouldTimeOut, found := shouldTimeOutID[id]
 		if !found {

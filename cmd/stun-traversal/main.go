@@ -35,7 +35,9 @@ func main() { // nolint:gocognit
 		log.Fatalln("dial:", err)
 	}
 
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	log.Printf("Listening on %s\n", conn.LocalAddr())
 
@@ -122,7 +124,7 @@ func main() { // nolint:gocognit
 			}
 
 		case <-quit:
-			conn.Close()
+			_ = conn.Close()
 		}
 
 		if quit == nil && gotPong && sentPong {
