@@ -58,7 +58,7 @@ func (h *hmac) Sum(in []byte) []byte {
 
 	if h.marshaled {
 		if err := h.outer.(marshalable).UnmarshalBinary(h.opad); err != nil {
-			panic(err)
+			panic(err) // nolint
 		}
 	} else {
 		h.outer.Reset()
@@ -78,7 +78,7 @@ func (h *hmac) BlockSize() int { return h.inner.BlockSize() }
 func (h *hmac) Reset() {
 	if h.marshaled {
 		if err := h.inner.(marshalable).UnmarshalBinary(h.ipad); err != nil {
-			panic(err)
+			panic(err) // nolint
 		}
 		return
 	}
