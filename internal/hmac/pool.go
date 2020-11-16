@@ -84,6 +84,6 @@ func PutSHA256(h hash.Hash) {
 // checking it via such assert is optimal.
 func assertHMACSize(h *hmac, size, blocksize int) { //nolint: unparam
 	if h.Size() != size || h.BlockSize() != blocksize {
-		panic("BUG: hmac size invalid")
+		panic("BUG: hmac size invalid") // nolint
 	}
 }
