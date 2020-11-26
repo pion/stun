@@ -25,6 +25,7 @@ jobs:
         run: |
           go test \
           -coverprofile=cover.out -covermode=atomic \
+          -bench=. \
           ${TEST_EXTRA_ARGS:-} \
           -v -race ./...
 
