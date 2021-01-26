@@ -19,7 +19,8 @@ func main() {
 	if addr == "" {
 		addr = "stun.l.google.com:19302"
 	}
-	c, err := stun.Dial("udp", addr)
+	// we only try the first address, so restrict ourselves to IPv4
+	c, err := stun.Dial("udp4", addr)
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
