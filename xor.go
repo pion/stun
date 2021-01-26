@@ -11,7 +11,7 @@ import (
 
 const wordSize = int(unsafe.Sizeof(uintptr(0))) // nolint: gosec
 
-var supportsUnaligned = runtime.GOARCH == "386" || runtime.GOARCH == "amd64" // nolint:gochecknoglobals
+var supportsUnaligned = runtime.GOARCH == "386" || runtime.GOARCH == "amd64" || runtime.GOARCH == "arm64" // nolint:gochecknoglobals
 
 // fastXORBytes xors in bulk. It only works on architectures that
 // support unaligned read/writes.
