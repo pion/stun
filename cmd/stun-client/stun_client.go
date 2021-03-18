@@ -26,7 +26,7 @@ func main() {
 	}
 	if err = c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
-			log.Fatalln(err)
+			log.Fatalln(res.Error)
 		}
 		var xorAddr stun.XORMappedAddress
 		if getErr := xorAddr.GetFrom(res.Message); getErr != nil {
