@@ -49,7 +49,7 @@ Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contribu
 * [David-dp-](https://github.com/David-dp-)
 * [ZHENK](https://github.com/scorpionknifes)
 * [Juliusz Chroboczek](https://github.com/jech)
-
+* [Jerry Tao](https://github.com/jerry-tao)
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
 protocol and [client](https://pkg.go.dev/github.com/pion/stun#Client) with no external dependencies and zero allocations in hot paths.
