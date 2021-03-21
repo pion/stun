@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ["1.14", "1.15"]
+        go: ["1.15", "1.16"]
       fail-fast: false
     name: Go ${{ matrix.go }}
     steps:
@@ -39,6 +39,7 @@ jobs:
       - name: Run test
         run: |
           go-acc -o cover.out ./... -- \
+          -bench=. \
           -v -race
 
       - uses: codecov/codecov-action@v1
@@ -52,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ["1.14", "1.15"]
+        go: ["1.15", "1.16"]
       fail-fast: false
     name: Go i386 ${{ matrix.go }}
     steps:
@@ -108,7 +109,7 @@ jobs:
       - name: Download Go
         run: curl -sSfL https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | tar -C ~ -xzf -
         env:
-          GO_VERSION: 1.15
+          GO_VERSION: 1.16
 
       - name: Set Go Root
         run: echo "GOROOT=${HOME}/go" >> $GITHUB_ENV
