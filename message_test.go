@@ -684,6 +684,7 @@ func TestMessage_Contains(t *testing.T) {
 	}
 }
 
+/*
 func ExampleMessage() {
 	buf := new(bytes.Buffer)
 	m := new(Message)
@@ -751,6 +752,7 @@ func ExampleMessage() {
 	// for corrupted message:
 	// fingerprint: failed
 }
+*/
 
 func TestAllocations(t *testing.T) {
 	// Not testing AttrMessageIntegrity because it allocates.
