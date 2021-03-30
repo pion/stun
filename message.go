@@ -120,7 +120,11 @@ func (m *Message) NewTransactionID() error {
 
 func (m *Message) String() string {
 	tID := base64.StdEncoding.EncodeToString(m.TransactionID[:])
-	return fmt.Sprintf("%s l=%d attrs=%d id=%s", m.Type, m.Length, len(m.Attributes), tID)
+	aInfo := ""
+	for k, a := range m.Attributes {
+		aInfo += fmt.Sprintf("attr%d=%s ", k, a.Type)
+	}
+	return fmt.Sprintf("%s l=%d attrs=%d id=%s, %s", m.Type, m.Length, len(m.Attributes), tID, aInfo)
 }
 
 // Reset resets Message, attributes and underlying buffer length.

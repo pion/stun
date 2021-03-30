@@ -741,7 +741,7 @@ func ExampleMessage() {
 	}
 
 	// Output:
-	// Binding request l=48 attrs=3 id=AQIDBAUGBwgJAAEA buff length: 68
+	// Binding request l=48 attrs=3 id=AQIDBAUGBwgJAAEA, attr0=SOFTWARE attr1=MESSAGE-INTEGRITY attr2=FINGERPRINT  buff length: 68
 	// wrote 68 err <nil>
 	// has software: true
 	// has nonce: false
