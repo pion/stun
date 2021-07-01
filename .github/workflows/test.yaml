@@ -40,6 +40,7 @@ jobs:
       - name: Run test
         run: |
           go-acc -o cover.out ./... -- \
+          -bench=. \
           -v -race
 
       - uses: codecov/codecov-action@v1
