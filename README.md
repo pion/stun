@@ -31,26 +31,6 @@ If you need commercial support or don't want to use public methods you can conta
 ### Contributing
 Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contributing)** to join the group of amazing people making this project possible:
 
-* [Sean DuBois](https://github.com/Sean-Der) - *Original Author*
-* [Raphael Randschau](https://github.com/nicolai86) - *STUN client*
-* [Michiel De Backker](https://github.com/backkem) - *Minor fixes*
-* [Y.Horie](https://github.com/u5surf) - *Fix lint issues*
-* [Aleksandr Razumov](https://github.com/ernado) - *The v0.3 version*
-* [songjiayang](https://github.com/songjiayang)
-* [Adam Kiss](https://github.com/masterada)
-* [Moises Marangoni](https://github.com/Moisesbr)
-* [Yutaka Takeda](https://github.com/enobufs)
-* [Hugo Arregui](https://github.com/hugoArregui)
-* [Maanas Royy](https://github.com/maanas)
-* [Atsushi Watanabe](https://github.com/at-wat)
-* [Cecylia Bocovich](https://github.com/cohosh)
-* [Christian Muehlhaeuser](https://github.com/muesli)
-* [Will LE](https://github.com/bixycler)
-* [David-dp-](https://github.com/David-dp-)
-* [ZHENK](https://github.com/scorpionknifes)
-* [Juliusz Chroboczek](https://github.com/jech)
-* [Jerry Tao](https://github.com/jerry-tao)
-* [jinleileiking](https://github.com/jinleileiking)
 # STUN
 Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
 protocol and [client](https://pkg.go.dev/github.com/pion/stun#Client) with no external dependencies and zero allocations in hot paths.
