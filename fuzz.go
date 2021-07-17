@@ -21,16 +21,16 @@ func FuzzMessage(data []byte) int {
 	}
 	m2 := New()
 	if _, err := m2.Write(m.Raw); err != nil {
-		fatal(err)
+		panic(err) // nolint
 	}
 	if m2.TransactionID != m.TransactionID {
-		fatal("transaction ID mismatch")
+		panic("transaction ID mismatch") // nolint
 	}
 	if m2.Type != m.Type {
-		fatal("type missmatch")
+		panic("type missmatch") // nolint
 	}
 	if len(m2.Attributes) != len(m.Attributes) {
-		fatal("attributes length missmatch")
+		panic("attributes length missmatch") // nolint
 	}
 	return 1
 }
@@ -43,12 +43,12 @@ func FuzzType(data []byte) int {
 	t.ReadValue(v)
 	v2 := t.Value()
 	if v != v2 {
-		fatal("v != v2")
+		panic("v != v2") // nolint
 	}
 	t2 := MessageType{}
 	t2.ReadValue(v2)
 	if t2 != t {
-		fatal("t2 != t")
+		panic("t2 != t") // nolint
 	}
 	return 0
 }
@@ -109,7 +109,7 @@ func FuzzSetters(data []byte) int {
 	err := a.g.GetFrom(m1)
 	if errors.Is(err, ErrAttributeNotFound) {
 		fmt.Println("unexpected 404") // nolint
-		fatal(err)
+		panic(err)                    // nolint
 	}
 	if err != nil {
 		return 1
@@ -120,20 +120,20 @@ func FuzzSetters(data []byte) int {
 		// when their length is too big, but
 		// not encoding.
 		if !IsAttrSizeOverflow(err) {
-			fatal(err)
+			panic(err) // nolint
 		}
 		return 1
 	}
 	m3.WriteHeader()
 	v, err := m2.Get(a.t)
 	if err != nil {
-		fatal(err)
+		panic(err) // nolint
 	}
 	m3.Add(a.t, v)
 
 	if !m2.Equal(m3) {
 		fmt.Println(m2, "not equal", m3) // nolint
-		fatal("not equal")
+		panic("not equal")               // nolint
 	}
 	return 1
 }
