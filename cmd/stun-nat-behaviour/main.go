@@ -170,7 +170,7 @@ func filteringTests(addrStr string) error {
 
 	// Test II: Request to change both IP and port
 	log.Info("Filtering Test II: Request to change both IP and port")
-	request.Reset()
+	request = stun.MustBuild(stun.TransactionID, stun.BindingRequest)
 	request.Add(stun.AttrChangeRequest, []byte{0x00, 0x00, 0x00, 0x06})
 
 	resp, err = mapTestConn.roundTrip(request, mapTestConn.RemoteAddr)
@@ -184,7 +184,7 @@ func filteringTests(addrStr string) error {
 
 	// Test III: Request to change port only
 	log.Info("Filtering Test III: Request to change port only")
-	request.Reset()
+	request = stun.MustBuild(stun.TransactionID, stun.BindingRequest)
 	request.Add(stun.AttrChangeRequest, []byte{0x00, 0x00, 0x00, 0x02})
 
 	resp, err = mapTestConn.roundTrip(request, mapTestConn.RemoteAddr)
