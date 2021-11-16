@@ -24,6 +24,7 @@ Sean DuBois <seaduboi@amazon.com>
 Sean DuBois <sean@pion.ly>
 Sean DuBois <sean@siobud.com>
 songjiayang <songjiayang@users.noreply.github.com>
+Vladislav Yarmak <vladislav@vm-0.com>
 Will LE <lexuandinhct@gmail.com>
 Y.Horie <u5.horie@gmail.com>
 Yutaka Takeda <yt0916@gmail.com>
