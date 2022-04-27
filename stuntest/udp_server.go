@@ -34,7 +34,7 @@ func NewUDPServer(
 	}
 
 	// necessary for ipv6
-	address := fmt.Sprintf("%s:%d", ip, udpConn.LocalAddr().(*net.UDPAddr).Port)
+	address := fmt.Sprintf("%s:%d", ip, udpConn.LocalAddr().(*net.UDPAddr).Port) //nolint:forcetypeassert
 	serverAddr, err := net.ResolveUDPAddr(network, address)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to resolve stun host: %s: %w", address, err)

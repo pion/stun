@@ -1,6 +1,9 @@
 package stun
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestDecodeErr_IsInvalidCookie(t *testing.T) {
 	m := new(Message)
@@ -16,8 +19,8 @@ func TestDecodeErr_IsInvalidCookie(t *testing.T) {
 	if err.Error() != expected {
 		t.Error(err, "!=", expected)
 	}
-	dErr, ok := err.(*DecodeErr)
-	if !ok {
+	var dErr *DecodeErr
+	if !errors.As(err, &dErr) {
 		t.Error("not decode error")
 	}
 	if !dErr.IsInvalidCookie() {

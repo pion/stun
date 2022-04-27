@@ -236,7 +236,7 @@ var clientTransactionPool = &sync.Pool{ // nolint:gochecknoglobals
 }
 
 func acquireClientTransaction() *clientTransaction {
-	return clientTransactionPool.Get().(*clientTransaction)
+	return clientTransactionPool.Get().(*clientTransaction) //nolint:forcetypeassert
 }
 
 func putClientTransaction(t *clientTransaction) {
@@ -288,6 +288,7 @@ func (c *Client) SetRTO(rto time.Duration) {
 
 // StopErr occurs when Client fails to stop transaction while
 // processing error.
+// nolint:errname
 type StopErr struct {
 	Err   error // value returned by Stop()
 	Cause error // error that caused Stop() call
@@ -298,6 +299,7 @@ func (e StopErr) Error() string {
 }
 
 // CloseErr indicates client close failure.
+// nolint:errname
 type CloseErr struct {
 	AgentErr      error
 	ConnectionErr error
@@ -489,7 +491,7 @@ func (c *Client) Do(m *Message, f func(Event)) error {
 	if f == nil {
 		return c.Indicate(m)
 	}
-	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler)
+	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler) //nolint:forcetypeassert
 	h.setCallback(f)
 	defer func() {
 		callbackWaitHandlerPool.Put(h)
@@ -545,7 +547,7 @@ func (c *Client) handleAgentCallback(e Event) {
 	}
 	// Doing re-transmission.
 	t.attempt++
-	b := bufferPool.Get().(*buffer)
+	b := bufferPool.Get().(*buffer) //nolint:forcetypeassert
 	b.buf = b.buf[:copy(b.buf[:cap(b.buf)], t.raw)]
 	defer bufferPool.Put(b)
 	var (

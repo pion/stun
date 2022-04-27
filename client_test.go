@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package stun
@@ -152,8 +153,8 @@ func TestClosedOrPanic(t *testing.T) {
 	closedOrPanic(ErrAgentClosed)
 	func() {
 		defer func() {
-			r := recover()
-			if r != io.EOF {
+			r, ok := recover().(error)
+			if !ok || !errors.Is(r, io.EOF) {
 				t.Error(r)
 			}
 		}()
@@ -492,7 +493,7 @@ func TestClientCloseErr(t *testing.T) {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err, ok := c.Close().(CloseErr); !ok || !errors.Is(err.AgentErr, io.ErrUnexpectedEOF) {
+		if err, ok := c.Close().(CloseErr); !ok || !errors.Is(err.AgentErr, io.ErrUnexpectedEOF) { //nolint:errorlint
 			t.Error("unexpected close err")
 		}
 	}()
@@ -659,7 +660,7 @@ func TestClientFinalizer(t *testing.T) {
 }
 
 func TestCallbackWaitHandler(t *testing.T) {
-	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler)
+	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler) //nolint:forcetypeassert
 	for i := 0; i < 100; i++ {
 		h.setCallback(func(event Event) {})
 		go func() {
@@ -847,7 +848,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 			for {
 				readN, readErr := connL.Read(buf)
 				if readErr != nil {
-					if readErr == io.EOF {
+					if errors.Is(readErr, io.EOF) {
 						break
 					}
 					t.Error(readErr)
@@ -877,7 +878,6 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 }
 
 func TestClient_DoConcurrent(t *testing.T) {
-	t.Parallel()
 	for _, concurrency := range []int{
 		1, 5, 10, 25, 100, 500,
 	} {
@@ -1288,7 +1288,8 @@ func TestClientRTOWriteErr(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
-			if e, ok := event.Error.(StopErr); !ok {
+			var e StopErr
+			if !errors.As(event.Error, &e) {
 				t.Error(event.Error)
 			} else {
 				if !errors.Is(e.Err, agentStopErr) {

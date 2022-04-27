@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package stun
@@ -191,12 +192,12 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 	mDecoded := New()
 	binary.BigEndian.PutUint16(m.Raw[2:4], 2) // rewrite to bad length
 	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+2]))
-	switch e := err.(type) {
-	case *DecodeErr:
+	var e *DecodeErr
+	if errors.As(err, &e) {
 		if !e.IsPlace(DecodeErrPlace{"attribute", "header"}) {
 			t.Error(e, "bad place")
 		}
-	default:
+	} else {
 		t.Error(err, "should be bad format")
 	}
 }
@@ -220,12 +221,12 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	bin.PutUint16(m.Raw[2:4], 5) // rewrite to bad length
 	mDecoded := New()
 	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+5]))
-	switch e := err.(type) {
-	case *DecodeErr:
+	var e *DecodeErr
+	if errors.As(err, &e) {
 		if !e.IsPlace(DecodeErrPlace{"attribute", "value"}) {
 			t.Error(e, "bad place")
 		}
-	default:
+	} else {
 		t.Error(err, "should be bad format")
 	}
 }
@@ -582,7 +583,7 @@ func TestMessageFromBrowsers(t *testing.T) {
 	m := New()
 	for {
 		line, err := reader.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

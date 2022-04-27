@@ -108,7 +108,7 @@ func TestHelpersErrorHandling(t *testing.T) {
 			MustBuild(NewTransactionIDSetter(transactionID{}))
 		})
 		defer func() {
-			if p := recover(); !errors.Is(p.(error), e.Err) {
+			if p, ok := recover().(error); !ok || !errors.Is(p, e.Err) {
 				t.Errorf("%s != %s",
 					p, e.Err,
 				)

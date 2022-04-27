@@ -3,6 +3,7 @@ package stun
 import "errors"
 
 // DecodeErr records an error and place when it is occurred.
+// nolint:errname
 type DecodeErr struct {
 	Place   DecodeErrPlace
 	Message string
