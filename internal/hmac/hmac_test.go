@@ -552,7 +552,7 @@ func TestHMAC(t *testing.T) {
 			// Third and fourth iteration: make sure hmac works on
 			// hashes without MarshalBinary/UnmarshalBinary
 			if j == 1 {
-				h = New(func() hash.Hash { return justHash{tt.hash()} }, tt.key) //nolint: scopecheck
+				h = New(func() hash.Hash { return justHash{tt.hash()} }, tt.key)
 			}
 		}
 	}

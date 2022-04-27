@@ -205,7 +205,8 @@ func parse(msg *stun.Message) (ret struct {
 	respOrigin *stun.ResponseOrigin
 	mappedAddr *stun.MappedAddress
 	software   *stun.Software
-}) {
+},
+) {
 	ret.mappedAddr = &stun.MappedAddress{}
 	ret.xorAddr = &stun.XORMappedAddress{}
 	ret.respOrigin = &stun.ResponseOrigin{}

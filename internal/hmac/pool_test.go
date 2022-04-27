@@ -40,7 +40,7 @@ func BenchmarkHMACSHA1_512_Pool(b *testing.B) {
 func TestHMACReset(t *testing.T) {
 	for i, tt := range hmacTests() {
 		h := New(tt.hash, tt.key)
-		h.(*hmac).resetTo(tt.key)
+		h.(*hmac).resetTo(tt.key) //nolint:forcetypeassert
 		if s := h.Size(); s != tt.size {
 			t.Errorf("Size: got %v, want %v", s, tt.size)
 		}
@@ -139,7 +139,7 @@ func TestHMACPool_SHA256(t *testing.T) { // nolint:dupl
 func TestAssertBlockSize(t *testing.T) {
 	t.Run("Positive", func(t *testing.T) {
 		h := AcquireSHA1(make([]byte, 0, 1024))
-		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize)
+		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize) //nolint:forcetypeassert
 	})
 	t.Run("Negative", func(t *testing.T) {
 		defer func() {
@@ -148,6 +148,6 @@ func TestAssertBlockSize(t *testing.T) {
 			}
 		}()
 		h := AcquireSHA256(make([]byte, 0, 1024))
-		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize)
+		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize) //nolint:forcetypeassert
 	})
 }
