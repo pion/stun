@@ -58,7 +58,7 @@ func TestHMACReset(t *testing.T) {
 			for k := 0; k < 2; k++ {
 				sum := fmt.Sprintf("%x", h.Sum(nil))
 				if sum != tt.out {
-					t.Errorf("test %d.%d.%d: have %s want %s\n", i, j, k, sum, tt.out)
+					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 				}
 			}
 
@@ -91,7 +91,7 @@ func TestHMACPool_SHA1(t *testing.T) { // nolint:dupl
 			for k := 0; k < 2; k++ {
 				sum := fmt.Sprintf("%x", h.Sum(nil))
 				if sum != tt.out {
-					t.Errorf("test %d.%d.%d: have %s want %s\n", i, j, k, sum, tt.out)
+					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 				}
 			}
 
@@ -125,7 +125,7 @@ func TestHMACPool_SHA256(t *testing.T) { // nolint:dupl
 			for k := 0; k < 2; k++ {
 				sum := fmt.Sprintf("%x", h.Sum(nil))
 				if sum != tt.out {
-					t.Errorf("test %d.%d.%d: have %s want %s\n", i, j, k, sum, tt.out)
+					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 				}
 			}
 
