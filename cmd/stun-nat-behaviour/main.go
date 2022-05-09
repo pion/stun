@@ -71,7 +71,7 @@ func main() {
 func mappingTests(addrStr string) error {
 	mapTestConn, err := connect(addrStr)
 	if err != nil {
-		log.Warnf("Error creating STUN connection: %s\n", err.Error())
+		log.Warnf("Error creating STUN connection: %s", err.Error())
 		return err
 	}
 
@@ -92,11 +92,11 @@ func mappingTests(addrStr string) error {
 	}
 	addr, err := net.ResolveUDPAddr("udp4", resps1.otherAddr.String())
 	if err != nil {
-		log.Infof("Failed resolving OTHER-ADDRESS: %v\n", resps1.otherAddr)
+		log.Infof("Failed resolving OTHER-ADDRESS: %v", resps1.otherAddr)
 		return err
 	}
 	mapTestConn.OtherAddr = addr
-	log.Infof("Received XOR-MAPPED-ADDRESS: %v\n", resps1.xorAddr)
+	log.Infof("Received XOR-MAPPED-ADDRESS: %v", resps1.xorAddr)
 
 	// Assert mapping behavior
 	if resps1.xorAddr.String() == mapTestConn.LocalAddr.String() {
@@ -115,7 +115,7 @@ func mappingTests(addrStr string) error {
 
 	// Assert mapping behavior
 	resps2 := parse(resp)
-	log.Infof("Received XOR-MAPPED-ADDRESS: %v\n", resps2.xorAddr)
+	log.Infof("Received XOR-MAPPED-ADDRESS: %v", resps2.xorAddr)
 	if resps2.xorAddr.String() == resps1.xorAddr.String() {
 		log.Warn("=> NAT mapping behavior: endpoint independent")
 		return nil
@@ -130,7 +130,7 @@ func mappingTests(addrStr string) error {
 
 	// Assert mapping behavior
 	resps3 := parse(resp)
-	log.Infof("Received XOR-MAPPED-ADDRESS: %v\n", resps3.xorAddr)
+	log.Infof("Received XOR-MAPPED-ADDRESS: %v", resps3.xorAddr)
 	if resps3.xorAddr.String() == resps2.xorAddr.String() {
 		log.Warn("=> NAT mapping behavior: address dependent")
 	} else {
@@ -144,7 +144,7 @@ func mappingTests(addrStr string) error {
 func filteringTests(addrStr string) error {
 	mapTestConn, err := connect(addrStr)
 	if err != nil {
-		log.Warnf("Error creating STUN connection: %s\n", err.Error())
+		log.Warnf("Error creating STUN connection: %s", err.Error())
 		return err
 	}
 
@@ -163,7 +163,7 @@ func filteringTests(addrStr string) error {
 	}
 	addr, err := net.ResolveUDPAddr("udp4", resps.otherAddr.String())
 	if err != nil {
-		log.Infof("Failed resolving OTHER-ADDRESS: %v\n", resps.otherAddr)
+		log.Infof("Failed resolving OTHER-ADDRESS: %v", resps.otherAddr)
 		return err
 	}
 	mapTestConn.OtherAddr = addr
@@ -227,12 +227,12 @@ func parse(msg *stun.Message) (ret struct {
 	if ret.software.GetFrom(msg) != nil {
 		ret.software = nil
 	}
-	log.Debugf("%v\n", msg)
-	log.Debugf("\tMAPPED-ADDRESS:     %v\n", ret.mappedAddr)
-	log.Debugf("\tXOR-MAPPED-ADDRESS: %v\n", ret.xorAddr)
-	log.Debugf("\tRESPONSE-ORIGIN:    %v\n", ret.respOrigin)
-	log.Debugf("\tOTHER-ADDRESS:      %v\n", ret.otherAddr)
-	log.Debugf("\tSOFTWARE: %v\n", ret.software)
+	log.Debugf("%v", msg)
+	log.Debugf("\tMAPPED-ADDRESS:     %v", ret.mappedAddr)
+	log.Debugf("\tXOR-MAPPED-ADDRESS: %v", ret.xorAddr)
+	log.Debugf("\tRESPONSE-ORIGIN:    %v", ret.respOrigin)
+	log.Debugf("\tOTHER-ADDRESS:      %v", ret.otherAddr)
+	log.Debugf("\tSOFTWARE: %v", ret.software)
 	for _, attr := range msg.Attributes {
 		switch attr.Type {
 		case
@@ -243,7 +243,7 @@ func parse(msg *stun.Message) (ret struct {
 			stun.AttrSoftware:
 			break //nolint: staticcheck
 		default:
-			log.Debugf("\t%v (l=%v)\n", attr, attr.Length)
+			log.Debugf("\t%v (l=%v)", attr, attr.Length)
 		}
 	}
 	return ret
@@ -251,10 +251,10 @@ func parse(msg *stun.Message) (ret struct {
 
 // Given an address string, returns a StunServerConn
 func connect(addrStr string) (*stunServerConn, error) {
-	log.Infof("connecting to STUN server: %s\n", addrStr)
+	log.Infof("connecting to STUN server: %s", addrStr)
 	addr, err := net.ResolveUDPAddr("udp4", addrStr)
 	if err != nil {
-		log.Warnf("Error resolving address: %s\n", err.Error())
+		log.Warnf("Error resolving address: %s", err.Error())
 		return nil, err
 	}
 
@@ -262,8 +262,8 @@ func connect(addrStr string) (*stunServerConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("Local address: %s\n", c.LocalAddr())
-	log.Infof("Remote address: %s\n", addr.String())
+	log.Infof("Local address: %s", c.LocalAddr())
+	log.Infof("Remote address: %s", addr.String())
 
 	mChan := listen(c)
 
@@ -278,14 +278,14 @@ func connect(addrStr string) (*stunServerConn, error) {
 // Send request and wait for response or timeout
 func (c *stunServerConn) roundTrip(msg *stun.Message, addr net.Addr) (*stun.Message, error) {
 	_ = msg.NewTransactionID()
-	log.Infof("Sending to %v: (%v bytes)\n", addr, msg.Length+messageHeaderSize)
-	log.Debugf("%v\n", msg)
+	log.Infof("Sending to %v: (%v bytes)", addr, msg.Length+messageHeaderSize)
+	log.Debugf("%v", msg)
 	for _, attr := range msg.Attributes {
-		log.Debugf("\t%v (l=%v)\n", attr, attr.Length)
+		log.Debugf("\t%v (l=%v)", attr, attr.Length)
 	}
 	_, err := c.conn.WriteTo(msg.Raw, addr)
 	if err != nil {
-		log.Warnf("Error sending request to %v\n", addr)
+		log.Warnf("Error sending request to %v", addr)
 		return nil, err
 	}
 
@@ -297,7 +297,7 @@ func (c *stunServerConn) roundTrip(msg *stun.Message, addr net.Addr) (*stun.Mess
 		}
 		return m, nil
 	case <-time.After(time.Duration(*timeoutPtr) * time.Second):
-		log.Infof("Timed out waiting for response from server %v\n", addr)
+		log.Infof("Timed out waiting for response from server %v", addr)
 		return nil, errTimedOut
 	}
 }
@@ -314,14 +314,14 @@ func listen(conn *net.UDPConn) (messages chan *stun.Message) {
 				close(messages)
 				return
 			}
-			log.Infof("Response from %v: (%v bytes)\n", addr, n)
+			log.Infof("Response from %v: (%v bytes)", addr, n)
 			buf = buf[:n]
 
 			m := new(stun.Message)
 			m.Raw = buf
 			err = m.Decode()
 			if err != nil {
-				log.Infof("Error decoding message: %v\n", err)
+				log.Infof("Error decoding message: %v", err)
 				close(messages)
 				return
 			}
