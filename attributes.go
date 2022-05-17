@@ -38,6 +38,7 @@ func (t AttrType) Optional() bool {
 const (
 	AttrMappedAddress     AttrType = 0x0001 // MAPPED-ADDRESS
 	AttrUsername          AttrType = 0x0006 // USERNAME
+	AttrSignature         AttrType = 0x0007 // SIGNATURE
 	AttrMessageIntegrity  AttrType = 0x0008 // MESSAGE-INTEGRITY
 	AttrErrorCode         AttrType = 0x0009 // ERROR-CODE
 	AttrUnknownAttributes AttrType = 0x000A // UNKNOWN-ATTRIBUTES
@@ -124,6 +125,7 @@ func attrNames() map[AttrType]string {
 	return map[AttrType]string{
 		AttrMappedAddress:          "MAPPED-ADDRESS",
 		AttrUsername:               "USERNAME",
+		AttrSignature:              "SIGNATURE",
 		AttrErrorCode:              "ERROR-CODE",
 		AttrMessageIntegrity:       "MESSAGE-INTEGRITY",
 		AttrUnknownAttributes:      "UNKNOWN-ATTRIBUTES",

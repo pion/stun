@@ -127,3 +127,28 @@ func (v *TextAttribute) GetFromAs(m *Message, t AttrType) error {
 	*v = a
 	return nil
 }
+
+func NewSignature(s string) Signature {
+	return Signature(s)
+}
+
+// Signature represents SIGNATURE attribute.
+//
+// Used to verify special client.
+type Signature []byte
+
+func (s Signature) String() string {
+	return string(s)
+}
+
+const maxSignatureB = 513
+
+// AddTo adds Signature attribute to message.
+func (s Signature) AddTo(m *Message) error {
+	return TextAttribute(s).AddToAs(m, AttrSignature, maxSignatureB)
+}
+
+// GetFrom gets SIGNATURE from message.
+func (s *Signature) GetFrom(m *Message) error {
+	return (*TextAttribute)(s).GetFromAs(m, AttrSignature)
+}
