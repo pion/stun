@@ -6,6 +6,8 @@ import (
 	"io"
 	"net"
 	"strconv"
+
+	"github.com/pion/transport/utils/xor"
 )
 
 const (
@@ -66,7 +68,7 @@ func (a XORMappedAddress) AddToAs(m *Message, t AttrType) error {
 	bin.PutUint32(xorValue[0:4], magicCookie)
 	bin.PutUint16(value[0:2], family)
 	bin.PutUint16(value[2:4], uint16(a.Port^magicCookie>>16))
-	xorBytes(value[4:4+len(ip)], ip, xorValue)
+	xor.XorBytes(value[4:4+len(ip)], ip, xorValue)
 	m.Add(t, value[:4+len(ip)])
 	return nil
 }
@@ -115,7 +117,7 @@ func (a *XORMappedAddress) GetFromAs(m *Message, t AttrType) error {
 	xorValue := make([]byte, 4+TransactionIDSize)
 	bin.PutUint32(xorValue[0:4], magicCookie)
 	copy(xorValue[4:], m.TransactionID[:])
-	xorBytes(a.IP, v[4:], xorValue)
+	xor.XorBytes(a.IP, v[4:], xorValue)
 	return nil
 }
 
