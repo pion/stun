@@ -143,3 +143,9 @@ func (a *XORMappedAddress) GetFromAs(m *Message, t AttrType) error {
 func (a *XORMappedAddress) GetFrom(m *Message) error {
 	return a.GetFromAs(m, AttrXORMappedAddress)
 }
+
+func xorBytes(dst, a, b []byte) {
+	for i := 0; i < len(a); i++ {
+		dst[i] = a[i] ^ b[i]
+	}
+}
