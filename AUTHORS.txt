@@ -13,6 +13,7 @@ Christian Muehlhaeuser <muesli@gmail.com>
 David-dp- <David-dp-@users.noreply.github.com>
 ernado <ar@cydev.ru>
 ernado <ernado@ya.ru>
+Frank Dietrich <bits_n_bytes@gmx.de>
 Hugo Arregui <hugo.arregui@gmail.com>
 Jerry Tao <taojay315@gmail.com>
 jinleileiking <jinleileiking@gmail.com>
