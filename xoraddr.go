@@ -7,7 +7,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/pion/transport/utils/xor"
+	"github.com/pion/transport/v2/utils/xor"
 )
 
 const (
@@ -128,20 +128,20 @@ func (a *XORMappedAddress) GetFromAs(m *Message, t AttrType) error {
 //
 // Example:
 //
-//  expectedIP := net.ParseIP("213.141.156.236")
-//  expectedIP.String() // 213.141.156.236, 16 bytes, first 12 of them are zeroes
-//  expectedPort := 21254
-//  addr := &XORMappedAddress{
-//    IP:   expectedIP,
-//    Port: expectedPort,
-//  }
-//  // addr were added to message that is decoded as newMessage
-//  // ...
+//	expectedIP := net.ParseIP("213.141.156.236")
+//	expectedIP.String() // 213.141.156.236, 16 bytes, first 12 of them are zeroes
+//	expectedPort := 21254
+//	addr := &XORMappedAddress{
+//	  IP:   expectedIP,
+//	  Port: expectedPort,
+//	}
+//	// addr were added to message that is decoded as newMessage
+//	// ...
 //
-//  addr.GetFrom(newMessage)
-//  addr.IP.String()    // 213.141.156.236, net.IPv4Len
-//  expectedIP.String() // d58d:9cec::ffff:d58d:9cec, 16 bytes, first 4 are IPv4
-//  // now we have len(expectedIP) = 16 and len(addr.IP) = 4.
+//	addr.GetFrom(newMessage)
+//	addr.IP.String()    // 213.141.156.236, net.IPv4Len
+//	expectedIP.String() // d58d:9cec::ffff:d58d:9cec, 16 bytes, first 4 are IPv4
+//	// now we have len(expectedIP) = 16 and len(addr.IP) = 4.
 func (a *XORMappedAddress) GetFrom(m *Message) error {
 	return a.GetFromAs(m, AttrXORMappedAddress)
 }
