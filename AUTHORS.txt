@@ -2,7 +2,7 @@
 # we would love to have you https://github.com/pion/webrtc/wiki/Contributing
 #
 # This file is auto generated, using git to list all individuals contributors.
-# see `.github/generate-authors.sh` for the scripting
+# see https://github.com/pion/.goassets/blob/master/scripts/generate-authors.sh for the scripting
 Adam Kiss <masterada@gmail.com>
 Aleksandr Razumov <ar@cydev.ru>
 Aleksandr Razumov <ar@gortc.io>
@@ -13,10 +13,12 @@ Christian Muehlhaeuser <muesli@gmail.com>
 David-dp- <David-dp-@users.noreply.github.com>
 ernado <ar@cydev.ru>
 ernado <ernado@ya.ru>
+fossabot <badges@fossa.io>
 Frank Dietrich <bits_n_bytes@gmx.de>
 Hugo Arregui <hugo.arregui@gmail.com>
 Jerry Tao <taojay315@gmail.com>
 jinleileiking <jinleileiking@gmail.com>
+John Bradley <john@pion.ly>
 Juliusz Chroboczek <jch@irif.fr>
 Maanas Royy <m4manas@gmail.com>
 Moises Marangoni <moises.marangon@gmail.com>
