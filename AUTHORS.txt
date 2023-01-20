@@ -34,4 +34,6 @@ Yutaka Takeda <yt0916@gmail.com>
 ZHENK <chengzhenyang@gmail.com>
 
 # List of contributors not appearing in Git history
-
+Aliaksandr Valialkin <valyala@gmail.com>
+The gortc project
+The IETF Trust
