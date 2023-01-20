@@ -63,6 +63,7 @@ func main() {
 - **RFC 5769**: [Test Vectors for Session Traversal Utilities for NAT (STUN)][rfc5769]
 - **RFC 6062**: [Traversal Using Relays around NAT (TURN) Extensions for TCP Allocations][rfc6062]
 - **RFC 7064**: [URI Scheme for the Session Traversal Utilities for NAT (STUN) Protocol][rfc7064]
+- **RFC 7065**: [Traversal Using Relays around NAT (TURN) Uniform Resource Identifiers][rfc7065]
 - **RFC 5780**: [NAT Behavior Discovery Using Session Traversal Utilities for NAT (STUN)][rfc5780] via [cmd/stun-nat-behaviour](cmd/stun-nat-behaviour)
 - (TLS-over-)TCP client support
 
@@ -80,6 +81,7 @@ func main() {
 [rfc5780]: https://tools.ietf.org/html/rfc5780
 [rfc6062]: https://tools.ietf.org/html/rfc6062
 [rfc7064]: https://tools.ietf.org/html/rfc7064
+[rfc7065]: https://tools.ietf.org/html/rfc7065
 
 ### Stability
 Package is currently stable, no backward incompatible changes are expected
