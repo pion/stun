@@ -71,36 +71,32 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) {
 		}
 
 		if conn, err = nw.Dial(network, addr); err != nil {
-			return nil, fmt.Errorf("failed to listen: %w", err)
+			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
 	case uri.Scheme == SchemeTypeTURNS && uri.Proto == ProtoTypeUDP:
-		var udpAddr *net.UDPAddr
-
-		if udpAddr, err = nw.ResolveUDPAddr("udp", addr); err != nil {
-			return nil, fmt.Errorf("failed to resolve address '%s': %w", addr, err)
-		}
-
-		var dtlsCfg dtls.Config
-		if cfg != nil {
-			dtlsCfg = cfg.DTLSConfig
-		}
-
+		dtlsCfg := cfg.DTLSConfig // Copy
 		dtlsCfg.ServerName = uri.Host
 
-		if conn, err = dtls.Dial("udp", udpAddr, &dtlsCfg); err != nil {
+		udpConn, err := nw.Dial("udp", addr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial: %w", err)
+		}
+
+		if conn, err = dtls.Client(udpConn, &dtlsCfg); err != nil {
 			return nil, fmt.Errorf("failed to connect to '%s': %w", addr, err)
 		}
 
 	case (uri.Scheme == SchemeTypeTURNS || uri.Scheme == SchemeTypeSTUNS) && uri.Proto == ProtoTypeTCP:
-		var tlsCfg tls.Config
-		if cfg != nil {
-			tlsCfg = cfg.TLSConfig //nolint:govet
+		tlsCfg := cfg.TLSConfig //nolint:govet
+		tlsCfg.ServerName = uri.Host
+
+		tcpConn, err := nw.Dial("tcp", addr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
-		if conn, err = tls.Dial("tcp", addr, &tlsCfg); err != nil {
-			return nil, fmt.Errorf("failed to connect to '%s': %w", addr, err)
-		}
+		conn = tls.Client(tcpConn, &tlsCfg)
 
 	default:
 		return nil, ErrUnsupportedURI
