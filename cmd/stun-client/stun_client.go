@@ -16,15 +16,22 @@ import (
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		fmt.Fprintln(os.Stderr, os.Args[0], "stun.l.google.com:19302")
+		fmt.Fprintln(os.Stderr, os.Args[0], "stun:stun.l.google.com:19302")
 	}
 	flag.Parse()
-	addr := flag.Arg(0)
-	if addr == "" {
-		addr = "stun.l.google.com:19302"
+
+	uriStr := flag.Arg(0)
+	if uriStr == "" {
+		uriStr = "stun:stun.l.google.com:19302"
 	}
+
+	uri, err := stun.ParseURI(uriStr)
+	if err != nil {
+		log.Fatalf("invalid URI '%s': %s", uriStr, err)
+	}
+
 	// we only try the first address, so restrict ourselves to IPv4
-	c, err := stun.Dial("udp4", addr)
+	c, err := stun.DialURI(uri, &stun.DialConfig{})
 	if err != nil {
 		log.Fatal("dial:", err)
 	}

@@ -33,8 +33,14 @@ import (
 )
 
 func main() {
+	// Parse a STUN URI
+	u, err := stun.ParseURI("stun:stun.l.google.com:19302")
+	if err != nil {
+		panic(err)
+	}
+
 	// Creating a "connection" to STUN server.
-	c, err := stun.Dial("udp", "stun.l.google.com:19302")
+	c, err := stun.DialURI(u, &stun.DialConfig{})
 	if err != nil {
 		panic(err)
 	}

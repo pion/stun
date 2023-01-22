@@ -4,16 +4,25 @@
 package stun
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pion/dtls/v2"
+	"github.com/pion/transport/v2"
+	"github.com/pion/transport/v2/stdnet"
 )
+
+// ErrUnsupportedURI is an error thrown if the user passes an unsupported STUN or TURN URI
+var ErrUnsupportedURI = fmt.Errorf("invalid schema or transport")
 
 // Dial connects to the address on the named network and then
 // initializes Client on that connection, returning error if any.
@@ -22,6 +31,81 @@ func Dial(network, address string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewClient(conn)
+}
+
+// DialConfig is used to pass configuration to DialURI()
+type DialConfig struct {
+	DTLSConfig dtls.Config
+	TLSConfig  tls.Config
+
+	Net transport.Net
+}
+
+// DialURI connect to the STUN/TURN URI and then
+// initializes Client on that connection, returning error if any.
+func DialURI(uri *URI, cfg *DialConfig) (*Client, error) {
+	var conn Connection
+	var err error
+
+	nw := cfg.Net
+	if nw == nil {
+		nw, err = stdnet.NewNet()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create net: %w", err)
+		}
+	}
+
+	addr := net.JoinHostPort(uri.Host, strconv.Itoa(uri.Port))
+
+	switch {
+	case uri.Scheme == SchemeTypeSTUN:
+		if conn, err = nw.Dial("udp", addr); err != nil {
+			return nil, fmt.Errorf("failed to listen: %w", err)
+		}
+
+	case uri.Scheme == SchemeTypeTURN:
+		network := "udp" //nolint:goconst
+		if uri.Proto == ProtoTypeTCP {
+			network = "tcp" //nolint:goconst
+		}
+
+		if conn, err = nw.Dial(network, addr); err != nil {
+			return nil, fmt.Errorf("failed to listen: %w", err)
+		}
+
+	case uri.Scheme == SchemeTypeTURNS && uri.Proto == ProtoTypeUDP:
+		var udpAddr *net.UDPAddr
+
+		if udpAddr, err = nw.ResolveUDPAddr("udp", addr); err != nil {
+			return nil, fmt.Errorf("failed to resolve address '%s': %w", addr, err)
+		}
+
+		var dtlsCfg dtls.Config
+		if cfg != nil {
+			dtlsCfg = cfg.DTLSConfig
+		}
+
+		dtlsCfg.ServerName = uri.Host
+
+		if conn, err = dtls.Dial("udp", udpAddr, &dtlsCfg); err != nil {
+			return nil, fmt.Errorf("failed to connect to '%s': %w", addr, err)
+		}
+
+	case (uri.Scheme == SchemeTypeTURNS || uri.Scheme == SchemeTypeSTUNS) && uri.Proto == ProtoTypeTCP:
+		var tlsCfg tls.Config
+		if cfg != nil {
+			tlsCfg = cfg.TLSConfig //nolint:govet
+		}
+
+		if conn, err = tls.Dial("tcp", addr, &tlsCfg); err != nil {
+			return nil, fmt.Errorf("failed to connect to '%s': %w", addr, err)
+		}
+
+	default:
+		return nil, ErrUnsupportedURI
+	}
+
 	return NewClient(conn)
 }
 
