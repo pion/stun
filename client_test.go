@@ -471,6 +471,22 @@ func TestDial(t *testing.T) {
 	}()
 }
 
+func TestDialURI(t *testing.T) {
+	u, err := ParseURI("stun:localhost")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := DialURI(u, &DialConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err = c.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+}
+
 func TestDialError(t *testing.T) {
 	_, err := Dial("bad?network", "?????")
 	if err == nil {

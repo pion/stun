@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"log"
 	mathRand "math/rand"
-	"net"
 	"os"
 	"os/signal"
 	"runtime"
@@ -25,10 +24,8 @@ import (
 
 var (
 	workers    = flag.Int("w", runtime.GOMAXPROCS(0), "concurrent workers")           //nolint:gochecknoglobals
-	addr       = flag.String("addr", "localhost", "target address")                   //nolint:gochecknoglobals
-	port       = flag.Int("port", stun.DefaultPort, "target port")                    //nolint:gochecknoglobals
+	uriStr     = flag.String("uri", "stun:localhost:3478", "URI of STUN server")      //nolint:gochecknoglobals
 	duration   = flag.Duration("d", time.Minute, "benchmark duration")                //nolint:gochecknoglobals
-	network    = flag.String("net", "udp", "protocol to use (udp, tcp)")              //nolint:gochecknoglobals
 	cpuProfile = flag.String("cpuprofile", "", "file output of pprof cpu profile")    //nolint:gochecknoglobals
 	memProfile = flag.String("memprofile", "", "file output of pprof memory profile") //nolint:gochecknoglobals
 	realRand   = flag.Bool("crypt", false, "use crypto/rand as random source")        //nolint:gochecknoglobals
@@ -36,6 +33,10 @@ var (
 
 func main() { //nolint:gocognit
 	flag.Parse()
+	uri, err := stun.ParseURI(*uriStr)
+	if err != nil {
+		log.Fatalf("failed to parse URI '%s': %s", *uriStr, err)
+	}
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	start := time.Now()
@@ -88,11 +89,7 @@ func main() { //nolint:gocognit
 		fmt.Println("using crypto/rand as random source for transaction id")
 	}
 	for i := 0; i < *workers; i++ {
-		wConn, connErr := net.Dial(*network, fmt.Sprintf("%s:%d", *addr, *port))
-		if connErr != nil {
-			log.Panicln("failed to dial:", wConn)
-		}
-		c, clientErr := stun.NewClient(wConn)
+		c, clientErr := stun.DialURI(uri, &stun.DialConfig{})
 		if clientErr != nil {
 			log.Panicln("failed to create client:", clientErr)
 		}
