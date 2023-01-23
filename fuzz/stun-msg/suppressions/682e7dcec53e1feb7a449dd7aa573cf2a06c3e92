@@ -1,4 +1,0 @@
-panic: BadFormat for message/cookie: 0 is invalid magic cookie (should be 2112a442)
-github.com/pion/stun.FuzzMessage
-go-fuzz-dep.Main
-main.main
