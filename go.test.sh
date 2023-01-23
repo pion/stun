@@ -3,9 +3,6 @@
 set -e
 touch coverage.txt
 
-# test fuzz inputs
-go test -tags gofuzz -run TestFuzz -v .
-
 # quick-test without -race
 go test ./...
 

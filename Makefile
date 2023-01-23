@@ -9,22 +9,6 @@ bench:
 	go test -bench .
 bench-record:
 	$(GO) test -bench . > "benchmarks/stun-go-$(GO_VERSION).txt"
-fuzz-prepare-msg:
-	go-fuzz-build -func FuzzMessage -o stun-msg-fuzz.zip github.com/pion/stun
-fuzz-prepare-typ:
-	go-fuzz-build -func FuzzType -o stun-typ-fuzz.zip github.com/pion/stun
-fuzz-prepare-setters:
-	go-fuzz-build -func FuzzSetters -o stun-setters-fuzz.zip github.com/pion/stun
-fuzz-msg:
-	go-fuzz -bin=./stun-msg-fuzz.zip -workdir=fuzz/stun-msg
-fuzz-typ:
-	go-fuzz -bin=./stun-typ-fuzz.zip -workdir=fuzz/stun-typ
-fuzz-setters:
-	go-fuzz -bin=./stun-setters-fuzz.zip -workdir=fuzz/stun-setters
-fuzz-test:
-	go test -tags gofuzz -run TestFuzz -v .
-fuzz-reset-setters:
-	rm -f -v -r stun-setters-fuzz.zip fuzz/stun-setters
 lint:
 	@golangci-lint run ./...
 	@echo "ok"
@@ -39,9 +23,6 @@ bench-compare:
 	go test -bench . > bench.go-16
 	go-tip test -bench . > bench.go-tip
 	@benchcmp bench.go-16 bench.go-tip
-install-fuzz:
-	go get -u github.com/dvyukov/go-fuzz/go-fuzz-build
-	go get github.com/dvyukov/go-fuzz/go-fuzz
 install:
 	go get gortc.io/api
 	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
