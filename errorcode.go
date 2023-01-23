@@ -29,7 +29,7 @@ const (
 
 // AddTo adds ERROR-CODE to m.
 func (c ErrorCodeAttribute) AddTo(m *Message) error {
-	value := make([]byte, 0, errorCodeReasonMaxB)
+	value := make([]byte, 0, errorCodeReasonStart+errorCodeReasonMaxB)
 	if err := CheckOverflow(AttrErrorCode,
 		len(c.Reason)+errorCodeReasonStart,
 		errorCodeReasonMaxB+errorCodeReasonStart,
