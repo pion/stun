@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("t\xc0\x85\xefZ\xbc\xfb\x01\xe1yp.size >amd64p32 4G")
