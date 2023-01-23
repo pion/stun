@@ -32,3 +32,6 @@ Will LE <lexuandinhct@gmail.com>
 Y.Horie <u5.horie@gmail.com>
 Yutaka Takeda <yt0916@gmail.com>
 ZHENK <chengzhenyang@gmail.com>
+
+# List of contributors not appearing in Git history
+
