@@ -1,3 +1,4 @@
+// Package main implements a CLI tool which acts as a STUN client
 package main
 
 import (

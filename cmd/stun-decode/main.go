@@ -1,3 +1,4 @@
+// Package main implements a simple CLI tool to decode STUN messages
 package main
 
 import (

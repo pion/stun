@@ -21,15 +21,16 @@ type (
 // first error. To prevent allocations, pass pointers to values.
 //
 // Example:
-//  var (
-//  	t        = BindingRequest
-//  	username = NewUsername("username")
-//  	nonce    = NewNonce("nonce")
-//  	realm    = NewRealm("example.org")
-//  )
-//  m := new(Message)
-//  m.Build(t, username, nonce, realm)     // 4 allocations
-//  m.Build(&t, &username, &nonce, &realm) // 0 allocations
+//
+//	var (
+//		t        = BindingRequest
+//		username = NewUsername("username")
+//		nonce    = NewNonce("nonce")
+//		realm    = NewRealm("example.org")
+//	)
+//	m := new(Message)
+//	m.Build(t, username, nonce, realm)     // 4 allocations
+//	m.Build(&t, &username, &nonce, &realm) // 0 allocations
 //
 // See BenchmarkBuildOverhead.
 func (m *Message) Build(setters ...Setter) error {

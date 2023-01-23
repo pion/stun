@@ -1,3 +1,4 @@
+// Package main implements a simple CLI tools to perform NAT traversal via STUN
 package main
 
 import (

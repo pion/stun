@@ -63,7 +63,7 @@ func Decode(data []byte, m *Message) error {
 // buffering to enable zero-allocation encoding and decoding,
 // so there are some usage constraints:
 //
-// 	Message, its fields, results of m.Get or any attribute a.GetFrom
+//	Message, its fields, results of m.Get or any attribute a.GetFrom
 //	are valid only until Message.Raw is not modified.
 type Message struct {
 	Type          MessageType

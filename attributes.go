@@ -85,7 +85,8 @@ const (
 )
 
 // Attributes from RFC 3489, removed by RFC 5389,
-//  but still used by RFC5389-implementing software like Vovida.org, reTURNServer, etc.
+//
+//	but still used by RFC5389-implementing software like Vovida.org, reTURNServer, etc.
 const (
 	AttrSourceAddress  AttrType = 0x0004 // SOURCE-ADDRESS
 	AttrChangedAddress AttrType = 0x0005 // CHANGED-ADDRESS
