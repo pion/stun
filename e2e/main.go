@@ -1,3 +1,4 @@
+// Package main implement end-to-end tests
 package main
 
 import (

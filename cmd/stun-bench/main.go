@@ -1,3 +1,4 @@
+// Package main implements benchmarks for the STUN package
 package main
 
 import (
@@ -96,7 +97,7 @@ func main() { // nolint:gocognit
 			req := stun.New()
 			for {
 				if *realRand {
-					if _, err := rand.Read(req.TransactionID[:]); err != nil {
+					if _, err := rand.Read(req.TransactionID[:]); err != nil { //nolint:gosec
 						log.Fatal("rand.Read failed:", err)
 					}
 				} else {

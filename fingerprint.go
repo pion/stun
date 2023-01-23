@@ -17,8 +17,8 @@ var ErrFingerprintMismatch = errors.New("fingerprint check failed")
 //
 // Example:
 //
-//  m := New()
-//  Fingerprint.AddTo(m)
+//	m := New()
+//	Fingerprint.AddTo(m)
 var Fingerprint FingerprintAttr // nolint:gochecknoglobals
 
 const (
