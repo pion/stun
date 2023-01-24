@@ -1,2 +1,0 @@
-go test fuzz v1
-uint16(0x5d5b)
