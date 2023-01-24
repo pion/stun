@@ -1,2 +1,2 @@
 go test fuzz v1
-[]byte("\xef\xbd�\xefǽ���")
+uint16(0xbdef)

@@ -1,2 +1,2 @@
 go test fuzz v1
-[]byte("\xfa\\")
+uint16(0x92fa)
