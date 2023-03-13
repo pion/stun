@@ -17,7 +17,7 @@
 <br>
 
 # STUN
-Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389](https://tools.ietf.org/html/rfc5389)]
+Package stun implements Session Traversal Utilities for NAT (STUN) [[RFC5389][rfc5389]]
 protocol and [client](https://pkg.go.dev/github.com/pion/stun#Client) with no external dependencies and zero allocations in hot paths.
 Client [supports](https://pkg.go.dev/github.com/pion/stun#WithRTO) automatic request retransmissions.
 
@@ -58,14 +58,28 @@ func main() {
 }
 ```
 
-## Supported RFCs
-- [x] [RFC 5389](https://tools.ietf.org/html/rfc5389) — Session Traversal Utilities for NAT
-- [x] [RFC 5769](https://tools.ietf.org/html/rfc5769) — Test Vectors for STUN
-- [x] [RFC 6062](https://tools.ietf.org/html/rfc6062) — TURN extensions for TCP allocations
-- [x] [RFC 7064](https://tools.ietf.org/html/rfc7064) — STUN URI
-- [x] (TLS-over-)TCP client support
-- [ ] [ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) support [#48](https://github.com/pion/stun/issues/48)
-- [x] [RFC 5780](https://tools.ietf.org/html/rfc5780) — NAT Behavior Discovery Using STUN via [cmd/stun-nat-behaviour](cmd/stun-nat-behaviour)
+## RFCs
+### Implemented
+- **RFC 5389**: [Session Traversal Utilities for NAT (STUN)][rfc5389]
+- **RFC 5769**: [Test Vectors for Session Traversal Utilities for NAT (STUN)][rfc5769]
+- **RFC 6062**: [Traversal Using Relays around NAT (TURN) Extensions for TCP Allocations][rfc6062]
+- **RFC 7064**: [URI Scheme for the Session Traversal Utilities for NAT (STUN) Protocol][rfc7064]
+- **RFC 5780**: [NAT Behavior Discovery Using Session Traversal Utilities for NAT (STUN)][rfc5780] via [cmd/stun-nat-behaviour](cmd/stun-nat-behaviour)
+- (TLS-over-)TCP client support
+
+### Planned
+- **RFC 5389**: [ALTERNATE-SERVER](https://tools.ietf.org/html/rfc5389#section-11) support [#48](https://github.com/pion/stun/issues/48)
+
+### Compatability notes
+
+[RFC 5389][rfc5389] obsoletes [RFC 3489][rfc3489], so implementation was ignored by purpose, however,
+[RFC 3489][rfc3489] can be easily implemented as separate package.
+
+[rfc5389]: https://tools.ietf.org/html/rfc5389
+[rfc5769]: https://tools.ietf.org/html/rfc5769
+[rfc5780]: https://tools.ietf.org/html/rfc5780
+[rfc6062]: https://tools.ietf.org/html/rfc6062
+[rfc7064]: https://tools.ietf.org/html/rfc7064
 
 # Stability
 Package is currently stable, no backward incompatible changes are expected
@@ -73,10 +87,6 @@ with exception of critical bugs or security fixes.
 
 Additional attributes are unlikely to be implemented in scope of stun package,
 the only exception is constants for attribute or message types.
-
-# RFC 3489 notes
-RFC 5389 obsoletes RFC 3489, so implementation was ignored by purpose, however,
-RFC 3489 can be easily implemented as separate package.
 
 # Requirements
 Go 1.12 is currently supported and tested in CI.
