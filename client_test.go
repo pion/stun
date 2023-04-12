@@ -24,7 +24,7 @@ var (
 	errClientCloseError     = errors.New("close error")
 	errClientSetHandler     = errors.New("set handler error")
 	errClientStart          = errors.New("start error")
-	errClientAgentCantStop  = errors.New("agent dont want to stop")
+	errClientAgentCantStop  = errors.New("agent does not want to stop")
 	errClientStartRefused   = errors.New("start refused")
 )
 
