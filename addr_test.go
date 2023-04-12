@@ -60,7 +60,7 @@ func TestMappedAddress(t *testing.T) {
 	})
 }
 
-func TestMappedAddressV6(t *testing.T) { // nolint:dupl
+func TestMappedAddressV6(t *testing.T) { //nolint:dupl
 	m := new(Message)
 	addr := &MappedAddress{
 		IP:   net.ParseIP("::"),
@@ -88,7 +88,7 @@ func TestMappedAddressV6(t *testing.T) { // nolint:dupl
 	})
 }
 
-func TestAlternateServer(t *testing.T) { // nolint:dupl
+func TestAlternateServer(t *testing.T) { //nolint:dupl
 	m := new(Message)
 	addr := &AlternateServer{
 		IP:   net.ParseIP("122.12.34.5"),
@@ -116,7 +116,7 @@ func TestAlternateServer(t *testing.T) { // nolint:dupl
 	})
 }
 
-func TestOtherAddress(t *testing.T) { // nolint:dupl
+func TestOtherAddress(t *testing.T) { //nolint:dupl
 	m := new(Message)
 	addr := &OtherAddress{
 		IP:   net.ParseIP("122.12.34.5"),

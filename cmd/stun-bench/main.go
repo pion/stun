@@ -21,17 +21,17 @@ import (
 )
 
 var (
-	workers    = flag.Int("w", runtime.GOMAXPROCS(0), "concurrent workers")           // nolint:gochecknoglobals
-	addr       = flag.String("addr", "localhost", "target address")                   // nolint:gochecknoglobals
-	port       = flag.Int("port", stun.DefaultPort, "target port")                    // nolint:gochecknoglobals
-	duration   = flag.Duration("d", time.Minute, "benchmark duration")                // nolint:gochecknoglobals
-	network    = flag.String("net", "udp", "protocol to use (udp, tcp)")              // nolint:gochecknoglobals
-	cpuProfile = flag.String("cpuprofile", "", "file output of pprof cpu profile")    // nolint:gochecknoglobals
-	memProfile = flag.String("memprofile", "", "file output of pprof memory profile") // nolint:gochecknoglobals
-	realRand   = flag.Bool("crypt", false, "use crypto/rand as random source")        // nolint:gochecknoglobals
+	workers    = flag.Int("w", runtime.GOMAXPROCS(0), "concurrent workers")           //nolint:gochecknoglobals
+	addr       = flag.String("addr", "localhost", "target address")                   //nolint:gochecknoglobals
+	port       = flag.Int("port", stun.DefaultPort, "target port")                    //nolint:gochecknoglobals
+	duration   = flag.Duration("d", time.Minute, "benchmark duration")                //nolint:gochecknoglobals
+	network    = flag.String("net", "udp", "protocol to use (udp, tcp)")              //nolint:gochecknoglobals
+	cpuProfile = flag.String("cpuprofile", "", "file output of pprof cpu profile")    //nolint:gochecknoglobals
+	memProfile = flag.String("memprofile", "", "file output of pprof memory profile") //nolint:gochecknoglobals
+	realRand   = flag.Bool("crypt", false, "use crypto/rand as random source")        //nolint:gochecknoglobals
 )
 
-func main() { // nolint:gocognit
+func main() { //nolint:gocognit
 	flag.Parse()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
@@ -101,7 +101,7 @@ func main() { // nolint:gocognit
 						log.Fatal("rand.Read failed:", err)
 					}
 				} else {
-					mathRand.Read(req.TransactionID[:]) // nolint:gosec
+					mathRand.Read(req.TransactionID[:]) //nolint:gosec
 				}
 				req.Type = stun.BindingRequest
 				req.WriteHeader()

@@ -78,7 +78,7 @@ func multiplex(conn *net.UDPConn, stunAddr net.Addr, stunConn io.Reader) {
 	}
 }
 
-var stunServer = flag.String("stun", "stun.l.google.com:19302", "STUN Server to use") // nolint:gochecknoglobals
+var stunServer = flag.String("stun", "stun.l.google.com:19302", "STUN Server to use") //nolint:gochecknoglobals
 
 func main() {
 	flag.Parse()

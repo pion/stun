@@ -9,7 +9,7 @@ func BenchmarkMessage_GetNotFound(b *testing.B) {
 	m := New()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		m.Get(AttrRealm) // nolint:errcheck,gosec
+		m.Get(AttrRealm) //nolint:errcheck,gosec
 	}
 }
 
@@ -18,7 +18,7 @@ func BenchmarkMessage_Get(b *testing.B) {
 	m.Add(AttrUsername, []byte{1, 2, 3, 4, 5, 6, 7})
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		m.Get(AttrUsername) // nolint:errcheck,gosec
+		m.Get(AttrUsername) //nolint:errcheck,gosec
 	}
 }
 
@@ -42,12 +42,12 @@ func TestRawAttribute_AddTo(t *testing.T) {
 
 func TestMessage_GetNoAllocs(t *testing.T) {
 	m := New()
-	NewSoftware("c").AddTo(m) // nolint:errcheck,gosec
+	NewSoftware("c").AddTo(m) //nolint:errcheck,gosec
 	m.WriteHeader()
 
 	t.Run("Default", func(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
-			m.Get(AttrSoftware) // nolint:errcheck,gosec
+			m.Get(AttrSoftware) //nolint:errcheck,gosec
 		})
 		if allocs > 0 {
 			t.Error("allocated memory, but should not")
@@ -55,7 +55,7 @@ func TestMessage_GetNoAllocs(t *testing.T) {
 	})
 	t.Run("Not found", func(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
-			m.Get(AttrOrigin) // nolint:errcheck,gosec
+			m.Get(AttrOrigin) //nolint:errcheck,gosec
 		})
 		if allocs > 0 {
 			t.Error("allocated memory, but should not")

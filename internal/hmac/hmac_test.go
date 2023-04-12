@@ -4,9 +4,9 @@
 
 package hmac
 
-import ( // nolint:gci
-	"crypto/md5"  // nolint:gosec
-	"crypto/sha1" // nolint:gosec
+import ( //nolint:gci
+	"crypto/md5"  //nolint:gosec
+	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
@@ -405,7 +405,7 @@ func hmacTests() []hmacTest {
 		},
 		{
 			sha512.New384,
-			[]byte{ // nolint:dupl
+			[]byte{ //nolint:dupl
 				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 				0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
 				0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
@@ -485,7 +485,7 @@ func hmacTests() []hmacTest {
 		},
 		{
 			sha512.New,
-			[]byte{ // nolint:dupl
+			[]byte{ //nolint:dupl
 				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 				0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
 				0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
@@ -588,7 +588,7 @@ func BenchmarkHMACSHA256_1K(b *testing.B) {
 	h := New(sha256.New, key)
 	b.SetBytes(int64(len(buf)))
 	for i := 0; i < b.N; i++ {
-		h.Write(buf) // nolint:errcheck,gosec
+		h.Write(buf) //nolint:errcheck,gosec
 		h.Reset()
 		mac := h.Sum(nil)
 		buf[0] = mac[0]
@@ -601,7 +601,7 @@ func BenchmarkHMACSHA256_32(b *testing.B) {
 	h := New(sha256.New, key)
 	b.SetBytes(int64(len(buf)))
 	for i := 0; i < b.N; i++ {
-		h.Write(buf) // nolint:errcheck,gosec
+		h.Write(buf) //nolint:errcheck,gosec
 		h.Reset()
 		mac := h.Sum(nil)
 		buf[0] = mac[0]

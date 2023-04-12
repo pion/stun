@@ -131,6 +131,7 @@ const (
 	CodePeerAddrFamilyMismatch ErrorCode = 443 // Peer Address Family Mismatch
 )
 
+//nolint:gocheckglobals
 var errorReasons = map[ErrorCode][]byte{
 	CodeTryAlternate:     []byte("Try Alternate"),
 	CodeBadRequest:       []byte("Bad Request"),

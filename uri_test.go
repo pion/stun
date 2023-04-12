@@ -35,12 +35,12 @@ func TestParseURI(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			out, parseErr := ParseURI(tc.in) //nolint: scopelint
+			out, parseErr := ParseURI(tc.in) //nolint:scopelint
 			if parseErr != nil {
 				t.Fatal(parseErr)
 			}
-			if out != tc.out { //nolint: scopelint
-				t.Errorf("%s != %s", out, tc.out) //nolint: scopelint
+			if out != tc.out { //nolint:scopelint
+				t.Errorf("%s != %s", out, tc.out) //nolint:scopelint
 			}
 		})
 	}
@@ -63,7 +63,7 @@ func TestParseURI(t *testing.T) {
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				_, parseErr := ParseURI(tc.in) //nolint: scopelint
+				_, parseErr := ParseURI(tc.in) //nolint:scopelint
 				if parseErr == nil {
 					t.Fatal("should fail, but did not")
 				}
@@ -109,8 +109,8 @@ func TestURI_String(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if v := tc.uri.String(); v != tc.out { //nolint: scopelint
-				t.Errorf("%q != %q", v, tc.out) //nolint: scopelint
+			if v := tc.uri.String(); v != tc.out { //nolint:scopelint
+				t.Errorf("%q != %q", v, tc.out) //nolint:scopelint
 			}
 		})
 	}

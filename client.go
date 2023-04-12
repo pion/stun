@@ -227,7 +227,7 @@ func (t *clientTransaction) handle(e Event) {
 	}
 }
 
-var clientTransactionPool = &sync.Pool{ // nolint:gochecknoglobals
+var clientTransactionPool = &sync.Pool{ //nolint:gochecknoglobals
 	New: func() interface{} {
 		return &clientTransaction{
 			raw: make([]byte, 1500),
@@ -288,7 +288,8 @@ func (c *Client) SetRTO(rto time.Duration) {
 
 // StopErr occurs when Client fails to stop transaction while
 // processing error.
-// nolint:errname
+//
+//nolint:errname
 type StopErr struct {
 	Err   error // value returned by Stop()
 	Cause error // error that caused Stop() call
@@ -299,7 +300,8 @@ func (e StopErr) Error() string {
 }
 
 // CloseErr indicates client close failure.
-// nolint:errname
+//
+//nolint:errname
 type CloseErr struct {
 	AgentErr      error
 	ConnectionErr error
@@ -307,7 +309,7 @@ type CloseErr struct {
 
 func sprintErr(err error) string {
 	if err == nil {
-		return "<nil>" // nolint:goconst
+		return "<nil>" //nolint:goconst
 	}
 	return err.Error()
 }
@@ -339,7 +341,7 @@ func closedOrPanic(err error) {
 	if err == nil || errors.Is(err, ErrAgentClosed) {
 		return
 	}
-	panic(err) // nolint
+	panic(err) //nolint
 }
 
 type tickerCollector struct {
@@ -431,7 +433,7 @@ type callbackWaitHandler struct {
 func (s *callbackWaitHandler) HandleEvent(e Event) {
 	s.cond.L.Lock()
 	if s.callback == nil {
-		panic("s.callback is nil") // nolint
+		panic("s.callback is nil") //nolint
 	}
 	s.callback(e)
 	s.processed = true
@@ -451,7 +453,7 @@ func (s *callbackWaitHandler) wait() {
 
 func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 	if f == nil {
-		panic("f is nil") // nolint
+		panic("f is nil") //nolint
 	}
 	s.cond.L.Lock()
 	s.callback = f
@@ -461,7 +463,7 @@ func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 	s.cond.L.Unlock()
 }
 
-var callbackWaitHandlerPool = sync.Pool{ // nolint:gochecknoglobals
+var callbackWaitHandlerPool = sync.Pool{ //nolint:gochecknoglobals
 	New: func() interface{} {
 		return &callbackWaitHandler{
 			cond: sync.NewCond(new(sync.Mutex)),
@@ -515,7 +517,7 @@ type buffer struct {
 	buf []byte
 }
 
-var bufferPool = &sync.Pool{ // nolint:gochecknoglobals
+var bufferPool = &sync.Pool{ //nolint:gochecknoglobals
 	New: func() interface{} {
 		return &buffer{buf: make([]byte, 2048)}
 	},

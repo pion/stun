@@ -30,7 +30,7 @@ func NewUDPServer(
 
 	udpConn, err := net.ListenUDP(network, &net.UDPAddr{IP: net.ParseIP(ip), Port: 0})
 	if err != nil {
-		t.Fatal(err) // nolint
+		t.Fatal(err)
 	}
 
 	// necessary for ipv6
@@ -68,7 +68,7 @@ func NewUDPServer(
 		select {
 		case err := <-errCh:
 			if err != nil {
-				t.Fatal(err) // nolint
+				t.Fatal(err) //nolint
 				return
 			}
 		default:
@@ -76,7 +76,7 @@ func NewUDPServer(
 
 		err := udpConn.Close()
 		if err != nil {
-			t.Fatal(err) // nolint
+			t.Fatal(err) //nolint
 		}
 
 		<-errCh
