@@ -122,7 +122,7 @@ func FuzzSetters(f *testing.F) {
 	})
 }
 
-func TestAttrPick(t *testing.T) {
+func TestAttrPick(*testing.T) {
 	attrs := attributes{
 		{new(XORMappedAddress), AttrXORMappedAddress},
 	}
