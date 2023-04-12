@@ -31,7 +31,7 @@ func TestSoftware_GetFrom(t *testing.T) {
 
 	sAttr, ok := m.Attributes.Get(AttrSoftware)
 	if !ok {
-		t.Error("sowfware attribute should be found")
+		t.Error("software attribute should be found")
 	}
 	s := sAttr.String()
 	if !strings.HasPrefix(s, "SOFTWARE:") {

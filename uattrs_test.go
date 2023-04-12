@@ -14,7 +14,7 @@ func TestUnknownAttributes(t *testing.T) {
 		t.Error("bad String:", a)
 	}
 	if (UnknownAttributes{}).String() != "<nil>" {
-		t.Error("bad blank stirng")
+		t.Error("bad blank string")
 	}
 	if err := a.AddTo(m); err != nil {
 		t.Error(err)
