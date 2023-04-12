@@ -37,10 +37,10 @@ func ParseURI(rawURI string) (URI, error) {
 		return URI{}, urlParseErr
 	}
 	if u.Scheme != Scheme && u.Scheme != SchemeSecure {
-		return URI{}, fmt.Errorf("unknown uri scheme %q", u.Scheme) //nolint: goerr113
+		return URI{}, fmt.Errorf("unknown uri scheme %q", u.Scheme) //nolint:goerr113
 	}
 	if u.Opaque == "" {
-		return URI{}, errors.New("invalid uri format: expected opaque") //nolint: goerr113
+		return URI{}, errors.New("invalid uri format: expected opaque") //nolint:goerr113
 	}
 	// Using URL methods to split host.
 	u.Host = u.Opaque

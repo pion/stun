@@ -68,7 +68,7 @@ func (m *Message) Parse(getters ...Getter) error {
 func MustBuild(setters ...Setter) *Message {
 	m, err := Build(setters...)
 	if err != nil {
-		panic(err) // nolint
+		panic(err) //nolint
 	}
 	return m
 }

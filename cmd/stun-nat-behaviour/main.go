@@ -27,10 +27,10 @@ func (c *stunServerConn) Close() error {
 }
 
 var (
-	addrStrPtr = flag.String("server", "stun.voip.blackberry.com:3478", "STUN server address")      // nolint:gochecknoglobals
-	timeoutPtr = flag.Int("timeout", 3, "the number of seconds to wait for STUN server's response") // nolint:gochecknoglobals
-	verbose    = flag.Int("verbose", 1, "the verbosity level")                                      // nolint:gochecknoglobals
-	log        logging.LeveledLogger                                                                // nolint:gochecknoglobals
+	addrStrPtr = flag.String("server", "stun.voip.blackberry.com:3478", "STUN server address")      //nolint:gochecknoglobals
+	timeoutPtr = flag.Int("timeout", 3, "the number of seconds to wait for STUN server's response") //nolint:gochecknoglobals
+	verbose    = flag.Int("verbose", 1, "the verbosity level")                                      //nolint:gochecknoglobals
+	log        logging.LeveledLogger                                                                //nolint:gochecknoglobals
 )
 
 const (
@@ -241,7 +241,7 @@ func parse(msg *stun.Message) (ret struct {
 			stun.AttrResponseOrigin,
 			stun.AttrMappedAddress,
 			stun.AttrSoftware:
-			break //nolint: staticcheck
+			break //nolint:staticcheck
 		default:
 			log.Debugf("\t%v (l=%v)", attr, attr.Length)
 		}

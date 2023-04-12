@@ -14,7 +14,7 @@ import (
 	"github.com/pion/stun"
 )
 
-var server = flag.String("server", "pion.ly:3478", "Stun server address") // nolint:gochecknoglobals
+var server = flag.String("server", "pion.ly:3478", "Stun server address") //nolint:gochecknoglobals
 
 const (
 	udp           = "udp4"
@@ -23,7 +23,7 @@ const (
 	timeoutMillis = 500
 )
 
-func main() { // nolint:gocognit
+func main() { //nolint:gocognit
 	flag.Parse()
 
 	srvAddr, err := net.ResolveUDPAddr(udp, *server)

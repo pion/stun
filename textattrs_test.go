@@ -74,7 +74,7 @@ func BenchmarkUsername_AddTo(b *testing.B) {
 func BenchmarkUsername_GetFrom(b *testing.B) {
 	b.ReportAllocs()
 	m := new(Message)
-	Username("test").AddTo(m) // nolint:errcheck,gosec
+	Username("test").AddTo(m) //nolint:errcheck,gosec
 	var u Username
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -260,8 +260,8 @@ func BenchmarkNonce_GetFrom(b *testing.B) {
 	b.ReportAllocs()
 	m := New()
 	n := NewNonce("nonce")
-	n.AddTo(m) // nolint:errcheck,gosec
+	n.AddTo(m) //nolint:errcheck,gosec
 	for i := 0; i < b.N; i++ {
-		n.GetFrom(m) // nolint:errcheck,gosec
+		n.GetFrom(m) //nolint:errcheck,gosec
 	}
 }
