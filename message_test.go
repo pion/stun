@@ -233,7 +233,7 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 
 type unexpectedEOFReader struct{}
 
-func (r unexpectedEOFReader) Read(b []byte) (int, error) {
+func (r unexpectedEOFReader) Read([]byte) (int, error) {
 	return 0, io.ErrUnexpectedEOF
 }
 

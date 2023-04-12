@@ -45,9 +45,9 @@ func (n *TestAgent) Close() error {
 
 func (TestAgent) Collect(time.Time) error { return nil }
 
-func (TestAgent) Process(m *Message) error { return nil }
+func (TestAgent) Process(*Message) error { return nil }
 
-func (n *TestAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
+func (n *TestAgent) Start(id [TransactionIDSize]byte, _ time.Time) error {
 	n.e <- Event{
 		TransactionID: id,
 	}
@@ -64,7 +64,7 @@ func (noopConnection) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func (noopConnection) Read(b []byte) (int, error) {
+func (noopConnection) Read([]byte) (int, error) {
 	time.Sleep(time.Millisecond)
 	return 0, io.EOF
 }
@@ -324,15 +324,15 @@ type errorAgent struct {
 	setHandlerError error
 }
 
-func (a errorAgent) SetHandler(h Handler) error { return a.setHandlerError }
+func (a errorAgent) SetHandler(Handler) error { return a.setHandlerError }
 
 func (a errorAgent) Close() error { return a.closeErr }
 
 func (errorAgent) Collect(time.Time) error { return nil }
 
-func (errorAgent) Process(m *Message) error { return nil }
+func (errorAgent) Process(*Message) error { return nil }
 
-func (a errorAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
+func (a errorAgent) Start([TransactionIDSize]byte, time.Time) error {
 	return a.startErr
 }
 
@@ -527,11 +527,11 @@ type gcWaitAgent struct {
 	gc chan struct{}
 }
 
-func (a *gcWaitAgent) SetHandler(h Handler) error {
+func (a *gcWaitAgent) SetHandler(Handler) error {
 	return nil
 }
 
-func (a *gcWaitAgent) Stop(id [TransactionIDSize]byte) error {
+func (a *gcWaitAgent) Stop([TransactionIDSize]byte) error {
 	return nil
 }
 
@@ -545,11 +545,11 @@ func (a *gcWaitAgent) Collect(time.Time) error {
 	return nil
 }
 
-func (a *gcWaitAgent) Process(m *Message) error {
+func (a *gcWaitAgent) Process(*Message) error {
 	return nil
 }
 
-func (a *gcWaitAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
+func (a *gcWaitAgent) Start([TransactionIDSize]byte, time.Time) error {
 	return nil
 }
 
@@ -659,7 +659,7 @@ func TestClientFinalizer(t *testing.T) {
 	}
 }
 
-func TestCallbackWaitHandler(t *testing.T) {
+func TestCallbackWaitHandler(*testing.T) {
 	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler) //nolint:forcetypeassert
 	for i := 0; i < 100; i++ {
 		h.setCallback(func(event Event) {})
@@ -679,7 +679,7 @@ func (m *manualCollector) Collect(t time.Time) {
 	m.f(t)
 }
 
-func (m *manualCollector) Start(rate time.Duration, f func(t time.Time)) error {
+func (m *manualCollector) Start(_ time.Duration, f func(t time.Time)) error {
 	m.f = f
 	return nil
 }
@@ -893,7 +893,7 @@ type errorCollector struct {
 	closeError error
 }
 
-func (c errorCollector) Start(rate time.Duration, f func(now time.Time)) error {
+func (c errorCollector) Start(time.Duration, func(now time.Time)) error {
 	return c.startError
 }
 

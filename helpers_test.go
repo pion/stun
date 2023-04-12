@@ -79,15 +79,15 @@ type errReturner struct {
 
 var errTError = errors.New("tError")
 
-func (e errReturner) AddTo(m *Message) error {
+func (e errReturner) AddTo(*Message) error {
 	return e.Err
 }
 
-func (e errReturner) Check(m *Message) error {
+func (e errReturner) Check(*Message) error {
 	return e.Err
 }
 
-func (e errReturner) GetFrom(m *Message) error {
+func (e errReturner) GetFrom(*Message) error {
 	return e.Err
 }
 
