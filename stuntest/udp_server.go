@@ -33,10 +33,10 @@ func NewUDPServer(
 
 	udpConn, err := net.ListenUDP(network, &net.UDPAddr{IP: net.ParseIP(ip), Port: 0})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(err) //nolint:forbidigo
 	}
 
-	// necessary for ipv6
+	// Necessary for IPv6
 	address := fmt.Sprintf("%s:%d", ip, udpConn.LocalAddr().(*net.UDPAddr).Port) //nolint:forcetypeassert
 	serverAddr, err := net.ResolveUDPAddr(network, address)
 	if err != nil {
