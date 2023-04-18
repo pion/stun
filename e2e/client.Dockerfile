@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+# SPDX-License-Identifier: MIT
+
 ARG CI_GO_VERSION
 FROM golang:${CI_GO_VERSION}
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 // Package stun implements Session Traversal Utilities for NAT (STUN) RFC 5389.
 //
 // The stun package is intended to use by package that implements extension

@@ -1,4 +1,7 @@
-// This cmd implements RFC5780's tests:
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
+// This package implements RFC5780's tests:
 // - 4.3.  Determining NAT Mapping Behavior
 // - 4.4.  Determining NAT Filtering Behavior
 package main
