@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 //go:build !js
 // +build !js
 
@@ -574,7 +577,7 @@ func TestExampleChrome(t *testing.T) {
 func TestMessageFromBrowsers(t *testing.T) {
 	// file contains udp-packets captured from browsers (WebRTC)
 	reader := csv.NewReader(bytes.NewReader(loadData(t, "frombrowsers.csv")))
-	reader.Comma = ','
+	reader.Comment = '#'
 	_, err := reader.Read() // skipping header
 	if err != nil {
 		t.Fatal("failed to skip header of csv: ", err)

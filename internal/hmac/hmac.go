@@ -1,6 +1,5 @@
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// SPDX-FileCopyrightText: 2009 The Go Authors. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
 
 /*
 Package hmac implements the Keyed-Hash Message Authentication Code (HMAC) as

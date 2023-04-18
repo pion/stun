@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+# SPDX-License-Identifier: CC0-1.0
 Value,Name,Reference
 0-299,Reserved,
 300,Try Alternate,[RFC5389]

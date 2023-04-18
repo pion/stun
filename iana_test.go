@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 //go:build !js
 // +build !js
 
@@ -15,6 +18,7 @@ func loadCSV(t testing.TB, name string) [][]string {
 	t.Helper()
 	data := loadData(t, name)
 	r := csv.NewReader(bytes.NewReader(data))
+	r.Comment = '#'
 	records, err := r.ReadAll()
 	if err != nil {
 		t.Fatal(err)

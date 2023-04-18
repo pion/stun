@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 // Command stun-multiplex is example of doing UDP connection multiplexing
 // that splits incoming UDP packets to two streams, "STUN Data" and
 // "Application Data".
