@@ -17,7 +17,7 @@ import (
 	"github.com/pion/stun"
 )
 
-var server = flag.String("server", "pion.ly:3478", "Stun server address") //nolint:gochecknoglobals
+var server = flag.String("server", "stun:stun.voipgate.com:3478", "Stun server address") //nolint:gochecknoglobals
 
 const (
 	udp           = "udp4"
@@ -31,19 +31,19 @@ func main() { //nolint:gocognit
 
 	srvAddr, err := net.ResolveUDPAddr(udp, *server)
 	if err != nil {
-		log.Fatalln("resolve serveraddr:", err)
+		log.Fatalf("Failed to resolve server addr: %s", err)
 	}
 
 	conn, err := net.ListenUDP(udp, nil)
 	if err != nil {
-		log.Fatalln("dial:", err)
+		log.Fatalf("Failed to listen: %s", err)
 	}
 
 	defer func() {
 		_ = conn.Close()
 	}()
 
-	log.Printf("Listening on %s\n", conn.LocalAddr())
+	log.Printf("Listening on %s", conn.LocalAddr())
 
 	var publicAddr stun.XORMappedAddress
 	var peerAddr *net.UDPAddr
