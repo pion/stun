@@ -14,7 +14,7 @@ $ $GOPATH/bin/stun-nat-behaviour [options] [--server IP:port]
 
 If `$GOPATH` is unset it defaults to `~/go`
 
-The default value `--server` is stun.voip.blackberry.com:3478
+The default value `--server` is stun.voipgate.com:3478
 
 Use `-h` to see all options
 
@@ -22,7 +22,7 @@ Use `-h` to see all options
 For a successful run you will see output like the following.
 
 ```
-connecting to STUN server: stun.voip.blackberry.com:3478
+connecting to STUN server: stun.voipgate.com:3478
 ...
 Mapping Test I: Regular binding request
 Received XOR-MAPPED-ADDRESS: ...:...
@@ -31,7 +31,7 @@ Mapping Test II: Send binding request to the other address but primary port
 ...
 => NAT mapping behavior: endpoint independent
 
-connecting to STUN server: stun.voip.blackberry.com:3478
+connecting to STUN server: stun.voipgate.com:3478
 ...
 Filtering Test I: Regular binding request
 ...
