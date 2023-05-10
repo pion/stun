@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"flag"
-	"fmt"
 	"log"
 	mathRand "math/rand"
 	"os"
@@ -35,7 +34,7 @@ func main() { //nolint:gocognit
 	flag.Parse()
 	uri, err := stun.ParseURI(*uriStr)
 	if err != nil {
-		log.Fatalf("failed to parse URI '%s': %s", *uriStr, err)
+		log.Fatalf("Failed to parse URI '%s': %s", *uriStr, err)
 	}
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
@@ -48,57 +47,57 @@ func main() { //nolint:gocognit
 	if *cpuProfile != "" {
 		f, createErr := os.Create(*cpuProfile)
 		if createErr != nil {
-			log.Fatalln("failed to create cpu profile output file:", createErr)
+			log.Fatalf("Failed to create CPU profile output file: %s", createErr)
 		}
 		if pprofErr := pprof.StartCPUProfile(f); pprofErr != nil {
-			log.Fatalln("failed to start pprof cpu profiling:", pprofErr)
+			log.Fatalf("Failed to start pprof CPU profiling: %s", pprofErr)
 		}
 		defer func() {
 			pprof.StopCPUProfile()
 			if closeErr := f.Close(); closeErr != nil {
-				log.Println("failed to close cpu profile output file:", closeErr)
+				log.Printf("Failed to close CPU profile output file: %s", closeErr)
 			} else {
-				fmt.Println("saved cpu profile to", *cpuProfile)
+				log.Printf("Saved cpu profile to: %s", *cpuProfile)
 			}
 		}()
 	}
 	if *memProfile != "" {
 		f, createErr := os.Create(*memProfile)
 		if createErr != nil {
-			log.Panicln("failed to create memory profile output file:", createErr)
+			log.Panicf("Failed to create memory profile output file: %s", createErr)
 		}
 		defer func() {
 			if pprofErr := pprof.Lookup("heap").WriteTo(f, 1); pprofErr != nil {
-				log.Fatalln("failed to write pprof memory profiling:", pprofErr)
+				log.Fatalf("Failed to write pprof memory profiling: %s", pprofErr)
 			}
 			if closeErr := f.Close(); closeErr != nil {
-				log.Println("failed to close memory profile output file:", closeErr)
+				log.Printf("Failed to close memory profile output file: %s", closeErr)
 			} else {
-				fmt.Println("saved memory profile to", *memProfile)
+				log.Printf("Saved memory profile to %s", *memProfile)
 			}
 		}()
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), *duration)
 	go func() {
 		for sig := range signals {
-			fmt.Println("stopping on", sig)
+			log.Printf("Stopping on %s", sig)
 			cancel()
 		}
 	}()
 	if *realRand {
-		fmt.Println("using crypto/rand as random source for transaction id")
+		log.Print("Using crypto/rand as random source for transaction id")
 	}
 	for i := 0; i < *workers; i++ {
 		c, clientErr := stun.DialURI(uri, &stun.DialConfig{})
 		if clientErr != nil {
-			log.Panicln("failed to create client:", clientErr)
+			log.Panicf("Failed to create client: %s", clientErr)
 		}
 		go func() {
 			req := stun.New()
 			for {
 				if *realRand {
 					if _, err := rand.Read(req.TransactionID[:]); err != nil { //nolint:gosec
-						log.Fatal("rand.Read failed:", err)
+						log.Fatalf("Failed to generate transaction ID: %s", err)
 					}
 				} else {
 					mathRand.Read(req.TransactionID[:]) //nolint:gosec
@@ -109,7 +108,7 @@ func main() { //nolint:gocognit
 				if doErr := c.Do(req, func(event stun.Event) {
 					if event.Error != nil {
 						if !errors.Is(event.Error, stun.ErrTransactionTimeOut) {
-							log.Println("event.Error error:", event.Error)
+							log.Printf("Failed STUN transaction: %s", event.Error)
 						}
 						atomic.AddInt64(&requestErr, 1)
 						return
@@ -117,20 +116,20 @@ func main() { //nolint:gocognit
 					atomic.AddInt64(&requestOK, 1)
 				}); doErr != nil {
 					if !errors.Is(doErr, stun.ErrTransactionExists) {
-						log.Println("Do() error:", doErr)
+						log.Printf("Failed STUN transaction: %s", doErr)
 					}
 					atomic.AddInt64(&requestErr, 1)
 				}
 			}
 		}()
 	}
-	fmt.Println("workers started")
+	log.Print("Workers started")
 	<-ctx.Done()
 	stop := time.Now()
 	rps := int(float64(atomic.LoadInt64(&requestOK)) / stop.Sub(start).Seconds())
-	fmt.Println("rps:", rps)
+	log.Printf("RPS: %v", rps)
 	if reqErr := atomic.LoadInt64(&requestErr); requestErr != 0 {
-		fmt.Println("errors:", reqErr)
+		log.Printf("Errors: %d", reqErr)
 	}
-	fmt.Println("total:", atomic.LoadInt64(&request))
+	log.Printf("Total: %d", atomic.LoadInt64(&request))
 }

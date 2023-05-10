@@ -33,21 +33,23 @@ func main() {
 	// we only try the first address, so restrict ourselves to IPv4
 	c, err := stun.DialURI(uri, &stun.DialConfig{})
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Fatalf("Failed to dial: %s", err)
 	}
 	if err = c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
-			log.Fatalln(res.Error)
+			log.Fatalf("Failed STUN transaction: %s", res.Error)
 		}
+
 		var xorAddr stun.XORMappedAddress
 		if getErr := xorAddr.GetFrom(res.Message); getErr != nil {
-			log.Fatalln(getErr)
+			log.Fatalf("Failed to get XOR-MAPPED-ADDRESS: %s", getErr)
 		}
-		fmt.Println(xorAddr)
+
+		log.Print(xorAddr)
 	}); err != nil {
 		log.Fatal("do:", err)
 	}
 	if err := c.Close(); err != nil {
-		log.Fatalln(err)
+		log.Fatalf("Failed to close connection: %s", err)
 	}
 }
