@@ -27,7 +27,7 @@ func main() {
 
 	uri, err := stun.ParseURI(uriStr)
 	if err != nil {
-		log.Fatalf("invalid URI '%s': %s", uriStr, err)
+		log.Fatalf("Invalid URI '%s': %s", uriStr, err)
 	}
 
 	// we only try the first address, so restrict ourselves to IPv4
@@ -47,7 +47,7 @@ func main() {
 
 		log.Print(xorAddr)
 	}); err != nil {
-		log.Fatal("do:", err)
+		log.Fatal("Do:", err)
 	}
 	if err := c.Close(); err != nil {
 		log.Fatalf("Failed to close connection: %s", err)

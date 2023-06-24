@@ -74,7 +74,7 @@ func main() {
 func mappingTests(addrStr string) error {
 	mapTestConn, err := connect(addrStr)
 	if err != nil {
-		log.Warnf("Error creating STUN connection: %s", err.Error())
+		log.Warnf("Error creating STUN connection: %s", err)
 		return err
 	}
 
@@ -147,7 +147,7 @@ func mappingTests(addrStr string) error {
 func filteringTests(addrStr string) error {
 	mapTestConn, err := connect(addrStr)
 	if err != nil {
-		log.Warnf("Error creating STUN connection: %s", err.Error())
+		log.Warnf("Error creating STUN connection: %s", err)
 		return err
 	}
 
@@ -254,10 +254,10 @@ func parse(msg *stun.Message) (ret struct {
 
 // Given an address string, returns a StunServerConn
 func connect(addrStr string) (*stunServerConn, error) {
-	log.Infof("connecting to STUN server: %s", addrStr)
+	log.Infof("Connecting to STUN server: %s", addrStr)
 	addr, err := net.ResolveUDPAddr("udp4", addrStr)
 	if err != nil {
-		log.Warnf("Error resolving address: %s", err.Error())
+		log.Warnf("Error resolving address: %s", err)
 		return nil, err
 	}
 
