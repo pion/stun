@@ -15,6 +15,6 @@ func ShouldNotAllocate(t *testing.T, f func()) {
 		return
 	}
 	if a := testing.AllocsPerRun(10, f); a > 0 {
-		t.Errorf("allocations detected: %f", a)
+		t.Errorf("Allocations detected: %f", a)
 	}
 }
