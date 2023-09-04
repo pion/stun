@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/pion/dtls/v2"
-	"github.com/pion/transport/v2"
-	"github.com/pion/transport/v2/stdnet"
+	"github.com/pion/transport/v3"
+	"github.com/pion/transport/v3/stdnet"
 )
 
 // ErrUnsupportedURI is an error thrown if the user passes an unsupported STUN or TURN URI
