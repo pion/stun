@@ -1,3 +1,0 @@
-pkg github.com/pion/stun, const CodeRoleConflict = 487
-pkg github.com/pion/stun, const CodeUnauthorized = 401
-pkg github.com/pion/stun, const CodeUnauthorized ErrorCode

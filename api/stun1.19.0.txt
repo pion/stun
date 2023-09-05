@@ -1,1 +1,0 @@
-pkg github.com/pion/stun, var WithNoConnClose ClientOption

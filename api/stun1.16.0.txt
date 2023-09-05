@@ -1,9 +1,0 @@
-pkg github.com/pion/stun, func NewClient(Connection, ...ClientOption) (*Client, error)
-pkg github.com/pion/stun, func WithAgent(ClientAgent) ClientOption
-pkg github.com/pion/stun, func WithClock(Clock) ClientOption
-pkg github.com/pion/stun, func WithCollector(Collector) ClientOption
-pkg github.com/pion/stun, func WithHandler(Handler) ClientOption
-pkg github.com/pion/stun, func WithRTO(time.Duration) ClientOption
-pkg github.com/pion/stun, func WithTimeoutRate(time.Duration) ClientOption
-pkg github.com/pion/stun, func WithNoRetransmit(*Client)
-pkg github.com/pion/stun, type ClientOption func(*Client)

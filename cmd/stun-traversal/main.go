@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pion/stun"
+	"github.com/pion/stun/v2"
 )
 
 var server = flag.String("server", "stun:stun.voipgate.com:3478", "Stun server address") //nolint:gochecknoglobals
