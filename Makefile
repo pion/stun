@@ -32,8 +32,6 @@ install:
 test-integration:
 	@cd e2e && bash ./test.sh
 prepush: test lint test-integration
-check-api:
-	@cd api && bash ./check.sh
 test:
 	@./go.test.sh
 clean:

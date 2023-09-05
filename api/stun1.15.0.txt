@@ -1,6 +1,0 @@
-pkg github.com/pion/stun, const AttrRequestedAddressFamily = 23
-pkg github.com/pion/stun, const AttrRequestedAddressFamily AttrType
-pkg github.com/pion/stun, const CodeAddrFamilyNotSupported = 440
-pkg github.com/pion/stun, const CodeAddrFamilyNotSupported ErrorCode
-pkg github.com/pion/stun, const CodePeerAddrFamilyMismatch = 443
-pkg github.com/pion/stun, const CodePeerAddrFamilyMismatch ErrorCode

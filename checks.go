@@ -9,7 +9,7 @@ package stun
 import (
 	"errors"
 
-	"github.com/pion/stun/internal/hmac"
+	"github.com/pion/stun/v2/internal/hmac"
 )
 
 // CheckSize returns ErrAttrSizeInvalid if got is not equal to expected.
