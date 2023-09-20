@@ -17,7 +17,7 @@ import (
 	"github.com/pion/stun/v3"
 )
 
-var server = flag.String("server", "stun:stun.voipgate.com:3478", "Stun server address") //nolint:gochecknoglobals
+var server = flag.String("server", "stun.voipgate.com:3478", "Stun server address") //nolint:gochecknoglobals
 
 const (
 	udp           = "udp4"
