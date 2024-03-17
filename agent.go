@@ -11,7 +11,7 @@ import (
 
 // NoopHandler just discards any event.
 func NoopHandler() Handler {
-	return func(e Event) {}
+	return func(Event) {}
 }
 
 // NewAgent initializes and returns new Agent with provided handler.

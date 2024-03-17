@@ -12,6 +12,7 @@ func TestRFC5769(t *testing.T) {
 	// Test Vectors for Session Traversal Utilities for NAT (STUN)
 	// see https://tools.ietf.org/html/rfc5769
 	t.Run("Request", func(t *testing.T) {
+		// nolint
 		m := &Message{
 			Raw: []byte("\x00\x01\x00\x58" +
 				"\x21\x12\xa4\x42" +
