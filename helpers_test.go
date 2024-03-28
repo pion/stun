@@ -107,7 +107,7 @@ func TestHelpersErrorHandling(t *testing.T) {
 		t.Error(err, "!=", e.Err)
 	}
 	t.Run("MustBuild", func(t *testing.T) {
-		t.Run("Positive", func(t *testing.T) {
+		t.Run("Positive", func(*testing.T) {
 			MustBuild(NewTransactionIDSetter(transactionID{}))
 		})
 		defer func() {
@@ -142,7 +142,7 @@ func TestMessage_ForEach(t *testing.T) {
 		if !m.Equal(initial) {
 			t.Error("m should be equal to initial")
 		}
-		if err := m.ForEach(AttrUsername, func(m *Message) error {
+		if err := m.ForEach(AttrUsername, func(*Message) error {
 			t.Error("should not be called")
 			return nil
 		}); err != nil {
@@ -155,7 +155,7 @@ func TestMessage_ForEach(t *testing.T) {
 	t.Run("ReturnOnError", func(t *testing.T) {
 		m := newMessage()
 		var calls int
-		if err := m.ForEach(AttrRealm, func(m *Message) error {
+		if err := m.ForEach(AttrRealm, func(*Message) error {
 			if calls > 0 {
 				t.Error("called multiple times")
 			}
@@ -235,7 +235,7 @@ func BenchmarkMessage_ForEach(b *testing.B) {
 		NewRealm("realm4"),
 	)
 	for i := 0; i < b.N; i++ {
-		if err := m.ForEach(AttrRealm, func(m *Message) error {
+		if err := m.ForEach(AttrRealm, func(*Message) error {
 			return nil
 		}); err != nil {
 			b.Fatal(err)

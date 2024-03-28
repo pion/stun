@@ -140,7 +140,7 @@ func TestHMACPool_SHA256(t *testing.T) { //nolint:dupl
 }
 
 func TestAssertBlockSize(t *testing.T) {
-	t.Run("Positive", func(t *testing.T) {
+	t.Run("Positive", func(*testing.T) {
 		h := AcquireSHA1(make([]byte, 0, 1024))
 		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize) //nolint:forcetypeassert
 	})

@@ -93,7 +93,7 @@ func BenchmarkClient_Do(b *testing.B) {
 		}
 	}()
 
-	noopF := func(event Event) {
+	noopF := func(Event) {
 		// pass
 	}
 	b.RunParallel(func(pb *testing.PB) {
@@ -224,7 +224,7 @@ func TestClient_Start(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log("starting the second transaction")
-	if err := c.Start(m, func(e Event) {
+	if err := c.Start(m, func(Event) {
 		t.Error("should not be called")
 	}); !errors.Is(err, ErrTransactionExists) {
 		t.Errorf("unexpected error %v", err)
@@ -380,7 +380,7 @@ func TestClientAgentError(t *testing.T) {
 
 func TestClientConnErr(t *testing.T) {
 	conn := &testConnection{
-		write: func(bytes []byte) (int, error) {
+		write: func([]byte) (int, error) {
 			return 0, io.ErrClosedPipe
 		},
 	}
@@ -404,7 +404,7 @@ func TestClientConnErr(t *testing.T) {
 
 func TestClientConnErrStopErr(t *testing.T) {
 	conn := &testConnection{
-		write: func(bytes []byte) (int, error) {
+		write: func([]byte) (int, error) {
 			return 0, io.ErrClosedPipe
 		},
 	}
@@ -629,7 +629,7 @@ func TestClientFinalizer(t *testing.T) {
 	clientFinalizer(nil) // should not panic
 	clientFinalizer(&Client{})
 	conn := &testConnection{
-		write: func(bytes []byte) (int, error) {
+		write: func([]byte) (int, error) {
 			return 0, io.ErrClosedPipe
 		},
 	}
@@ -681,7 +681,7 @@ func TestClientFinalizer(t *testing.T) {
 func TestCallbackWaitHandler(*testing.T) {
 	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler) //nolint:forcetypeassert
 	for i := 0; i < 100; i++ {
-		h.setCallback(func(event Event) {})
+		h.setCallback(func(Event) {})
 		go func() {
 			time.Sleep(time.Microsecond * 100)
 			h.HandleEvent(Event{})
@@ -775,7 +775,7 @@ func TestClientRetransmission(t *testing.T) {
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
 	attempt := 0
-	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
 		if attempt == 0 {
 			attempt++
 			go agent.h(Event{
@@ -841,7 +841,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
-	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
 		go agent.h(Event{
 			TransactionID: id,
 			Message:       response,
@@ -1033,7 +1033,7 @@ func TestWithNoRetransmit(t *testing.T) {
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
 	attempt := 0
-	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
 		if attempt == 0 {
 			attempt++
 			go agent.h(Event{
@@ -1125,7 +1125,7 @@ func TestClientRTOStartErr(t *testing.T) {
 		c              *Client
 		startClientErr error
 	)
-	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
 		t.Log("start", attempt)
 		if attempt == 0 {
 			attempt++
@@ -1242,10 +1242,10 @@ func TestClientRTOWriteErr(t *testing.T) {
 		startClientErr error
 	)
 	agentStopErr := errClientAgentCantStop
-	agent.stop = func(id [TransactionIDSize]byte) error {
+	agent.stop = func([TransactionIDSize]byte) error {
 		return agentStopErr
 	}
-	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
 		t.Log("start", attempt)
 		if attempt == 0 {
 			attempt++
@@ -1350,7 +1350,7 @@ func TestClientRTOAgentErr(t *testing.T) {
 		startClientErr error
 	)
 	agentStartErr := errClientStartRefused
-	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
 		t.Log("start", attempt)
 		if attempt == 0 {
 			attempt++
@@ -1413,7 +1413,7 @@ func TestClient_HandleProcessError(t *testing.T) {
 	agent := &manualAgent{}
 	gotWrites := make(chan struct{})
 	processCalled := make(chan struct{}, 1)
-	agent.process = func(m *Message) error {
+	agent.process = func(*Message) error {
 		processCalled <- struct{}{}
 		return ErrAgentClosed
 	}
