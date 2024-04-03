@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"hash/crc64"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -558,7 +557,7 @@ func loadData(tb testing.TB, name string) []byte {
 			tb.Fatal(errClose)
 		}
 	}()
-	v, err := ioutil.ReadAll(f)
+	v, err := io.ReadAll(f)
 	if err != nil {
 		tb.Fatal(err)
 	}
