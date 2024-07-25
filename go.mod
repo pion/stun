@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/pion/dtls/v2 v2.2.12
 	github.com/pion/logging v0.2.2
-	github.com/pion/transport/v3 v3.0.5
+	github.com/pion/transport/v3 v3.0.6
 	github.com/stretchr/testify v1.9.0
 )
 
