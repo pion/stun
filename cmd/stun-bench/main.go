@@ -18,7 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pion/stun/v2"
+	"github.com/pion/stun/v3"
 )
 
 var (

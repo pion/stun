@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pion/stun/v2"
+	"github.com/pion/stun/v3"
 )
 
 func test(network string) {

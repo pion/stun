@@ -5,7 +5,7 @@ that splits incoming UDP packets to two streams, "STUN Data" and "Application Da
 
 Usage:
 ```sh
-$ go install github.com/pion/stun/v2/cmd/stun-multiplex@latest
+$ go install github.com/pion/stun/v3/cmd/stun-multiplex@latest
 ```
 
 On "server":
