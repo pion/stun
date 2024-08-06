@@ -1,4 +1,4 @@
-module github.com/pion/stun/v2
+module github.com/pion/stun/v3
 
 go 1.19
 
