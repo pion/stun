@@ -16,7 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pion/dtls/v2"
+	"github.com/pion/dtls/v3"
 	"github.com/pion/transport/v3"
 	"github.com/pion/transport/v3/stdnet"
 )
@@ -78,12 +78,17 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) {
 		dtlsCfg := cfg.DTLSConfig // Copy
 		dtlsCfg.ServerName = uri.Host
 
-		udpConn, err := nw.Dial("udp", addr)
+		udpAddr, err := net.ResolveUDPAddr("udp", addr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve UDPAddr: %w", err)
+		}
+
+		udpConn, err := nw.DialUDP("udp", nil, udpAddr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
-		if conn, err = dtls.Client(udpConn, &dtlsCfg); err != nil {
+		if conn, err = dtls.Client(udpConn, udpConn.RemoteAddr(), &dtlsCfg); err != nil {
 			return nil, fmt.Errorf("failed to connect to '%s': %w", addr, err)
 		}
 
