@@ -40,8 +40,8 @@ func IsAttrSizeInvalid(err error) bool {
 }
 
 // CheckOverflow returns ErrAttributeSizeOverflow if got is bigger that max.
-func CheckOverflow(_ AttrType, got, max int) error {
-	if got <= max {
+func CheckOverflow(_ AttrType, got, maxVal int) error {
+	if got <= maxVal {
 		return nil
 	}
 	return ErrAttributeSizeOverflow
