@@ -13,14 +13,19 @@ import (
 
 var errUDPServerUnsupportedNetwork = errors.New("unsupported network")
 
-// NewUDPServer creates an udp server for testing. The supplied handler function will be called with the request
+// NewUDPServer creates an udp server for testing.
+// The supplied handler function will be called with the request
 // and should be used to emulate the server behavior.
+//
+//nolint:cyclop
 func NewUDPServer(
 	t *testing.T,
 	network string,
 	maxMessageSize int,
 	handler func(req []byte) ([]byte, error),
 ) (net.Addr, func(t *testing.T), error) {
+	t.Helper()
+
 	var ip string
 	switch network {
 	case "udp4":
@@ -50,28 +55,34 @@ func NewUDPServer(
 			n, addr, err := udpConn.ReadFrom(bs)
 			if err != nil {
 				errCh <- err
+
 				return
 			}
 
 			resp, err := handler(bs[:n])
 			if err != nil {
 				errCh <- err
+
 				return
 			}
 
 			_, err = udpConn.WriteTo(resp, addr)
 			if err != nil {
 				errCh <- err
+
 				return
 			}
 		}
 	}()
 
 	return serverAddr, func(t *testing.T) {
+		t.Helper()
+
 		select {
 		case err := <-errCh:
 			if err != nil {
-				t.Fatal(err) //nolint
+				t.Fatal(err)
+
 				return
 			}
 		default:
@@ -79,7 +90,7 @@ func NewUDPServer(
 
 		err := udpConn.Close()
 		if err != nil {
-			t.Fatal(err) //nolint
+			t.Fatal(err)
 		}
 
 		<-errCh

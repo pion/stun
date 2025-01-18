@@ -44,13 +44,13 @@ func TestRawAttribute_AddTo(t *testing.T) {
 }
 
 func TestMessage_GetNoAllocs(t *testing.T) {
-	m := New()
-	NewSoftware("c").AddTo(m) //nolint:errcheck,gosec
-	m.WriteHeader()
+	msg := New()
+	NewSoftware("c").AddTo(msg) //nolint:errcheck,gosec
+	msg.WriteHeader()
 
 	t.Run("Default", func(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
-			m.Get(AttrSoftware) //nolint:errcheck,gosec
+			msg.Get(AttrSoftware) //nolint:errcheck,gosec
 		})
 		if allocs > 0 {
 			t.Error("allocated memory, but should not")
@@ -58,7 +58,7 @@ func TestMessage_GetNoAllocs(t *testing.T) {
 	})
 	t.Run("Not found", func(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
-			m.Get(AttrOrigin) //nolint:errcheck,gosec
+			msg.Get(AttrOrigin) //nolint:errcheck,gosec
 		})
 		if allocs > 0 {
 			t.Error("allocated memory, but should not")

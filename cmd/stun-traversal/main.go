@@ -26,7 +26,7 @@ const (
 	timeoutMillis = 500
 )
 
-func main() { //nolint:gocognit
+func main() { //nolint:gocognit,cyclop
 	flag.Parse()
 
 	srvAddr, err := net.ResolveUDPAddr(udp, *server)
@@ -87,11 +87,13 @@ func main() { //nolint:gocognit
 				decErr := m.Decode()
 				if decErr != nil {
 					log.Println("decode:", decErr)
+
 					break
 				}
 				var xorAddr stun.XORMappedAddress
 				if getErr := xorAddr.GetFrom(m); getErr != nil {
 					log.Println("getFrom:", getErr)
+
 					break
 				}
 
@@ -160,6 +162,7 @@ func listen(conn *net.UDPConn) <-chan []byte {
 			n, _, err := conn.ReadFromUDP(buf)
 			if err != nil {
 				close(messages)
+
 				return
 			}
 			buf = buf[:n]
@@ -167,6 +170,7 @@ func listen(conn *net.UDPConn) <-chan []byte {
 			messages <- buf
 		}
 	}()
+
 	return messages
 }
 

@@ -38,11 +38,13 @@ type TestAgent struct {
 
 func (n *TestAgent) SetHandler(h Handler) error {
 	n.h = h
+
 	return nil
 }
 
 func (n *TestAgent) Close() error {
 	close(n.e)
+
 	return nil
 }
 
@@ -54,6 +56,7 @@ func (n *TestAgent) Start(id [TransactionIDSize]byte, _ time.Time) error {
 	n.e <- Event{
 		TransactionID: id,
 	}
+
 	return nil
 }
 
@@ -69,6 +72,7 @@ func (noopConnection) Write(b []byte) (int, error) {
 
 func (noopConnection) Read([]byte) (int, error) {
 	time.Sleep(time.Millisecond)
+
 	return 0, io.EOF
 }
 
@@ -136,6 +140,7 @@ func (t *testConnection) Close() error {
 		return errClientAlreadyStopped
 	}
 	t.stopped = true
+
 	return nil
 }
 
@@ -148,6 +153,7 @@ func (t *testConnection) Read(b []byte) (int, error) {
 	if t.read != nil {
 		return t.read(b)
 	}
+
 	return copy(b, t.b), nil
 }
 
@@ -165,7 +171,7 @@ func TestClosedOrPanic(t *testing.T) {
 	}()
 }
 
-func TestClient_Start(t *testing.T) {
+func TestClient_Start(t *testing.T) { //nolint:cyclop
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	write := make(chan struct{}, 1)
@@ -178,6 +184,7 @@ func TestClient_Start(t *testing.T) {
 			case <-read:
 				t.Log("reading")
 				copy(i, response.Raw)
+
 				return len(response.Raw), nil
 			case <-time.After(time.Millisecond * 10):
 				return 0, errClientReadTimedOut
@@ -188,33 +195,34 @@ func TestClient_Start(t *testing.T) {
 			select {
 			case <-write:
 				t.Log("writing")
+
 				return len(bytes), nil
 			case <-time.After(time.Millisecond * 10):
 				return 0, errClientWriteTimedOut
 			}
 		},
 	}
-	c, err := NewClient(conn)
+	client, err := NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := c.Close(); err != nil {
+		if err := client.Close(); err != nil {
 			t.Error(err)
 		}
-		if err := c.Close(); err == nil {
+		if err := client.Close(); err == nil {
 			t.Error("second close should fail")
 		}
-		if err := c.Do(MustBuild(TransactionID), nil); err == nil {
+		if err := client.Do(MustBuild(TransactionID), nil); err == nil {
 			t.Error("Do after Close should fail")
 		}
 	}()
-	m := MustBuild(response, BindingRequest)
+	msg := MustBuild(response, BindingRequest)
 	t.Log("init")
 	got := make(chan struct{})
 	write <- struct{}{}
 	t.Log("starting the first transaction")
-	if err := c.Start(m, func(event Event) {
+	if err := client.Start(msg, func(event Event) {
 		t.Log("got first transaction callback")
 		if event.Error != nil {
 			t.Error(event.Error)
@@ -224,7 +232,7 @@ func TestClient_Start(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log("starting the second transaction")
-	if err := c.Start(m, func(Event) {
+	if err := client.Start(msg, func(Event) {
 		t.Error("should not be called")
 	}); !errors.Is(err, ErrTransactionExists) {
 		t.Errorf("unexpected error %v", err)
@@ -247,25 +255,25 @@ func TestClient_Do(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	c, err := NewClient(conn)
+	client, err := NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := c.Close(); err != nil {
+		if err := client.Close(); err != nil {
 			t.Error(err)
 		}
-		if err := c.Close(); err == nil {
+		if err := client.Close(); err == nil {
 			t.Error("second close should fail")
 		}
-		if err := c.Do(MustBuild(TransactionID), nil); err == nil {
+		if err := client.Do(MustBuild(TransactionID), nil); err == nil {
 			t.Error("Do after Close should fail")
 		}
 	}()
 	m := MustBuild(
 		NewTransactionIDSetter(response.TransactionID),
 	)
-	if err := c.Do(m, func(event Event) {
+	if err := client.Do(m, func(event Event) {
 		if event.Error != nil {
 			t.Error(event.Error)
 		}
@@ -273,13 +281,13 @@ func TestClient_Do(t *testing.T) {
 		t.Error(err)
 	}
 	m = MustBuild(TransactionID)
-	if err := c.Do(m, nil); err != nil {
+	if err := client.Do(m, nil); err != nil {
 		t.Error(err)
 	}
 }
 
 func TestCloseErr_Error(t *testing.T) {
-	for id, c := range []struct {
+	for id, testCase := range []struct {
 		Err CloseErr
 		Out string
 	}{
@@ -291,16 +299,16 @@ func TestCloseErr_Error(t *testing.T) {
 			ConnectionErr: io.ErrUnexpectedEOF,
 		}, "failed to close: unexpected EOF (connection), <nil> (agent)"},
 	} {
-		if out := c.Err.Error(); out != c.Out {
+		if out := testCase.Err.Error(); out != testCase.Out {
 			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
-				id, c.Err, out, c.Out,
+				id, testCase.Err, out, testCase.Out,
 			)
 		}
 	}
 }
 
 func TestStopErr_Error(t *testing.T) {
-	for id, c := range []struct {
+	for id, testcase := range []struct {
 		Err StopErr
 		Out string
 	}{
@@ -312,9 +320,9 @@ func TestStopErr_Error(t *testing.T) {
 			Cause: io.ErrUnexpectedEOF,
 		}, "error while stopping due to unexpected EOF: <nil>"},
 	} {
-		if out := c.Err.Error(); out != c.Out {
+		if out := testcase.Err.Error(); out != testcase.Out {
 			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
-				id, c.Err, out, c.Out,
+				id, testcase.Err, out, testcase.Out,
 			)
 		}
 	}
@@ -352,7 +360,7 @@ func TestClientAgentError(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	c, err := NewClient(conn,
+	client, err := NewClient(conn,
 		WithAgent(errorAgent{
 			startErr: io.ErrUnexpectedEOF,
 		}),
@@ -361,15 +369,15 @@ func TestClientAgentError(t *testing.T) {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := c.Close(); err != nil {
+		if err := client.Close(); err != nil {
 			t.Error(err)
 		}
 	}()
 	m := MustBuild(NewTransactionIDSetter(response.TransactionID))
-	if err := c.Do(m, nil); err != nil {
+	if err := client.Do(m, nil); err != nil {
 		t.Error(err)
 	}
-	if err := c.Do(m, func(event Event) {
+	if err := client.Do(m, func(event Event) {
 		if event.Error == nil {
 			t.Error("error expected")
 		}
@@ -384,20 +392,20 @@ func TestClientConnErr(t *testing.T) {
 			return 0, io.ErrClosedPipe
 		},
 	}
-	c, err := NewClient(conn)
+	client, err := NewClient(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := c.Close(); err != nil {
+		if err := client.Close(); err != nil {
 			t.Error(err)
 		}
 	}()
 	m := MustBuild(TransactionID)
-	if err := c.Do(m, nil); err == nil {
+	if err := client.Do(m, nil); err == nil {
 		t.Error("error expected")
 	}
-	if err := c.Do(m, NoopHandler()); err == nil {
+	if err := client.Do(m, NoopHandler()); err == nil {
 		t.Error("error expected")
 	}
 }
@@ -408,7 +416,7 @@ func TestClientConnErrStopErr(t *testing.T) {
 			return 0, io.ErrClosedPipe
 		},
 	}
-	c, err := NewClient(conn,
+	client, err := NewClient(conn,
 		WithAgent(errorAgent{
 			stopErr: io.ErrUnexpectedEOF,
 		}),
@@ -417,12 +425,12 @@ func TestClientConnErrStopErr(t *testing.T) {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := c.Close(); err != nil {
+		if err := client.Close(); err != nil {
 			t.Error(err)
 		}
 	}()
 	m := MustBuild(TransactionID)
-	if err := c.Do(m, NoopHandler()); err == nil {
+	if err := client.Do(m, NoopHandler()); err == nil {
 		t.Error("error expected")
 	}
 }
@@ -556,11 +564,13 @@ func (a *gcWaitAgent) Stop([TransactionIDSize]byte) error {
 
 func (a *gcWaitAgent) Close() error {
 	close(a.gc)
+
 	return nil
 }
 
 func (a *gcWaitAgent) Collect(time.Time) error {
 	a.gc <- struct{}{}
+
 	return nil
 }
 
@@ -617,6 +627,7 @@ func captureLog() (*bytes.Buffer, func()) {
 	log.SetOutput(&buf)
 	f := log.Flags()
 	log.SetFlags(0)
+
 	return &buf, func() {
 		log.SetFlags(f)
 		log.SetOutput(os.Stderr)
@@ -633,12 +644,12 @@ func TestClientFinalizer(t *testing.T) {
 			return 0, io.ErrClosedPipe
 		},
 	}
-	c, err := NewClient(conn)
+	client, err := NewClient(conn)
 	if err != nil {
 		log.Panic(err)
 	}
-	clientFinalizer(c)
-	clientFinalizer(c)
+	clientFinalizer(client)
+	clientFinalizer(client)
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	conn = &testConnection{
@@ -647,7 +658,7 @@ func TestClientFinalizer(t *testing.T) {
 			return len(bytes), nil
 		},
 	}
-	c, err = NewClient(conn,
+	client, err = NewClient(conn,
 		WithAgent(errorAgent{
 			closeErr: io.ErrUnexpectedEOF,
 		}),
@@ -655,7 +666,7 @@ func TestClientFinalizer(t *testing.T) {
 	if err != nil {
 		log.Panic(err)
 	}
-	clientFinalizer(c)
+	clientFinalizer(client)
 	reader := bufio.NewScanner(buf)
 	var lines int
 	expectedLines := []string{
@@ -700,6 +711,7 @@ func (m *manualCollector) Collect(t time.Time) {
 
 func (m *manualCollector) Start(_ time.Duration, f func(t time.Time)) error {
 	m.f = f
+
 	return nil
 }
 
@@ -717,12 +729,14 @@ func (m *manualClock) Add(d time.Duration) time.Time {
 	v := m.current.Add(d)
 	m.current = v
 	m.mux.Unlock()
+
 	return v
 }
 
 func (m *manualClock) Now() time.Time {
 	m.mux.Lock()
 	defer m.mux.Unlock()
+
 	return m.current
 }
 
@@ -735,6 +749,7 @@ type manualAgent struct {
 
 func (n *manualAgent) SetHandler(h Handler) error {
 	n.h = h
+
 	return nil
 }
 
@@ -748,6 +763,7 @@ func (n *manualAgent) Process(m *Message) error {
 	if n.process != nil {
 		return n.process(m)
 	}
+
 	return nil
 }
 
@@ -759,6 +775,7 @@ func (n *manualAgent) Stop(id [TransactionIDSize]byte) error {
 	if n.stop != nil {
 		return n.stop(id)
 	}
+
 	return nil
 }
 
@@ -788,9 +805,10 @@ func TestClientRetransmission(t *testing.T) {
 				Message:       response,
 			})
 		}
+
 		return nil
 	}
-	c, err := NewClient(connR,
+	client, err := NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -799,7 +817,7 @@ func TestClientRetransmission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c.SetRTO(time.Second)
+	client.SetRTO(time.Second)
 	gotReads := make(chan struct{})
 	go func() {
 		buf := make([]byte, 1500)
@@ -819,7 +837,7 @@ func TestClientRetransmission(t *testing.T) {
 		}
 		gotReads <- struct{}{}
 	}()
-	if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+	if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
 		if event.Error != nil {
 			t.Error("failed")
 		}
@@ -829,7 +847,9 @@ func TestClientRetransmission(t *testing.T) {
 	<-gotReads
 }
 
-func testClientDoConcurrent(t *testing.T, concurrency int) {
+func testClientDoConcurrent(t *testing.T, concurrency int) { //nolint:cyclop
+	t.Helper()
+
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
@@ -846,9 +866,10 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 			TransactionID: id,
 			Message:       response,
 		})
+
 		return nil
 	}
-	c, err := NewClient(connR,
+	client, err := NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -856,7 +877,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c.SetRTO(time.Second)
+	client.SetRTO(time.Second)
 	conns := new(sync.WaitGroup)
 	wg := new(sync.WaitGroup)
 	for i := 0; i < concurrency; i++ {
@@ -880,7 +901,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if doErr := c.Do(MustBuild(TransactionID, BindingRequest), func(event Event) {
+			if doErr := client.Do(MustBuild(TransactionID, BindingRequest), func(event Event) {
 				if event.Error != nil {
 					t.Error("failed")
 				}
@@ -962,14 +983,14 @@ func TestClient_Close(t *testing.T) {
 }
 
 func TestClientDefaultHandler(t *testing.T) {
-	a := &TestAgent{
+	agent := &TestAgent{
 		e: make(chan Event),
 	}
 	id := NewTransactionID()
 	handlerCalled := make(chan struct{})
 	called := false
-	c, createErr := NewClient(noopConnection{},
-		WithAgent(a),
+	client, createErr := NewClient(noopConnection{},
+		WithAgent(agent),
 		WithHandler(func(e Event) {
 			if called {
 				t.Error("should not be called twice")
@@ -985,7 +1006,7 @@ func TestClientDefaultHandler(t *testing.T) {
 		t.Fatal(createErr)
 	}
 	go func() {
-		a.h(Event{
+		agent.h(Event{
 			TransactionID: id,
 		})
 	}()
@@ -995,11 +1016,11 @@ func TestClientDefaultHandler(t *testing.T) {
 	case <-time.After(time.Millisecond * 100):
 		t.Fatal("timed out")
 	}
-	if closeErr := c.Close(); closeErr != nil {
+	if closeErr := client.Close(); closeErr != nil {
 		t.Error(closeErr)
 	}
 	// Handler call should be ignored.
-	a.h(Event{})
+	agent.h(Event{})
 }
 
 func TestClientClosedStart(t *testing.T) {
@@ -1047,9 +1068,10 @@ func TestWithNoRetransmit(t *testing.T) {
 				Error:         ErrTransactionTimeOut,
 			})
 		}
+
 		return nil
 	}
-	c, err := NewClient(connR,
+	client, err := NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -1071,7 +1093,7 @@ func TestWithNoRetransmit(t *testing.T) {
 		}
 		gotReads <- struct{}{}
 	}()
-	if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+	if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
 		if !errors.Is(event.Error, ErrTransactionTimeOut) {
 			t.Error("unexpected error")
 		}
@@ -1087,7 +1109,7 @@ func (c callbackClock) Now() time.Time {
 	return c()
 }
 
-func TestClientRTOStartErr(t *testing.T) {
+func TestClientRTOStartErr(t *testing.T) { //nolint:cyclop
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
@@ -1116,13 +1138,14 @@ func TestClientRTOStartErr(t *testing.T) {
 		} else {
 			t.Log("clock returned")
 		}
+
 		return time.Now()
 	})
 	agent := &manualAgent{}
 	attempt := 0
 	gotReads := make(chan struct{})
 	var (
-		c              *Client
+		client         *Client
 		startClientErr error
 	)
 	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
@@ -1146,7 +1169,7 @@ func TestClientRTOStartErr(t *testing.T) {
 				t.Log("clock locked")
 				<-clockLocked
 				t.Log("closing client")
-				if closeErr := c.Close(); closeErr != nil {
+				if closeErr := client.Close(); closeErr != nil {
 					t.Error(closeErr)
 				}
 				t.Log("client closed, unlocking clock")
@@ -1154,9 +1177,10 @@ func TestClientRTOStartErr(t *testing.T) {
 				t.Log("clock unlocked")
 			}()
 		}
+
 		return nil
 	}
-	c, startClientErr = NewClient(connR,
+	client, startClientErr = NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -1186,7 +1210,7 @@ func TestClientRTOStartErr(t *testing.T) {
 	t.Log("starting")
 	done := make(chan struct{})
 	go func() {
-		if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+		if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
 			if !errors.Is(event.Error, ErrClientClosed) {
 				t.Error(event.Error)
 			}
@@ -1203,7 +1227,7 @@ func TestClientRTOStartErr(t *testing.T) {
 	}
 }
 
-func TestClientRTOWriteErr(t *testing.T) {
+func TestClientRTOWriteErr(t *testing.T) { //nolint:cyclop
 	response := MustBuild(TransactionID, BindingSuccess)
 	response.Encode()
 	connL, connR := net.Pipe()
@@ -1232,13 +1256,14 @@ func TestClientRTOWriteErr(t *testing.T) {
 		} else {
 			t.Log("clock returned")
 		}
+
 		return time.Now()
 	})
 	agent := &manualAgent{}
 	attempt := 0
 	gotReads := make(chan struct{})
 	var (
-		c              *Client
+		client         *Client
 		startClientErr error
 	)
 	agentStopErr := errClientAgentCantStop
@@ -1274,9 +1299,10 @@ func TestClientRTOWriteErr(t *testing.T) {
 				t.Log("clock unlocked")
 			}()
 		}
+
 		return nil
 	}
-	c, startClientErr = NewClient(connR,
+	client, startClientErr = NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -1306,7 +1332,7 @@ func TestClientRTOWriteErr(t *testing.T) {
 	t.Log("starting")
 	done := make(chan struct{})
 	go func() {
-		if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+		if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
 			var e StopErr
 			if !errors.As(event.Error, &e) {
 				t.Error(event.Error)
@@ -1346,7 +1372,7 @@ func TestClientRTOAgentErr(t *testing.T) {
 	attempt := 0
 	gotReads := make(chan struct{})
 	var (
-		c              *Client
+		client         *Client
 		startClientErr error
 	)
 	agentStartErr := errClientStartRefused
@@ -1361,9 +1387,10 @@ func TestClientRTOAgentErr(t *testing.T) {
 		} else {
 			return agentStartErr
 		}
+
 		return nil
 	}
-	c, startClientErr = NewClient(connR,
+	client, startClientErr = NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -1384,7 +1411,7 @@ func TestClientRTOAgentErr(t *testing.T) {
 		gotReads <- struct{}{}
 	}()
 	t.Log("starting")
-	if doErr := c.Do(MustBuild(response, BindingRequest), func(event Event) {
+	if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
 		if !errors.Is(event.Error, agentStartErr) {
 			t.Error(event.Error)
 		}
@@ -1415,9 +1442,10 @@ func TestClient_HandleProcessError(t *testing.T) {
 	processCalled := make(chan struct{}, 1)
 	agent.process = func(*Message) error {
 		processCalled <- struct{}{}
+
 		return ErrAgentClosed
 	}
-	c, startClientErr := NewClient(connR,
+	client, startClientErr := NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -1440,7 +1468,7 @@ func TestClient_HandleProcessError(t *testing.T) {
 	case <-time.After(time.Second * 5):
 		t.Error("reads timeout")
 	}
-	if closeErr := c.Close(); closeErr != nil {
+	if closeErr := client.Close(); closeErr != nil {
 		t.Error(closeErr)
 	}
 }
@@ -1475,9 +1503,10 @@ func TestClientImmediateTimeout(t *testing.T) {
 				Error:         ErrTransactionTimeOut,
 			})
 		}
+
 		return nil
 	}
-	c, err := NewClient(connR,
+	client, err := NewClient(connR,
 		WithAgent(agent),
 		WithClock(clock),
 		WithCollector(collector),
@@ -1498,7 +1527,7 @@ func TestClientImmediateTimeout(t *testing.T) {
 		}
 		gotReads <- struct{}{}
 	}()
-	c.Start(MustBuild(response, BindingRequest), func(e Event) { //nolint:errcheck,gosec
+	client.Start(MustBuild(response, BindingRequest), func(e Event) { //nolint:errcheck,gosec
 		if errors.Is(e.Error, ErrTransactionTimeOut) {
 			t.Error("unexpected error")
 		}

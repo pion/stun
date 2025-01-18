@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestRFC5769(t *testing.T) {
+func TestRFC5769(t *testing.T) { //nolint:cyclop
 	// Test Vectors for Session Traversal Utilities for NAT (STUN)
 	// see https://tools.ietf.org/html/rfc5769
 	t.Run("Request", func(t *testing.T) {
@@ -46,7 +46,7 @@ func TestRFC5769(t *testing.T) {
 			t.Error("check failed: ", err)
 		}
 		t.Run("Long-Term credentials", func(t *testing.T) {
-			m := &Message{
+			msg := &Message{
 				Raw: []byte("\x00\x01\x00\x60" +
 					"\x21\x12\xa4\x42" +
 					"\x78\xad\x34\x33\xc6\xad\x72\xc0\x29\xda\x41\x2e" +
@@ -64,11 +64,11 @@ func TestRFC5769(t *testing.T) {
 					"\x2e\x85\xc9\xa2\x8c\xa8\x96\x66",
 				),
 			}
-			if err := m.Decode(); err != nil {
+			if err := msg.Decode(); err != nil {
 				t.Error(err)
 			}
 			u := new(Username)
-			if err := u.GetFrom(m); err != nil {
+			if err := u.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			expectedUsername := "\u30DE\u30C8\u30EA\u30C3\u30AF\u30B9"
@@ -76,14 +76,14 @@ func TestRFC5769(t *testing.T) {
 				t.Errorf("username: %q (got) != %q (exp)", u, expectedUsername)
 			}
 			n := new(Nonce)
-			if err := n.GetFrom(m); err != nil {
+			if err := n.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			if n.String() != "f//499k954d6OL34oL9FSTvy64sA" {
 				t.Error("bad nonce")
 			}
 			r := new(Realm)
-			if err := r.GetFrom(m); err != nil {
+			if err := r.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			if r.String() != "example.org" { //nolint:goconst
@@ -95,14 +95,14 @@ func TestRFC5769(t *testing.T) {
 				"example.org",
 				"TheMatrIX",
 			)
-			if err := i.Check(m); err != nil {
+			if err := i.Check(msg); err != nil {
 				t.Error(err)
 			}
 		})
 	})
 	t.Run("Response", func(t *testing.T) {
 		t.Run("IPv4", func(t *testing.T) {
-			m := &Message{
+			msg := &Message{
 				Raw: []byte("\x01\x01\x00\x3c" +
 					"\x21\x12\xa4\x42" +
 					"\xb7\xe7\xa7\x01\xbc\x34\xd6\x86\xfa\x87\xdf\xae" +
@@ -117,21 +117,21 @@ func TestRFC5769(t *testing.T) {
 					"\xc0\x7d\x4c\x96",
 				),
 			}
-			if err := m.Decode(); err != nil {
+			if err := msg.Decode(); err != nil {
 				t.Error(err)
 			}
 			software := new(Software)
-			if err := software.GetFrom(m); err != nil {
+			if err := software.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			if software.String() != "test vector" {
 				t.Error("bad software: ", software)
 			}
-			if err := Fingerprint.Check(m); err != nil {
+			if err := Fingerprint.Check(msg); err != nil {
 				t.Error("Check failed: ", err)
 			}
 			addr := new(XORMappedAddress)
-			if err := addr.GetFrom(m); err != nil {
+			if err := addr.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			if !addr.IP.Equal(net.ParseIP("192.0.2.1")) {
@@ -140,12 +140,12 @@ func TestRFC5769(t *testing.T) {
 			if addr.Port != 32853 {
 				t.Error("bad Port")
 			}
-			if err := Fingerprint.Check(m); err != nil {
+			if err := Fingerprint.Check(msg); err != nil {
 				t.Error("check failed: ", err)
 			}
 		})
 		t.Run("IPv6", func(t *testing.T) {
-			m := &Message{
+			msg := &Message{
 				Raw: []byte("\x01\x01\x00\x48" +
 					"\x21\x12\xa4\x42" +
 					"\xb7\xe7\xa7\x01\xbc\x34\xd6\x86\xfa\x87\xdf\xae" +
@@ -162,21 +162,21 @@ func TestRFC5769(t *testing.T) {
 					"\xc8\xfb\x0b\x4c",
 				),
 			}
-			if err := m.Decode(); err != nil {
+			if err := msg.Decode(); err != nil {
 				t.Error(err)
 			}
 			software := new(Software)
-			if err := software.GetFrom(m); err != nil {
+			if err := software.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			if software.String() != "test vector" {
 				t.Error("bad software: ", software)
 			}
-			if err := Fingerprint.Check(m); err != nil {
+			if err := Fingerprint.Check(msg); err != nil {
 				t.Error("Check failed: ", err)
 			}
 			addr := new(XORMappedAddress)
-			if err := addr.GetFrom(m); err != nil {
+			if err := addr.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			if !addr.IP.Equal(net.ParseIP("2001:db8:1234:5678:11:2233:4455:6677")) {
@@ -185,7 +185,7 @@ func TestRFC5769(t *testing.T) {
 			if addr.Port != 32853 {
 				t.Error("bad Port")
 			}
-			if err := Fingerprint.Check(m); err != nil {
+			if err := Fingerprint.Check(msg); err != nil {
 				t.Error("check failed: ", err)
 			}
 		})

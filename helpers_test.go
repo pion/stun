@@ -13,7 +13,7 @@ import (
 
 func BenchmarkBuildOverhead(b *testing.B) {
 	var (
-		t        = BindingRequest
+		msgType  = BindingRequest
 		username = NewUsername("username")
 		nonce    = NewNonce("nonce")
 		realm    = NewRealm("example.org")
@@ -22,14 +22,14 @@ func BenchmarkBuildOverhead(b *testing.B) {
 		b.ReportAllocs()
 		m := new(Message)
 		for i := 0; i < b.N; i++ {
-			m.Build(&t, &username, &nonce, &realm, &Fingerprint) //nolint:errcheck,gosec
+			m.Build(&msgType, &username, &nonce, &realm, &Fingerprint) //nolint:errcheck,gosec
 		}
 	})
 	b.Run("BuildNonPointer", func(b *testing.B) {
 		b.ReportAllocs()
 		m := new(Message)
 		for i := 0; i < b.N; i++ {
-			m.Build(t, username, nonce, realm, Fingerprint) //nolint:errcheck,gosec //nolint:errcheck,gosec
+			m.Build(msgType, username, nonce, realm, Fingerprint) //nolint:errcheck,gosec //nolint:errcheck,gosec
 		}
 	})
 	b.Run("Raw", func(b *testing.B) {
@@ -38,7 +38,7 @@ func BenchmarkBuildOverhead(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			m.Reset()
 			m.WriteHeader()
-			m.SetType(t)
+			m.SetType(msgType)
 			username.AddTo(m)    //nolint:errcheck,gosec
 			nonce.AddTo(m)       //nolint:errcheck,gosec
 			realm.AddTo(m)       //nolint:errcheck,gosec
@@ -52,7 +52,7 @@ func TestMessage_Apply(t *testing.T) {
 		integrity = NewShortTermIntegrity("password")
 		decoded   = new(Message)
 	)
-	m, err := Build(BindingRequest, TransactionID,
+	msg, err := Build(BindingRequest, TransactionID,
 		NewUsername("username"),
 		NewNonce("nonce"),
 		NewRealm("example.org"),
@@ -62,13 +62,13 @@ func TestMessage_Apply(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to build:", err)
 	}
-	if err = m.Check(Fingerprint, integrity); err != nil {
+	if err = msg.Check(Fingerprint, integrity); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := decoded.Write(m.Raw); err != nil {
+	if _, err := decoded.Write(msg.Raw); err != nil {
 		t.Fatal(err)
 	}
-	if !decoded.Equal(m) {
+	if !decoded.Equal(msg) {
 		t.Error("not equal")
 	}
 	if err := integrity.Check(decoded); err != nil {
@@ -96,32 +96,32 @@ func (e errReturner) GetFrom(*Message) error {
 
 func TestHelpersErrorHandling(t *testing.T) {
 	m := New()
-	e := errReturner{Err: errTError}
-	if err := m.Build(e); !errors.Is(err, e.Err) {
-		t.Error(err, "!=", e.Err)
+	errReturn := errReturner{Err: errTError}
+	if err := m.Build(errReturn); !errors.Is(err, errReturn.Err) {
+		t.Error(err, "!=", errReturn.Err)
 	}
-	if err := m.Check(e); !errors.Is(err, e.Err) {
-		t.Error(err, "!=", e.Err)
+	if err := m.Check(errReturn); !errors.Is(err, errReturn.Err) {
+		t.Error(err, "!=", errReturn.Err)
 	}
-	if err := m.Parse(e); !errors.Is(err, e.Err) {
-		t.Error(err, "!=", e.Err)
+	if err := m.Parse(errReturn); !errors.Is(err, errReturn.Err) {
+		t.Error(err, "!=", errReturn.Err)
 	}
 	t.Run("MustBuild", func(t *testing.T) {
 		t.Run("Positive", func(*testing.T) {
 			MustBuild(NewTransactionIDSetter(transactionID{}))
 		})
 		defer func() {
-			if p, ok := recover().(error); !ok || !errors.Is(p, e.Err) {
+			if p, ok := recover().(error); !ok || !errors.Is(p, errReturn.Err) {
 				t.Errorf("%s != %s",
-					p, e.Err,
+					p, errReturn.Err,
 				)
 			}
 		}()
-		MustBuild(e)
+		MustBuild(errReturn)
 	})
 }
 
-func TestMessage_ForEach(t *testing.T) {
+func TestMessage_ForEach(t *testing.T) { //nolint:cyclop
 	initial := New()
 	if err := initial.Build(
 		NewRealm("realm1"), NewRealm("realm2"),
@@ -135,6 +135,7 @@ func TestMessage_ForEach(t *testing.T) {
 		); err != nil {
 			t.Fatal(err)
 		}
+
 		return m
 	}
 	t.Run("NoResults", func(t *testing.T) {
@@ -144,6 +145,7 @@ func TestMessage_ForEach(t *testing.T) {
 		}
 		if err := m.ForEach(AttrUsername, func(*Message) error {
 			t.Error("should not be called")
+
 			return nil
 		}); err != nil {
 			t.Fatal(err)
@@ -160,6 +162,7 @@ func TestMessage_ForEach(t *testing.T) {
 				t.Error("called multiple times")
 			}
 			calls++
+
 			return ErrAttributeNotFound
 		}); !errors.Is(err, ErrAttributeNotFound) {
 			t.Fatal(err)
@@ -169,14 +172,15 @@ func TestMessage_ForEach(t *testing.T) {
 		}
 	})
 	t.Run("Positive", func(t *testing.T) {
-		m := newMessage()
+		msg := newMessage()
 		var realms []string
-		if err := m.ForEach(AttrRealm, func(m *Message) error {
+		if err := msg.ForEach(AttrRealm, func(m *Message) error {
 			var realm Realm
 			if err := realm.GetFrom(m); err != nil {
 				return err
 			}
 			realms = append(realms, realm.String())
+
 			return nil
 		}); err != nil {
 			t.Fatal(err)
@@ -190,18 +194,18 @@ func TestMessage_ForEach(t *testing.T) {
 		if realms[1] != "realm2" {
 			t.Error("bad value for 2 realm")
 		}
-		if !m.Equal(initial) {
+		if !msg.Equal(initial) {
 			t.Error("m should be equal to initial")
 		}
 		t.Run("ZeroAlloc", func(t *testing.T) {
-			m = newMessage()
+			msg = newMessage()
 			var realm Realm
 			testutil.ShouldNotAllocate(t, func() {
-				if err := m.ForEach(AttrRealm, realm.GetFrom); err != nil {
+				if err := msg.ForEach(AttrRealm, realm.GetFrom); err != nil {
 					t.Fatal(err)
 				}
 			})
-			if !m.Equal(initial) {
+			if !msg.Equal(initial) {
 				t.Error("m should be equal to initial")
 			}
 		})
@@ -216,6 +220,7 @@ func ExampleMessage_ForEach() {
 			return err
 		}
 		fmt.Println(r)
+
 		return nil
 	}); err != nil {
 		fmt.Println("error:", err)

@@ -8,26 +8,26 @@ import (
 )
 
 func TestUnknownAttributes(t *testing.T) {
-	m := new(Message)
-	a := &UnknownAttributes{
+	msg := new(Message)
+	attr := &UnknownAttributes{
 		AttrDontFragment,
 		AttrChannelNumber,
 	}
-	if a.String() != "DONT-FRAGMENT, CHANNEL-NUMBER" {
-		t.Error("bad String:", a)
+	if attr.String() != "DONT-FRAGMENT, CHANNEL-NUMBER" {
+		t.Error("bad String:", attr)
 	}
 	if (UnknownAttributes{}).String() != "<nil>" {
 		t.Error("bad blank string")
 	}
-	if err := a.AddTo(m); err != nil {
+	if err := attr.AddTo(msg); err != nil {
 		t.Error(err)
 	}
 	t.Run("GetFrom", func(t *testing.T) {
 		attrs := make(UnknownAttributes, 10)
-		if err := attrs.GetFrom(m); err != nil {
+		if err := attrs.GetFrom(msg); err != nil {
 			t.Error(err)
 		}
-		for i, at := range *a {
+		for i, at := range *attr {
 			if at != attrs[i] {
 				t.Error("expected", at, "!=", attrs[i])
 			}
@@ -44,8 +44,8 @@ func TestUnknownAttributes(t *testing.T) {
 }
 
 func BenchmarkUnknownAttributes(b *testing.B) {
-	m := new(Message)
-	a := UnknownAttributes{
+	msg := new(Message)
+	attr := UnknownAttributes{
 		AttrDontFragment,
 		AttrChannelNumber,
 		AttrRealm,
@@ -54,20 +54,20 @@ func BenchmarkUnknownAttributes(b *testing.B) {
 	b.Run("AddTo", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			if err := a.AddTo(m); err != nil {
+			if err := attr.AddTo(msg); err != nil {
 				b.Fatal(err)
 			}
-			m.Reset()
+			msg.Reset()
 		}
 	})
 	b.Run("GetFrom", func(b *testing.B) {
 		b.ReportAllocs()
-		if err := a.AddTo(m); err != nil {
+		if err := attr.AddTo(msg); err != nil {
 			b.Fatal(err)
 		}
 		attrs := make(UnknownAttributes, 0, 10)
 		for i := 0; i < b.N; i++ {
-			if err := attrs.GetFrom(m); err != nil {
+			if err := attrs.GetFrom(msg); err != nil {
 				b.Fatal(err)
 			}
 			attrs = attrs[:0]

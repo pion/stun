@@ -13,20 +13,20 @@ import (
 
 func BenchmarkFingerprint_AddTo(b *testing.B) {
 	b.ReportAllocs()
-	m := new(Message)
+	msg := new(Message)
 	s := NewSoftware("software")
 	addr := &XORMappedAddress{
 		IP: net.IPv4(213, 1, 223, 5),
 	}
-	addAttr(b, m, addr)
-	addAttr(b, m, s)
-	b.SetBytes(int64(len(m.Raw)))
+	addAttr(b, msg, addr)
+	addAttr(b, msg, s)
+	b.SetBytes(int64(len(msg.Raw)))
 	for i := 0; i < b.N; i++ {
-		Fingerprint.AddTo(m) //nolint:errcheck,gosec
-		m.WriteLength()
-		m.Length -= attributeHeaderSize + fingerprintSize
-		m.Raw = m.Raw[:m.Length+messageHeaderSize]
-		m.Attributes = m.Attributes[:len(m.Attributes)-1]
+		Fingerprint.AddTo(msg) //nolint:errcheck,gosec
+		msg.WriteLength()
+		msg.Length -= attributeHeaderSize + fingerprintSize
+		msg.Raw = msg.Raw[:msg.Length+messageHeaderSize]
+		msg.Attributes = msg.Attributes[:len(msg.Attributes)-1]
 	}
 }
 

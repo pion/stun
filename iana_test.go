@@ -14,22 +14,24 @@ import (
 	"testing"
 )
 
-func loadCSV(t testing.TB, name string) [][]string {
-	t.Helper()
-	data := loadData(t, name)
+func loadCSV(tb testing.TB, name string) [][]string {
+	tb.Helper()
+
+	data := loadData(tb, name)
 	r := csv.NewReader(bytes.NewReader(data))
 	r.Comment = '#'
 	records, err := r.ReadAll()
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
+
 	return records
 }
 
-func TestIANA(t *testing.T) {
+func TestIANA(t *testing.T) { //nolint:cyclop
 	t.Run("Methods", func(t *testing.T) {
 		records := loadCSV(t, "stun-parameters-2.csv")
-		m := make(map[string]Method)
+		methods := make(map[string]Method)
 		for _, r := range records[1:] {
 			var (
 				v    = r[0]
@@ -43,10 +45,10 @@ func TestIANA(t *testing.T) {
 				t.Fatal(parseErr)
 			}
 			t.Logf("value: 0x%x, name: %s", val, name)
-			m[name] = Method(val)
+			methods[name] = Method(val) //nolint:gosec // G115
 		}
 		for val, name := range methodName() {
-			mapped, ok := m[name]
+			mapped, ok := methods[name]
 			if !ok {
 				t.Errorf("failed to find method %s in IANA", name)
 			}
@@ -57,7 +59,7 @@ func TestIANA(t *testing.T) {
 	})
 	t.Run("Attributes", func(t *testing.T) {
 		records := loadCSV(t, "stun-parameters-4.csv")
-		m := map[string]AttrType{}
+		attrTypes := map[string]AttrType{}
 		for _, r := range records[1:] {
 			var (
 				v    = r[0]
@@ -71,16 +73,16 @@ func TestIANA(t *testing.T) {
 				t.Fatal(parseErr)
 			}
 			t.Logf("value: 0x%x, name: %s", val, name)
-			m[name] = AttrType(val)
+			attrTypes[name] = AttrType(val) //nolint:gosec // G115
 		}
 		// Not registered in IANA.
 		for k, v := range map[string]AttrType{
 			"ORIGIN": 0x802F,
 		} {
-			m[k] = v
+			attrTypes[k] = v
 		}
 		for val, name := range attrNames() {
-			mapped, ok := m[name]
+			mapped, ok := attrTypes[name]
 			if !ok {
 				t.Errorf("failed to find attribute %s in IANA", name)
 			}
@@ -91,7 +93,7 @@ func TestIANA(t *testing.T) {
 	})
 	t.Run("ErrorCodes", func(t *testing.T) {
 		records := loadCSV(t, "stun-parameters-6.csv")
-		m := map[string]ErrorCode{}
+		errorCodes := map[string]ErrorCode{}
 		for _, r := range records[1:] {
 			var (
 				v    = r[0]
@@ -105,11 +107,11 @@ func TestIANA(t *testing.T) {
 				t.Fatal(parseErr)
 			}
 			t.Logf("value: 0x%x, name: %s", val, name)
-			m[name] = ErrorCode(val)
+			errorCodes[name] = ErrorCode(val)
 		}
 		for val, nameB := range errorReasons {
 			name := string(nameB)
-			mapped, ok := m[name]
+			mapped, ok := errorCodes[name]
 			if !ok {
 				t.Errorf("failed to find error code %s in IANA", name)
 			}

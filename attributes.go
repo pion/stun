@@ -21,6 +21,7 @@ func (a Attributes) Get(t AttrType) (RawAttribute, bool) {
 			return candidate, true
 		}
 	}
+
 	return RawAttribute{}, false
 }
 
@@ -77,7 +78,7 @@ const (
 	AttrReservationToken   AttrType = 0x0022 // RESERVATION-TOKEN
 )
 
-// Attributes from RFC 5780 NAT Behavior Discovery
+// Attributes from RFC 5780 NAT Behavior Discovery.
 const (
 	AttrChangeRequest  AttrType = 0x0003 // CHANGE-REQUEST
 	AttrPadding        AttrType = 0x0026 // PADDING
@@ -166,6 +167,7 @@ func (t AttrType) String() string {
 		// Just return hex representation of unknown attribute type.
 		return fmt.Sprintf("0x%x", uint16(t))
 	}
+
 	return s
 }
 
@@ -186,6 +188,7 @@ type RawAttribute struct {
 // the Length field.
 func (a RawAttribute) AddTo(m *Message) error {
 	m.Add(a.Type, a.Value)
+
 	return nil
 }
 
@@ -205,6 +208,7 @@ func (a RawAttribute) Equal(b RawAttribute) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -224,6 +228,7 @@ func (m *Message) Get(t AttrType) ([]byte, error) {
 	if !ok {
 		return nil, ErrAttributeNotFound
 	}
+
 	return v.Value, nil
 }
 
@@ -240,6 +245,7 @@ func nearestPaddedValueLength(l int) int {
 	if n < l {
 		n += padding
 	}
+
 	return n
 }
 
@@ -250,5 +256,6 @@ func compatAttrType(val uint16) AttrType {
 	if val == 0x8020 { // draft-ietf-behave-rfc3489bis-02, MS-TURN
 		return AttrXORMappedAddress // new: 0x0020 (from draft-ietf-behave-rfc3489bis-03 on)
 	}
+
 	return AttrType(val)
 }

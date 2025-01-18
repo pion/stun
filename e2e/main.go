@@ -14,7 +14,7 @@ import (
 	"github.com/pion/stun/v3"
 )
 
-func test(network string) {
+func test(network string) { //nolint:cyclop
 	addr := resolve(network)
 	fmt.Println("START", strings.ToUpper(addr.Network())) //nolint
 	var (

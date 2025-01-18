@@ -27,9 +27,11 @@ type attributeEncoder interface {
 	AddTo(m *Message) error
 }
 
-func addAttr(t testing.TB, m *Message, a attributeEncoder) {
+func addAttr(tb testing.TB, m *Message, a attributeEncoder) {
+	tb.Helper()
+
 	if err := a.AddTo(m); err != nil {
-		t.Error(err)
+		tb.Error(err)
 	}
 }
 
@@ -129,21 +131,21 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 }
 
 func TestMessage_WriteTo(t *testing.T) {
-	m := New()
-	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
-	m.TransactionID = NewTransactionID()
-	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
-	m.WriteHeader()
+	msg := New()
+	msg.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	msg.TransactionID = NewTransactionID()
+	msg.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	msg.WriteHeader()
 	buf := new(bytes.Buffer)
-	if _, err := m.WriteTo(buf); err != nil {
+	if _, err := msg.WriteTo(buf); err != nil {
 		t.Fatal(err)
 	}
 	mDecoded := New()
 	if _, err := mDecoded.ReadFrom(buf); err != nil {
 		t.Error(err)
 	}
-	if !mDecoded.Equal(m) {
-		t.Error(mDecoded, "!", m)
+	if !mDecoded.Equal(msg) {
+		t.Error(mDecoded, "!", msg)
 	}
 }
 
@@ -275,23 +277,23 @@ func BenchmarkMessage_WriteTo(b *testing.B) {
 
 func BenchmarkMessage_ReadFrom(b *testing.B) {
 	mType := MessageType{Method: MethodBinding, Class: ClassRequest}
-	m := &Message{
+	msg := &Message{
 		Type:   mType,
 		Length: 0,
 		TransactionID: [TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 		},
 	}
-	m.WriteHeader()
+	msg.WriteHeader()
 	b.ReportAllocs()
-	b.SetBytes(int64(len(m.Raw)))
-	reader := m.reader()
+	b.SetBytes(int64(len(msg.Raw)))
+	reader := msg.reader()
 	mRec := New()
 	for i := 0; i < b.N; i++ {
 		if _, err := mRec.ReadFrom(reader); err != nil {
 			b.Fatal(err)
 		}
-		reader.Reset(m.Raw)
+		reader.Reset(msg.Raw)
 		mRec.Reset()
 	}
 }
@@ -342,7 +344,7 @@ func TestMessageClass_String(t *testing.T) {
 }
 
 func TestAttrType_String(t *testing.T) {
-	v := [...]AttrType{
+	attrType := [...]AttrType{
 		AttrMappedAddress,
 		AttrUsername,
 		AttrErrorCode,
@@ -355,7 +357,7 @@ func TestAttrType_String(t *testing.T) {
 		AttrAlternateServer,
 		AttrFingerprint,
 	}
-	for _, k := range v {
+	for _, k := range attrType {
 		if k.String() == "" {
 			t.Error(k, "bad stringer")
 		}
@@ -379,80 +381,80 @@ func TestMethod_String(t *testing.T) {
 }
 
 func TestAttribute_Equal(t *testing.T) {
-	a := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
-	b := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
-	if !a.Equal(b) {
+	attr1 := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
+	attr2 := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
+	if !attr1.Equal(attr2) {
 		t.Error("should equal")
 	}
-	if a.Equal(RawAttribute{Type: 0x2}) {
+	if attr1.Equal(RawAttribute{Type: 0x2}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(RawAttribute{Length: 0x2}) {
+	if attr1.Equal(RawAttribute{Length: 0x2}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(RawAttribute{Length: 0x3}) {
+	if attr1.Equal(RawAttribute{Length: 0x3}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(RawAttribute{Length: 2, Value: []byte{0x1, 0x3}}) {
+	if attr1.Equal(RawAttribute{Length: 2, Value: []byte{0x1, 0x3}}) {
 		t.Error("should not equal")
 	}
 }
 
-func TestMessage_Equal(t *testing.T) {
+func TestMessage_Equal(t *testing.T) { //nolint:cyclop
 	attr := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}, Type: 0x1}
 	attrs := Attributes{attr}
-	a := &Message{Attributes: attrs, Length: 4 + 2}
-	b := &Message{Attributes: attrs, Length: 4 + 2}
-	if !a.Equal(b) {
+	msg1 := &Message{Attributes: attrs, Length: 4 + 2}
+	msg2 := &Message{Attributes: attrs, Length: 4 + 2}
+	if !msg1.Equal(msg2) {
 		t.Error("should equal")
 	}
-	if a.Equal(&Message{Type: MessageType{Class: 128}}) {
+	if msg1.Equal(&Message{Type: MessageType{Class: 128}}) {
 		t.Error("should not equal")
 	}
 	tID := [TransactionIDSize]byte{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 	}
-	if a.Equal(&Message{TransactionID: tID}) {
+	if msg1.Equal(&Message{TransactionID: tID}) {
 		t.Error("should not equal")
 	}
-	if a.Equal(&Message{Length: 3}) {
+	if msg1.Equal(&Message{Length: 3}) {
 		t.Error("should not equal")
 	}
 	tAttrs := Attributes{
 		{Length: 1, Value: []byte{0x1}, Type: 0x1},
 	}
-	if a.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
+	if msg1.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
 		t.Error("should not equal")
 	}
 	tAttrs = Attributes{
 		{Length: 2, Value: []byte{0x1, 0x1}, Type: 0x2},
 	}
-	if a.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
+	if msg1.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
 		t.Error("should not equal")
 	}
 	if !(*Message)(nil).Equal(nil) {
 		t.Error("nil should be equal to nil")
 	}
-	if a.Equal(nil) {
+	if msg1.Equal(nil) {
 		t.Error("non-nil should not be equal to nil")
 	}
 	t.Run("Nil attributes", func(t *testing.T) {
-		a := &Message{
+		msg1 := &Message{
 			Attributes: nil,
 			Length:     4 + 2,
 		}
-		b := &Message{
+		msg2 := &Message{
 			Attributes: attrs,
 			Length:     4 + 2,
 		}
-		if a.Equal(b) {
+		if msg1.Equal(msg2) {
 			t.Error("should not equal")
 		}
-		if b.Equal(a) {
+		if msg2.Equal(msg1) {
 			t.Error("should not equal")
 		}
-		b.Attributes = nil
-		if !a.Equal(b) {
+		msg2.Attributes = nil
+		if !msg1.Equal(msg2) {
 			t.Error("should equal")
 		}
 	})
@@ -547,6 +549,8 @@ func BenchmarkIsMessage(b *testing.B) {
 }
 
 func loadData(tb testing.TB, name string) []byte {
+	tb.Helper()
+
 	name = filepath.Join("testdata", name)
 	f, err := os.Open(name) //nolint:gosec
 	if err != nil {
@@ -561,6 +565,7 @@ func loadData(tb testing.TB, name string) []byte {
 	if err != nil {
 		tb.Fatal(err)
 	}
+
 	return v
 }
 
@@ -582,7 +587,7 @@ func TestMessageFromBrowsers(t *testing.T) {
 		t.Fatal("failed to skip header of csv: ", err)
 	}
 	crcTable := crc64.MakeTable(crc64.ISO)
-	m := New()
+	msg := New()
 	for {
 		line, err := reader.Read()
 		if errors.Is(err, io.EOF) {
@@ -602,10 +607,10 @@ func TestMessageFromBrowsers(t *testing.T) {
 		if b != crc64.Checksum(data, crcTable) {
 			t.Error("crc64 check failed for ", line[1])
 		}
-		if _, err = m.Write(data); err != nil {
+		if _, err = msg.Write(data); err != nil {
 			t.Error("failed to decode ", line[1], " as message: ", err)
 		}
-		m.Reset()
+		msg.Reset()
 	}
 }
 
@@ -622,42 +627,42 @@ func BenchmarkMessage_NewTransactionID(b *testing.B) {
 
 func BenchmarkMessageFull(b *testing.B) {
 	b.ReportAllocs()
-	m := new(Message)
+	msg := new(Message)
 	s := NewSoftware("software")
 	addr := &XORMappedAddress{
 		IP: net.IPv4(213, 1, 223, 5),
 	}
 	for i := 0; i < b.N; i++ {
-		if err := addr.AddTo(m); err != nil {
+		if err := addr.AddTo(msg); err != nil {
 			b.Fatal(err)
 		}
-		if err := s.AddTo(m); err != nil {
+		if err := s.AddTo(msg); err != nil {
 			b.Fatal(err)
 		}
-		m.WriteAttributes()
-		m.WriteHeader()
-		Fingerprint.AddTo(m) //nolint:errcheck,gosec
-		m.WriteHeader()
-		m.Reset()
+		msg.WriteAttributes()
+		msg.WriteHeader()
+		Fingerprint.AddTo(msg) //nolint:errcheck,gosec
+		msg.WriteHeader()
+		msg.Reset()
 	}
 }
 
 func BenchmarkMessageFullHardcore(b *testing.B) {
 	b.ReportAllocs()
-	m := new(Message)
+	msg := new(Message)
 	s := NewSoftware("software")
 	addr := &XORMappedAddress{
 		IP: net.IPv4(213, 1, 223, 5),
 	}
 	for i := 0; i < b.N; i++ {
-		if err := addr.AddTo(m); err != nil {
+		if err := addr.AddTo(msg); err != nil {
 			b.Fatal(err)
 		}
-		if err := s.AddTo(m); err != nil {
+		if err := s.AddTo(msg); err != nil {
 			b.Fatal(err)
 		}
-		m.WriteHeader()
-		m.Reset()
+		msg.WriteHeader()
+		msg.Reset()
 	}
 }
 
@@ -689,8 +694,8 @@ func TestMessage_Contains(t *testing.T) {
 
 func ExampleMessage() {
 	buf := new(bytes.Buffer)
-	m := new(Message)
-	m.Build(BindingRequest, //nolint:errcheck,gosec
+	msg := new(Message)
+	msg.Build(BindingRequest, //nolint:errcheck,gosec
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
@@ -707,8 +712,8 @@ func ExampleMessage() {
 	//	m.Build(&software) // no allocations
 	// If you pass software as value, there will be 1 allocation.
 	// This rule is correct for all setters.
-	fmt.Println(m, "buff length:", len(m.Raw))
-	n, err := m.WriteTo(buf)
+	fmt.Println(msg, "buff length:", len(msg.Raw))
+	n, err := msg.WriteTo(buf)
 	fmt.Println("wrote", n, "err", err)
 
 	// Decoding from buf new *Message.
@@ -743,6 +748,7 @@ func ExampleMessage() {
 		fmt.Println("fingerprint: failed")
 	}
 
+	//nolint:lll
 	// Output:
 	// Binding request l=48 attrs=3 id=AQIDBAUGBwgJAAEA, attr0=SOFTWARE attr1=MESSAGE-INTEGRITY attr2=FINGERPRINT  buff length: 68
 	// wrote 68 err <nil>
@@ -811,8 +817,8 @@ func TestAllocationsGetters(t *testing.T) {
 		NewShortTermIntegrity("pwd"),
 		Fingerprint,
 	}
-	m := New()
-	if err := m.Build(setters...); err != nil {
+	msg := New()
+	if err := msg.Build(setters...); err != nil {
 		t.Error("failed to build", err)
 	}
 	getters := []Getter{
@@ -826,7 +832,7 @@ func TestAllocationsGetters(t *testing.T) {
 		g := g
 		i := i
 		allocs := testing.AllocsPerRun(10, func() {
-			if err := g.GetFrom(m); err != nil {
+			if err := g.GetFrom(msg); err != nil {
 				t.Errorf("[%d] failed to get", i)
 			}
 		})
@@ -837,8 +843,8 @@ func TestAllocationsGetters(t *testing.T) {
 }
 
 func TestMessageFullSize(t *testing.T) {
-	m := new(Message)
-	if err := m.Build(BindingRequest,
+	msg := new(Message)
+	if err := msg.Build(BindingRequest,
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
@@ -848,18 +854,18 @@ func TestMessageFullSize(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	m.Raw = m.Raw[:len(m.Raw)-10]
+	msg.Raw = msg.Raw[:len(msg.Raw)-10]
 
 	decoder := new(Message)
-	decoder.Raw = m.Raw[:len(m.Raw)-10]
+	decoder.Raw = msg.Raw[:len(msg.Raw)-10]
 	if err := decoder.Decode(); err == nil {
 		t.Error("decode on truncated buffer should error")
 	}
 }
 
 func TestMessage_CloneTo(t *testing.T) {
-	m := new(Message)
-	if err := m.Build(BindingRequest,
+	msg := new(Message)
+	if err := msg.Build(BindingRequest,
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
@@ -869,29 +875,29 @@ func TestMessage_CloneTo(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	m.Encode()
-	b := new(Message)
-	if err := m.CloneTo(b); err != nil {
+	msg.Encode()
+	msg2 := new(Message)
+	if err := msg.CloneTo(msg2); err != nil {
 		t.Fatal(err)
 	}
-	if !b.Equal(m) {
+	if !msg2.Equal(msg) {
 		t.Fatal("not equal")
 	}
 	// Corrupting m and checking that b is not corrupted.
-	s, ok := b.Attributes.Get(AttrSoftware)
+	s, ok := msg2.Attributes.Get(AttrSoftware)
 	if !ok {
 		t.Fatal("no software attribute")
 	}
 	s.Value[0] = 'k'
-	if b.Equal(m) {
+	if msg2.Equal(msg) {
 		t.Fatal("should not be equal")
 	}
 }
 
 func BenchmarkMessage_CloneTo(b *testing.B) {
 	b.ReportAllocs()
-	m := new(Message)
-	if err := m.Build(BindingRequest,
+	msg := new(Message)
+	if err := msg.Build(BindingRequest,
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
@@ -901,19 +907,19 @@ func BenchmarkMessage_CloneTo(b *testing.B) {
 	); err != nil {
 		b.Fatal(err)
 	}
-	b.SetBytes(int64(len(m.Raw)))
+	b.SetBytes(int64(len(msg.Raw)))
 	a := new(Message)
-	m.CloneTo(a) //nolint:errcheck,gosec
+	msg.CloneTo(a) //nolint:errcheck,gosec
 	for i := 0; i < b.N; i++ {
-		if err := m.CloneTo(a); err != nil {
+		if err := msg.CloneTo(a); err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
 func TestMessage_AddTo(t *testing.T) {
-	m := new(Message)
-	if err := m.Build(BindingRequest,
+	msg := new(Message)
+	if err := msg.Build(BindingRequest,
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
@@ -921,19 +927,19 @@ func TestMessage_AddTo(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	m.Encode()
+	msg.Encode()
 	b := new(Message)
-	if err := m.CloneTo(b); err != nil {
+	if err := msg.CloneTo(b); err != nil {
 		t.Fatal(err)
 	}
-	m.TransactionID = [TransactionIDSize]byte{
+	msg.TransactionID = [TransactionIDSize]byte{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 2,
 	}
-	if b.Equal(m) {
+	if b.Equal(msg) {
 		t.Fatal("should not be equal")
 	}
-	m.AddTo(b) //nolint:errcheck,gosec
-	if !b.Equal(m) {
+	msg.AddTo(b) //nolint:errcheck,gosec
+	if !b.Equal(msg) {
 		t.Fatal("should be equal")
 	}
 }
@@ -964,22 +970,22 @@ func TestDecode(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})
-	m := New()
-	m.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
-	m.TransactionID = NewTransactionID()
-	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
-	m.WriteHeader()
+	msg := New()
+	msg.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
+	msg.TransactionID = NewTransactionID()
+	msg.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
+	msg.WriteHeader()
 	mDecoded := New()
-	if err := Decode(m.Raw, mDecoded); err != nil {
+	if err := Decode(msg.Raw, mDecoded); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if !mDecoded.Equal(m) {
+	if !mDecoded.Equal(msg) {
 		t.Error("decoded result is not equal to encoded message")
 	}
 	t.Run("ZeroAlloc", func(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
 			mDecoded.Reset()
-			if err := Decode(m.Raw, mDecoded); err != nil {
+			if err := Decode(msg.Raw, mDecoded); err != nil {
 				t.Error(err)
 			}
 		})
@@ -1008,22 +1014,22 @@ func BenchmarkDecode(b *testing.B) {
 }
 
 func TestMessage_MarshalBinary(t *testing.T) {
-	m := MustBuild(
+	msg := MustBuild(
 		NewSoftware("software"),
 		&XORMappedAddress{
 			IP: net.IPv4(213, 1, 223, 5),
 		},
 	)
-	data, err := m.MarshalBinary()
+	data, err := msg.MarshalBinary()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Reset m.Raw to check retention.
-	for i := range m.Raw {
-		m.Raw[i] = 0
+	for i := range msg.Raw {
+		msg.Raw[i] = 0
 	}
-	if err := m.UnmarshalBinary(data); err != nil {
+	if err := msg.UnmarshalBinary(data); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1031,28 +1037,28 @@ func TestMessage_MarshalBinary(t *testing.T) {
 	for i := range data {
 		data[i] = 0
 	}
-	if err := m.Decode(); err != nil {
+	if err := msg.Decode(); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestMessage_GobDecode(t *testing.T) {
-	m := MustBuild(
+	msg := MustBuild(
 		NewSoftware("software"),
 		&XORMappedAddress{
 			IP: net.IPv4(213, 1, 223, 5),
 		},
 	)
-	data, err := m.GobEncode()
+	data, err := msg.GobEncode()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Reset m.Raw to check retention.
-	for i := range m.Raw {
-		m.Raw[i] = 0
+	for i := range msg.Raw {
+		msg.Raw[i] = 0
 	}
-	if err := m.GobDecode(data); err != nil {
+	if err := msg.GobDecode(data); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1060,7 +1066,7 @@ func TestMessage_GobDecode(t *testing.T) {
 	for i := range data {
 		data[i] = 0
 	}
-	if err := m.Decode(); err != nil {
+	if err := msg.Decode(); err != nil {
 		t.Fatal(err)
 	}
 }

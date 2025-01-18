@@ -13,26 +13,26 @@ import (
 )
 
 func TestSoftware_GetFrom(t *testing.T) {
-	m := New()
-	v := "Client v0.0.1"
-	m.Add(AttrSoftware, []byte(v))
-	m.WriteHeader()
+	msg := New()
+	val := "Client v0.0.1"
+	msg.Add(AttrSoftware, []byte(val))
+	msg.WriteHeader()
 
 	m2 := &Message{
 		Raw: make([]byte, 0, 256),
 	}
 	software := new(Software)
-	if _, err := m2.ReadFrom(m.reader()); err != nil {
+	if _, err := m2.ReadFrom(msg.reader()); err != nil {
 		t.Error(err)
 	}
-	if err := software.GetFrom(m); err != nil {
+	if err := software.GetFrom(msg); err != nil {
 		t.Fatal(err)
 	}
-	if software.String() != v {
-		t.Errorf("Expected %q, got %q.", v, software)
+	if software.String() != val {
+		t.Errorf("Expected %q, got %q.", val, software)
 	}
 
-	sAttr, ok := m.Attributes.Get(AttrSoftware)
+	sAttr, ok := msg.Attributes.Get(AttrSoftware)
 	if !ok {
 		t.Error("software attribute should be found")
 	}
@@ -90,22 +90,22 @@ func BenchmarkUsername_GetFrom(b *testing.B) {
 
 func TestUsername(t *testing.T) {
 	username := "username"
-	u := NewUsername(username)
-	m := new(Message)
-	m.WriteHeader()
+	uName := NewUsername(username)
+	msg := new(Message)
+	msg.WriteHeader()
 	t.Run("Bad length", func(t *testing.T) {
 		badU := make(Username, 600)
-		if err := badU.AddTo(m); !IsAttrSizeOverflow(err) {
+		if err := badU.AddTo(msg); !IsAttrSizeOverflow(err) {
 			t.Errorf("AddTo should return *AttrOverflowErr, got: %v", err)
 		}
 	})
 	t.Run("AddTo", func(t *testing.T) {
-		if err := u.AddTo(m); err != nil {
+		if err := uName.AddTo(msg); err != nil {
 			t.Error("errored:", err)
 		}
 		t.Run("GetFrom", func(t *testing.T) {
 			got := new(Username)
-			if err := got.GetFrom(m); err != nil {
+			if err := got.GetFrom(msg); err != nil {
 				t.Error("errored:", err)
 			}
 			if got.String() != username {
@@ -136,10 +136,10 @@ func TestUsername(t *testing.T) {
 }
 
 func TestRealm_GetFrom(t *testing.T) {
-	m := New()
-	v := "realm"
-	m.Add(AttrRealm, []byte(v))
-	m.WriteHeader()
+	msg := New()
+	val := "realm"
+	msg.Add(AttrRealm, []byte(val))
+	msg.WriteHeader()
 
 	m2 := &Message{
 		Raw: make([]byte, 0, 256),
@@ -148,17 +148,17 @@ func TestRealm_GetFrom(t *testing.T) {
 	if err := r.GetFrom(m2); !errors.Is(err, ErrAttributeNotFound) {
 		t.Errorf("GetFrom should return %q, got: %v", ErrAttributeNotFound, err)
 	}
-	if _, err := m2.ReadFrom(m.reader()); err != nil {
+	if _, err := m2.ReadFrom(msg.reader()); err != nil {
 		t.Error(err)
 	}
-	if err := r.GetFrom(m); err != nil {
+	if err := r.GetFrom(msg); err != nil {
 		t.Fatal(err)
 	}
-	if r.String() != v {
-		t.Errorf("Expected %q, got %q.", v, r)
+	if r.String() != val {
+		t.Errorf("Expected %q, got %q.", val, r)
 	}
 
-	rAttr, ok := m.Attributes.Get(AttrRealm)
+	rAttr, ok := msg.Attributes.Get(AttrRealm)
 	if !ok {
 		t.Error("realm attribute should be found")
 	}
@@ -180,26 +180,26 @@ func TestRealm_AddTo_Invalid(t *testing.T) {
 }
 
 func TestNonce_GetFrom(t *testing.T) {
-	m := New()
-	v := "example.org"
-	m.Add(AttrNonce, []byte(v))
-	m.WriteHeader()
+	msg := New()
+	val := "example.org"
+	msg.Add(AttrNonce, []byte(val))
+	msg.WriteHeader()
 
 	m2 := &Message{
 		Raw: make([]byte, 0, 256),
 	}
 	var nonce Nonce
-	if _, err := m2.ReadFrom(m.reader()); err != nil {
+	if _, err := m2.ReadFrom(msg.reader()); err != nil {
 		t.Error(err)
 	}
-	if err := nonce.GetFrom(m); err != nil {
+	if err := nonce.GetFrom(msg); err != nil {
 		t.Fatal(err)
 	}
-	if nonce.String() != v {
-		t.Errorf("Expected %q, got %q.", v, nonce)
+	if nonce.String() != val {
+		t.Errorf("Expected %q, got %q.", val, nonce)
 	}
 
-	nAttr, ok := m.Attributes.Get(AttrNonce)
+	nAttr, ok := msg.Attributes.Get(AttrNonce)
 	if !ok {
 		t.Error("nonce attribute should be found")
 	}

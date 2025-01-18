@@ -31,11 +31,11 @@ func main() {
 	}
 
 	// we only try the first address, so restrict ourselves to IPv4
-	c, err := stun.DialURI(uri, &stun.DialConfig{})
+	client, err := stun.DialURI(uri, &stun.DialConfig{})
 	if err != nil {
 		log.Fatalf("Failed to dial: %s", err)
 	}
-	if err = c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
+	if err = client.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
 			log.Fatalf("Failed STUN transaction: %s", res.Error)
 		}
@@ -49,7 +49,7 @@ func main() {
 	}); err != nil {
 		log.Fatal("Do:", err)
 	}
-	if err := c.Close(); err != nil {
+	if err := client.Close(); err != nil {
 		log.Fatalf("Failed to close connection: %s", err)
 	}
 }

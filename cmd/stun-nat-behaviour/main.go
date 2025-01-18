@@ -30,10 +30,14 @@ func (c *stunServerConn) Close() error {
 }
 
 var (
-	addrStrPtr = flag.String("server", "stun.voipgate.com:3478", "STUN server address")             //nolint:gochecknoglobals
-	timeoutPtr = flag.Int("timeout", 3, "the number of seconds to wait for STUN server's response") //nolint:gochecknoglobals
-	verbose    = flag.Int("verbose", 1, "the verbosity level")                                      //nolint:gochecknoglobals
-	log        logging.LeveledLogger                                                                //nolint:gochecknoglobals
+	//nolint:gochecknoglobals
+	addrStrPtr = flag.String("server", "stun.voipgate.com:3478", "STUN server address")
+	//nolint:gochecknoglobals
+	timeoutPtr = flag.Int("timeout", 3, "the number of seconds to wait for STUN server's response")
+	//nolint:gochecknoglobals
+	verbose = flag.Int("verbose", 1, "the verbosity level")
+	//nolint:gochecknoglobals
+	log logging.LeveledLogger
 )
 
 const (
@@ -70,11 +74,12 @@ func main() {
 	}
 }
 
-// RFC5780: 4.3.  Determining NAT Mapping Behavior
-func mappingTests(addrStr string) error {
+// RFC5780: 4.3.  Determining NAT Mapping Behavior.
+func mappingTests(addrStr string) error { //nolint:cyclop
 	mapTestConn, err := connect(addrStr)
 	if err != nil {
 		log.Warnf("Error creating STUN connection: %s", err)
+
 		return err
 	}
 
@@ -91,11 +96,13 @@ func mappingTests(addrStr string) error {
 	resps1 := parse(resp)
 	if resps1.xorAddr == nil || resps1.otherAddr == nil {
 		log.Info("Error: NAT discovery feature not supported by this server")
+
 		return errNoOtherAddress
 	}
 	addr, err := net.ResolveUDPAddr("udp4", resps1.otherAddr.String())
 	if err != nil {
 		log.Infof("Failed resolving OTHER-ADDRESS: %v", resps1.otherAddr)
+
 		return err
 	}
 	mapTestConn.OtherAddr = addr
@@ -104,6 +111,7 @@ func mappingTests(addrStr string) error {
 	// Assert mapping behavior
 	if resps1.xorAddr.String() == mapTestConn.LocalAddr.String() {
 		log.Warn("=> NAT mapping behavior: endpoint independent (no NAT)")
+
 		return nil
 	}
 
@@ -121,6 +129,7 @@ func mappingTests(addrStr string) error {
 	log.Infof("Received XOR-MAPPED-ADDRESS: %v", resps2.xorAddr)
 	if resps2.xorAddr.String() == resps1.xorAddr.String() {
 		log.Warn("=> NAT mapping behavior: endpoint independent")
+
 		return nil
 	}
 
@@ -143,11 +152,12 @@ func mappingTests(addrStr string) error {
 	return mapTestConn.Close()
 }
 
-// RFC5780: 4.4.  Determining NAT Filtering Behavior
-func filteringTests(addrStr string) error {
+// RFC5780: 4.4.  Determining NAT Filtering Behavior.
+func filteringTests(addrStr string) error { //nolint:cyclop
 	mapTestConn, err := connect(addrStr)
 	if err != nil {
 		log.Warnf("Error creating STUN connection: %s", err)
+
 		return err
 	}
 
@@ -162,11 +172,13 @@ func filteringTests(addrStr string) error {
 	resps := parse(resp)
 	if resps.xorAddr == nil || resps.otherAddr == nil {
 		log.Warn("Error: NAT discovery feature not supported by this server")
+
 		return errNoOtherAddress
 	}
 	addr, err := net.ResolveUDPAddr("udp4", resps.otherAddr.String())
 	if err != nil {
 		log.Infof("Failed resolving OTHER-ADDRESS: %v", resps.otherAddr)
+
 		return err
 	}
 	mapTestConn.OtherAddr = addr
@@ -180,6 +192,7 @@ func filteringTests(addrStr string) error {
 	if err == nil {
 		parse(resp) // just to print out the resp
 		log.Warn("=> NAT filtering behavior: endpoint independent")
+
 		return nil
 	} else if !errors.Is(err, errTimedOut) {
 		return err // something else went wrong
@@ -201,7 +214,7 @@ func filteringTests(addrStr string) error {
 	return mapTestConn.Close()
 }
 
-// Parse a STUN message
+// Parse a STUN message.
 func parse(msg *stun.Message) (ret struct {
 	xorAddr    *stun.XORMappedAddress
 	otherAddr  *stun.OtherAddress
@@ -249,15 +262,17 @@ func parse(msg *stun.Message) (ret struct {
 			log.Debugf("\t%v (l=%v)", attr, attr.Length)
 		}
 	}
+
 	return ret
 }
 
-// Given an address string, returns a StunServerConn
+// Given an address string, returns a StunServerConn.
 func connect(addrStr string) (*stunServerConn, error) {
 	log.Infof("Connecting to STUN server: %s", addrStr)
 	addr, err := net.ResolveUDPAddr("udp4", addrStr)
 	if err != nil {
 		log.Warnf("Error resolving address: %s", err)
+
 		return nil, err
 	}
 
@@ -278,7 +293,7 @@ func connect(addrStr string) (*stunServerConn, error) {
 	}, nil
 }
 
-// Send request and wait for response or timeout
+// Send request and wait for response or timeout.
 func (c *stunServerConn) roundTrip(msg *stun.Message, addr net.Addr) (*stun.Message, error) {
 	_ = msg.NewTransactionID()
 	log.Infof("Sending to %v: (%v bytes)", addr, msg.Length+messageHeaderSize)
@@ -289,6 +304,7 @@ func (c *stunServerConn) roundTrip(msg *stun.Message, addr net.Addr) (*stun.Mess
 	_, err := c.conn.WriteTo(msg.Raw, addr)
 	if err != nil {
 		log.Warnf("Error sending request to %v", addr)
+
 		return nil, err
 	}
 
@@ -298,9 +314,11 @@ func (c *stunServerConn) roundTrip(msg *stun.Message, addr net.Addr) (*stun.Mess
 		if !ok {
 			return nil, errResponseMessage
 		}
+
 		return m, nil
 	case <-time.After(time.Duration(*timeoutPtr) * time.Second):
 		log.Infof("Timed out waiting for response from server %v", addr)
+
 		return nil, errTimedOut
 	}
 }
@@ -315,6 +333,7 @@ func listen(conn *net.UDPConn) (messages chan *stun.Message) {
 			n, addr, err := conn.ReadFromUDP(buf)
 			if err != nil {
 				close(messages)
+
 				return
 			}
 			log.Infof("Response from %v: (%v bytes)", addr, n)
@@ -326,11 +345,13 @@ func listen(conn *net.UDPConn) (messages chan *stun.Message) {
 			if err != nil {
 				log.Infof("Error decoding message: %v", err)
 				close(messages)
+
 				return
 			}
 
 			messages <- m
 		}
 	}()
+
 	return
 }

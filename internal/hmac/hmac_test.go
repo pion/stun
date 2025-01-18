@@ -22,7 +22,7 @@ type hmacTest struct {
 	blocksize int
 }
 
-func hmacTests() []hmacTest {
+func hmacTests() []hmacTest { //nolint:maintidx
 	return []hmacTest{
 		// Tests from US FIPS 198
 		// https://csrc.nist.gov/publications/fips/fips198/fips-198a.pdf
@@ -523,41 +523,42 @@ func hmacTests() []hmacTest {
 
 func TestHMAC(t *testing.T) {
 	for i, tt := range hmacTests() {
-		h := New(tt.hash, tt.key)
-		if s := h.Size(); s != tt.size {
+		hsh := New(tt.hash, tt.key)
+		if s := hsh.Size(); s != tt.size {
 			t.Errorf("Size: got %v, want %v", s, tt.size)
 		}
-		if b := h.BlockSize(); b != tt.blocksize {
+		if b := hsh.BlockSize(); b != tt.blocksize {
 			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
 		}
-		for j := 0; j < 4; j++ {
-			n, err := h.Write(tt.in)
+		for j := 0; j < 4; j++ { //nolint:varnamelen
+			n, err := hsh.Write(tt.in)
 			if n != len(tt.in) || err != nil {
 				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
+
 				continue
 			}
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
-				sum := fmt.Sprintf("%x", h.Sum(nil))
+				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				if sum != tt.out {
 					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 				}
 			}
 
 			// Second iteration: make sure reset works.
-			h.Reset()
+			hsh.Reset()
 
 			// Third and fourth iteration: make sure hmac works on
 			// hashes without MarshalBinary/UnmarshalBinary
 			if j == 1 {
-				h = New(func() hash.Hash { return justHash{tt.hash()} }, tt.key)
+				hsh = New(func() hash.Hash { return justHash{tt.hash()} }, tt.key)
 			}
 		}
 	}
 }
 
-// justHash implements just the hash.Hash methods and nothing else
+// justHash implements just the hash.Hash methods and nothing else.
 type justHash struct {
 	hash.Hash
 }

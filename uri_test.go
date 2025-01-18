@@ -35,8 +35,16 @@ func TestParseURL(t *testing.T) {
 			{"stun:[::1]:123", "stun:[::1]:123", SchemeTypeSTUN, false, "::1", 123, ProtoTypeUDP},
 			{"turn:google.de", "turn:google.de:3478?transport=udp", SchemeTypeTURN, false, "google.de", 3478, ProtoTypeUDP},
 			{"turns:google.de", "turns:google.de:5349?transport=tcp", SchemeTypeTURNS, true, "google.de", 5349, ProtoTypeTCP},
-			{"turn:google.de?transport=udp", "turn:google.de:3478?transport=udp", SchemeTypeTURN, false, "google.de", 3478, ProtoTypeUDP},
-			{"turns:google.de?transport=tcp", "turns:google.de:5349?transport=tcp", SchemeTypeTURNS, true, "google.de", 5349, ProtoTypeTCP},
+			{
+				"turn:google.de?transport=udp",
+				"turn:google.de:3478?transport=udp",
+				SchemeTypeTURN, false, "google.de", 3478, ProtoTypeUDP,
+			},
+			{
+				"turns:google.de?transport=tcp",
+				"turns:google.de:5349?transport=tcp",
+				SchemeTypeTURNS, true, "google.de", 5349, ProtoTypeTCP,
+			},
 		}
 
 		for i, testCase := range testCases {

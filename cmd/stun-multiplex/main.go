@@ -84,7 +84,7 @@ func multiplex(conn *net.UDPConn, stunAddr net.Addr, stunConn io.Reader) {
 
 var stunServer = flag.String("stun", "stun.l.google.com:19302", "STUN Server to use") //nolint:gochecknoglobals
 
-func main() {
+func main() { //nolint:cyclop
 	flag.Parse()
 
 	isServer := flag.Arg(0) == ""
@@ -112,7 +112,7 @@ func main() {
 
 	stunL, stunR := net.Pipe()
 
-	c, err := stun.NewClient(stunR)
+	client, err := stun.NewClient(stunR)
 	if err != nil {
 		log.Panicf("Failed to create client: %s", err)
 	}
@@ -134,7 +134,7 @@ func main() {
 	// This can fail if your NAT Server is strict and will use separate ports
 	// for application data and STUN
 	var gotAddr stun.XORMappedAddress
-	if err = c.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
+	if err = client.Do(stun.MustBuild(stun.TransactionID, stun.BindingRequest), func(res stun.Event) {
 		if res.Error != nil {
 			log.Panicf("Failed STUN transaction: %s", res.Error)
 		}
@@ -153,7 +153,7 @@ func main() {
 	// Any ping-pong will work, but we are just making binding requests.
 	// Note that STUN Server is not mandatory for keep alive, application
 	// data will keep alive that binding too.
-	go keepAlive(c)
+	go keepAlive(client)
 
 	notify := make(chan os.Signal, 1)
 	signal.Notify(notify, os.Interrupt, syscall.SIGTERM)
@@ -168,6 +168,7 @@ func main() {
 				}
 			case <-notify:
 				log.Println("Stopping")
+
 				return
 			}
 		}
@@ -203,10 +204,12 @@ func main() {
 
 			case m := <-messages:
 				log.Printf("Got response from %s: %s", m.addr, m.text)
+
 				return
 
 			case <-notify:
 				log.Print("Stopping")
+
 				return
 			}
 		}

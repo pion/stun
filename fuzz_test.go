@@ -109,6 +109,7 @@ func FuzzSetters(f *testing.F) {
 			if !IsAttrSizeOverflow(err) {
 				t.Fatal(err)
 			}
+
 			return
 		}
 
@@ -150,5 +151,6 @@ func (a attributes) pick(v byte) struct {
 	t AttrType
 } {
 	idx := int(v) % len(a)
+
 	return a[idx]
 }

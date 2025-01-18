@@ -30,7 +30,7 @@ var (
 	realRand   = flag.Bool("crypt", false, "use crypto/rand as random source")        //nolint:gochecknoglobals
 )
 
-func main() { //nolint:gocognit
+func main() { //nolint:gocognit,cyclop
 	flag.Parse()
 	uri, err := stun.ParseURI(*uriStr)
 	if err != nil {
@@ -88,7 +88,7 @@ func main() { //nolint:gocognit
 		log.Print("Using crypto/rand as random source for transaction id")
 	}
 	for i := 0; i < *workers; i++ {
-		c, clientErr := stun.DialURI(uri, &stun.DialConfig{})
+		client, clientErr := stun.DialURI(uri, &stun.DialConfig{})
 		if clientErr != nil {
 			log.Panicf("Failed to create client: %s", clientErr)
 		}
@@ -105,12 +105,13 @@ func main() { //nolint:gocognit
 				req.Type = stun.BindingRequest
 				req.WriteHeader()
 				atomic.AddInt64(&request, 1)
-				if doErr := c.Do(req, func(event stun.Event) {
+				if doErr := client.Do(req, func(event stun.Event) {
 					if event.Error != nil {
 						if !errors.Is(event.Error, stun.ErrTransactionTimeOut) {
 							log.Printf("Failed STUN transaction: %s", event.Error)
 						}
 						atomic.AddInt64(&requestErr, 1)
+
 						return
 					}
 					atomic.AddInt64(&requestOK, 1)

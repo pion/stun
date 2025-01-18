@@ -17,6 +17,7 @@ func CheckSize(_ AttrType, got, expected int) error {
 	if got == expected {
 		return nil
 	}
+
 	return ErrAttributeSizeInvalid
 }
 
@@ -24,6 +25,7 @@ func checkHMAC(got, expected []byte) error {
 	if hmac.Equal(got, expected) {
 		return nil
 	}
+
 	return ErrIntegrityMismatch
 }
 
@@ -31,6 +33,7 @@ func checkFingerprint(got, expected uint32) error {
 	if got == expected {
 		return nil
 	}
+
 	return ErrFingerprintMismatch
 }
 
@@ -44,6 +47,7 @@ func CheckOverflow(_ AttrType, got, maxVal int) error {
 	if got <= maxVal {
 		return nil
 	}
+
 	return ErrAttributeSizeOverflow
 }
 

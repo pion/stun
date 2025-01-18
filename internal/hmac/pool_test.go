@@ -42,100 +42,103 @@ func BenchmarkHMACSHA1_512_Pool(b *testing.B) {
 
 func TestHMACReset(t *testing.T) {
 	for i, tt := range hmacTests() {
-		h := New(tt.hash, tt.key)
-		h.(*hmac).resetTo(tt.key) //nolint:forcetypeassert
-		if s := h.Size(); s != tt.size {
+		hsh := New(tt.hash, tt.key)
+		hsh.(*hmac).resetTo(tt.key) //nolint:forcetypeassert
+		if s := hsh.Size(); s != tt.size {
 			t.Errorf("Size: got %v, want %v", s, tt.size)
 		}
-		if b := h.BlockSize(); b != tt.blocksize {
+		if b := hsh.BlockSize(); b != tt.blocksize {
 			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
 		}
 		for j := 0; j < 2; j++ {
-			n, err := h.Write(tt.in)
+			n, err := hsh.Write(tt.in)
 			if n != len(tt.in) || err != nil {
 				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
+
 				continue
 			}
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
-				sum := fmt.Sprintf("%x", h.Sum(nil))
+				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				if sum != tt.out {
 					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 				}
 			}
 
 			// Second iteration: make sure reset works.
-			h.Reset()
+			hsh.Reset()
 		}
 	}
 }
 
-func TestHMACPool_SHA1(t *testing.T) { //nolint:dupl
+func TestHMACPool_SHA1(t *testing.T) { //nolint:dupl,cyclop
 	for i, tt := range hmacTests() {
 		if tt.blocksize != sha1.BlockSize || tt.size != sha1.Size {
 			continue
 		}
-		h := AcquireSHA1(tt.key)
-		if s := h.Size(); s != tt.size {
+		hsh := AcquireSHA1(tt.key)
+		if s := hsh.Size(); s != tt.size {
 			t.Errorf("Size: got %v, want %v", s, tt.size)
 		}
-		if b := h.BlockSize(); b != tt.blocksize {
+		if b := hsh.BlockSize(); b != tt.blocksize {
 			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
 		}
 		for j := 0; j < 2; j++ {
-			n, err := h.Write(tt.in)
+			n, err := hsh.Write(tt.in)
 			if n != len(tt.in) || err != nil {
 				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
+
 				continue
 			}
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
-				sum := fmt.Sprintf("%x", h.Sum(nil))
+				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				if sum != tt.out {
 					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 				}
 			}
 
 			// Second iteration: make sure reset works.
-			h.Reset()
+			hsh.Reset()
 		}
-		PutSHA1(h)
+		PutSHA1(hsh)
 	}
 }
 
-func TestHMACPool_SHA256(t *testing.T) { //nolint:dupl
+func TestHMACPool_SHA256(t *testing.T) { //nolint:dupl,cyclop
 	for i, tt := range hmacTests() {
 		if tt.blocksize != sha256.BlockSize || tt.size != sha256.Size {
 			continue
 		}
-		h := AcquireSHA256(tt.key)
-		if s := h.Size(); s != tt.size {
+		hsh := AcquireSHA256(tt.key)
+		if s := hsh.Size(); s != tt.size {
 			t.Errorf("Size: got %v, want %v", s, tt.size)
 		}
-		if b := h.BlockSize(); b != tt.blocksize {
+		if b := hsh.BlockSize(); b != tt.blocksize {
 			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
 		}
 		for j := 0; j < 2; j++ {
-			n, err := h.Write(tt.in)
+			n, err := hsh.Write(tt.in)
 			if n != len(tt.in) || err != nil {
 				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
+
 				continue
 			}
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
-				sum := fmt.Sprintf("%x", h.Sum(nil))
+				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				if sum != tt.out {
 					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 				}
 			}
 
 			// Second iteration: make sure reset works.
-			h.Reset()
+			hsh.Reset()
 		}
-		PutSHA256(h)
+		PutSHA256(hsh)
 	}
 }
 

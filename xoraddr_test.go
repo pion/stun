@@ -29,21 +29,21 @@ func BenchmarkXORMappedAddress_AddTo(b *testing.B) {
 }
 
 func BenchmarkXORMappedAddress_GetFrom(b *testing.B) {
-	m := New()
+	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		b.Error(err)
 	}
-	copy(m.TransactionID[:], transactionID)
+	copy(msg.TransactionID[:], transactionID)
 	addrValue, err := hex.DecodeString("00019cd5f49f38ae")
 	if err != nil {
 		b.Error(err)
 	}
-	m.Add(AttrXORMappedAddress, addrValue)
+	msg.Add(AttrXORMappedAddress, addrValue)
 	addr := new(XORMappedAddress)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if err := addr.GetFrom(m); err != nil {
+		if err := addr.GetFrom(msg); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -94,54 +94,54 @@ func TestXORMappedAddress_GetFrom(t *testing.T) {
 }
 
 func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
-	m := New()
+	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
 	}
-	copy(m.TransactionID[:], transactionID)
+	copy(msg.TransactionID[:], transactionID)
 	expectedIP := net.ParseIP("213.141.156.236")
 	expectedPort := 21254
 	addr := new(XORMappedAddress)
 
-	if err = addr.GetFrom(m); err == nil {
+	if err = addr.GetFrom(msg); err == nil {
 		t.Fatal(err, "should be nil")
 	}
 
 	addr.IP = expectedIP
 	addr.Port = expectedPort
-	addr.AddTo(m) //nolint:errcheck,gosec
-	m.WriteHeader()
+	addr.AddTo(msg) //nolint:errcheck,gosec
+	msg.WriteHeader()
 
 	mRes := New()
-	binary.BigEndian.PutUint16(m.Raw[20+4:20+4+2], 0x21)
-	if _, err = mRes.ReadFrom(bytes.NewReader(m.Raw)); err != nil {
+	binary.BigEndian.PutUint16(msg.Raw[20+4:20+4+2], 0x21)
+	if _, err = mRes.ReadFrom(bytes.NewReader(msg.Raw)); err != nil {
 		t.Fatal(err)
 	}
-	if err = addr.GetFrom(m); err == nil {
+	if err = addr.GetFrom(msg); err == nil {
 		t.Fatal(err, "should not be nil")
 	}
 }
 
 func TestXORMappedAddress_AddTo(t *testing.T) {
-	m := New()
+	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
 	}
-	copy(m.TransactionID[:], transactionID)
+	copy(msg.TransactionID[:], transactionID)
 	expectedIP := net.ParseIP("213.141.156.236")
 	expectedPort := 21254
 	addr := &XORMappedAddress{
 		IP:   net.ParseIP("213.141.156.236"),
 		Port: expectedPort,
 	}
-	if err = addr.AddTo(m); err != nil {
+	if err = addr.AddTo(msg); err != nil {
 		t.Fatal(err)
 	}
-	m.WriteHeader()
+	msg.WriteHeader()
 	mRes := New()
-	if _, err = mRes.Write(m.Raw); err != nil {
+	if _, err = mRes.Write(msg.Raw); err != nil {
 		t.Fatal(err)
 	}
 	if err = addr.GetFrom(mRes); err != nil {
@@ -156,27 +156,27 @@ func TestXORMappedAddress_AddTo(t *testing.T) {
 }
 
 func TestXORMappedAddress_AddTo_IPv6(t *testing.T) {
-	m := New()
+	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	if err != nil {
 		t.Error(err)
 	}
-	copy(m.TransactionID[:], transactionID)
+	copy(msg.TransactionID[:], transactionID)
 	expectedIP := net.ParseIP("fe80::dc2b:44ff:fe20:6009")
 	expectedPort := 21254
 	addr := &XORMappedAddress{
 		IP:   net.ParseIP("fe80::dc2b:44ff:fe20:6009"),
 		Port: 21254,
 	}
-	addr.AddTo(m) //nolint:errcheck,gosec
-	m.WriteHeader()
+	addr.AddTo(msg) //nolint:errcheck,gosec
+	msg.WriteHeader()
 
 	mRes := New()
-	if _, err = mRes.ReadFrom(m.reader()); err != nil {
+	if _, err = mRes.ReadFrom(msg.reader()); err != nil {
 		t.Fatal(err)
 	}
 	gotAddr := new(XORMappedAddress)
-	if err = gotAddr.GetFrom(m); err != nil {
+	if err = gotAddr.GetFrom(msg); err != nil {
 		t.Fatal(err)
 	}
 	if !gotAddr.IP.Equal(expectedIP) {

@@ -40,6 +40,7 @@ func (h *hmac) resetTo(key []byte) {
 var hmacSHA1Pool = &sync.Pool{ //nolint:gochecknoglobals
 	New: func() interface{} {
 		h := New(sha1.New, make([]byte, sha1.BlockSize))
+
 		return h
 	},
 }
@@ -49,6 +50,7 @@ func AcquireSHA1(key []byte) hash.Hash {
 	h := hmacSHA1Pool.Get().(*hmac) //nolint:forcetypeassert
 	assertHMACSize(h, sha1.Size, sha1.BlockSize)
 	h.resetTo(key)
+
 	return h
 }
 
@@ -62,6 +64,7 @@ func PutSHA1(h hash.Hash) {
 var hmacSHA256Pool = &sync.Pool{ //nolint:gochecknoglobals
 	New: func() interface{} {
 		h := New(sha256.New, make([]byte, sha256.BlockSize))
+
 		return h
 	},
 }
@@ -71,6 +74,7 @@ func AcquireSHA256(key []byte) hash.Hash {
 	h := hmacSHA256Pool.Get().(*hmac) //nolint:forcetypeassert
 	assertHMACSize(h, sha256.Size, sha256.BlockSize)
 	h.resetTo(key)
+
 	return h
 }
 

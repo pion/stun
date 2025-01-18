@@ -11,7 +11,7 @@ import (
 )
 
 func TestMappedAddress(t *testing.T) {
-	m := new(Message)
+	msg := new(Message)
 	addr := &MappedAddress{
 		IP:   net.ParseIP("122.12.34.5"),
 		Port: 5412,
@@ -23,17 +23,17 @@ func TestMappedAddress(t *testing.T) {
 		badAddr := &MappedAddress{
 			IP: net.IP{1, 2, 3},
 		}
-		if err := badAddr.AddTo(m); err == nil {
+		if err := badAddr.AddTo(msg); err == nil {
 			t.Error("should error")
 		}
 	})
 	t.Run("AddTo", func(t *testing.T) {
-		if err := addr.AddTo(m); err != nil {
+		if err := addr.AddTo(msg); err != nil {
 			t.Error(err)
 		}
 		t.Run("GetFrom", func(t *testing.T) {
 			got := new(MappedAddress)
-			if err := got.GetFrom(m); err != nil {
+			if err := got.GetFrom(msg); err != nil {
 				t.Error(err)
 			}
 			if !got.IP.Equal(addr.IP) {
@@ -46,9 +46,9 @@ func TestMappedAddress(t *testing.T) {
 				}
 			})
 			t.Run("Bad family", func(t *testing.T) {
-				v, _ := m.Attributes.Get(AttrMappedAddress)
+				v, _ := msg.Attributes.Get(AttrMappedAddress)
 				v.Value[0] = 32
-				if err := got.GetFrom(m); err == nil {
+				if err := got.GetFrom(msg); err == nil {
 					t.Error("should error")
 				}
 			})

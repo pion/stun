@@ -92,23 +92,23 @@ func TestMessage_AddErrorCode(t *testing.T) {
 }
 
 func TestErrorCode(t *testing.T) {
-	a := &ErrorCodeAttribute{
+	attr := &ErrorCodeAttribute{
 		Code:   404,
 		Reason: []byte("not found!"),
 	}
-	if a.String() != "404: not found!" {
-		t.Error("bad string", a)
+	if attr.String() != "404: not found!" {
+		t.Error("bad string", attr)
 	}
 	m := New()
 	cod := ErrorCode(666)
 	if err := cod.AddTo(m); !errors.Is(err, ErrNoDefaultReason) {
 		t.Error("should be ErrNoDefaultReason", err)
 	}
-	if err := a.GetFrom(m); err == nil {
+	if err := attr.GetFrom(m); err == nil {
 		t.Error("attr should not be in message")
 	}
-	a.Reason = make([]byte, 2048)
-	if err := a.AddTo(m); err == nil {
+	attr.Reason = make([]byte, 2048)
+	if err := attr.AddTo(m); err == nil {
 		t.Error("should error")
 	}
 }
