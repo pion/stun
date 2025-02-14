@@ -136,4 +136,3 @@ issues:
     - path: cmd
       linters:
         - forbidigo
-

@@ -3,7 +3,7 @@
 
 package hmac
 
-import ( //nolint:gci
+import (
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"fmt"
