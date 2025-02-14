@@ -100,7 +100,7 @@ func main() { //nolint:gocognit,cyclop
 						log.Fatalf("Failed to generate transaction ID: %s", err)
 					}
 				} else {
-					mathRand.Read(req.TransactionID[:]) //nolint:gosec
+					mathRand.Read(req.TransactionID[:]) //nolint
 				}
 				req.Type = stun.BindingRequest
 				req.WriteHeader()
