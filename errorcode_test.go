@@ -8,9 +8,10 @@ package stun
 
 import (
 	"encoding/base64"
-	"errors"
 	"io"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkErrorCode_AddTo(b *testing.B) {
@@ -52,19 +53,13 @@ func TestErrorCodeAttribute_GetFrom(t *testing.T) {
 	m := New()
 	m.Add(AttrErrorCode, []byte{1})
 	c := new(ErrorCodeAttribute)
-	if err := c.GetFrom(m); !errors.Is(err, io.ErrUnexpectedEOF) {
-		t.Errorf("GetFrom should return <%s>, but got <%s>",
-			io.ErrUnexpectedEOF, err,
-		)
-	}
+	assert.ErrorIs(t, c.GetFrom(m), io.ErrUnexpectedEOF)
 }
 
 func TestMessage_AddErrorCode(t *testing.T) {
 	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	copy(m.TransactionID[:], transactionID)
 	expectedCode := ErrorCode(438)
 	expectedReason := "Stale Nonce"
@@ -72,23 +67,13 @@ func TestMessage_AddErrorCode(t *testing.T) {
 	m.WriteHeader()
 
 	mRes := New()
-	if _, err = mRes.ReadFrom(m.reader()); err != nil {
-		t.Fatal(err)
-	}
+	_, err = mRes.ReadFrom(m.reader())
+	assert.NoError(t, err)
 	errCodeAttr := new(ErrorCodeAttribute)
-	if err = errCodeAttr.GetFrom(mRes); err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, errCodeAttr.GetFrom(mRes))
 	code := errCodeAttr.Code
-	if err != nil {
-		t.Error(err)
-	}
-	if code != expectedCode {
-		t.Error("bad code", code)
-	}
-	if string(errCodeAttr.Reason) != expectedReason {
-		t.Error("bad reason", string(errCodeAttr.Reason))
-	}
+	assert.Equal(t, expectedCode, code, "bad code")
+	assert.Equal(t, expectedReason, string(errCodeAttr.Reason), "bad reason")
 }
 
 func TestErrorCode(t *testing.T) {
@@ -96,19 +81,11 @@ func TestErrorCode(t *testing.T) {
 		Code:   404,
 		Reason: []byte("not found!"),
 	}
-	if attr.String() != "404: not found!" {
-		t.Error("bad string", attr)
-	}
+	assert.Equal(t, "404: not found!", attr.String(), "bad string")
 	m := New()
 	cod := ErrorCode(666)
-	if err := cod.AddTo(m); !errors.Is(err, ErrNoDefaultReason) {
-		t.Error("should be ErrNoDefaultReason", err)
-	}
-	if err := attr.GetFrom(m); err == nil {
-		t.Error("attr should not be in message")
-	}
+	assert.ErrorIs(t, cod.AddTo(m), ErrNoDefaultReason, "should be ErrNoDefaultReason")
+	assert.Error(t, attr.GetFrom(m), "attr should not be in message")
 	attr.Reason = make([]byte, 2048)
-	if err := attr.AddTo(m); err == nil {
-		t.Error("should error")
-	}
+	assert.Error(t, attr.AddTo(m), "should error")
 }

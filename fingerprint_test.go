@@ -9,6 +9,8 @@ package stun
 import (
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkFingerprint_AddTo(b *testing.B) {
@@ -36,26 +38,18 @@ func TestFingerprint_Check(t *testing.T) {
 	m.WriteHeader()
 	Fingerprint.AddTo(m) //nolint:errcheck,gosec
 	m.WriteHeader()
-	if err := Fingerprint.Check(m); err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, Fingerprint.Check(m))
 	m.Raw[3]++
-	if err := Fingerprint.Check(m); err == nil {
-		t.Error("should error")
-	}
+	assert.Error(t, Fingerprint.Check(m))
 }
 
 func TestFingerprint_CheckBad(t *testing.T) {
 	m := new(Message)
 	addAttr(t, m, NewSoftware("software"))
 	m.WriteHeader()
-	if err := Fingerprint.Check(m); err == nil {
-		t.Error("should error")
-	}
+	assert.Error(t, Fingerprint.Check(m))
 	m.Add(AttrFingerprint, []byte{1, 2, 3})
-	if !IsAttrSizeInvalid(Fingerprint.Check(m)) {
-		t.Error("IsAttrSizeInvalid should be true")
-	}
+	assert.True(t, IsAttrSizeInvalid(Fingerprint.Check(m)))
 }
 
 func BenchmarkFingerprint_Check(b *testing.B) {

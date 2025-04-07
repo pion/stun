@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var errUDPServerUnsupportedNetwork = errors.New("unsupported network")
@@ -37,9 +39,7 @@ func NewUDPServer(
 	}
 
 	udpConn, err := net.ListenUDP(network, &net.UDPAddr{IP: net.ParseIP(ip), Port: 0})
-	if err != nil {
-		t.Fatal(err) //nolint:forbidigo
-	}
+	assert.NoError(t, err)
 
 	// Necessary for IPv6
 	address := fmt.Sprintf("%s:%d", ip, udpConn.LocalAddr().(*net.UDPAddr).Port) //nolint:forcetypeassert
@@ -81,18 +81,14 @@ func NewUDPServer(
 		select {
 		case err := <-errCh:
 			if err != nil {
-				t.Fatal(err)
+				assert.NoError(t, err)
 
 				return
 			}
 		default:
 		}
 
-		err := udpConn.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
+		assert.NoError(t, udpConn.Close())
 		<-errCh
 	}, nil
 }

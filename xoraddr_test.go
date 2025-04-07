@@ -11,10 +11,11 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
 	"io"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkXORMappedAddress_AddTo(b *testing.B) {
@@ -31,82 +32,56 @@ func BenchmarkXORMappedAddress_AddTo(b *testing.B) {
 func BenchmarkXORMappedAddress_GetFrom(b *testing.B) {
 	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
-	if err != nil {
-		b.Error(err)
-	}
+	assert.NoError(b, err)
 	copy(msg.TransactionID[:], transactionID)
 	addrValue, err := hex.DecodeString("00019cd5f49f38ae")
-	if err != nil {
-		b.Error(err)
-	}
+	assert.NoError(b, err)
 	msg.Add(AttrXORMappedAddress, addrValue)
 	addr := new(XORMappedAddress)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if err := addr.GetFrom(msg); err != nil {
-			b.Fatal(err)
-		}
+		assert.NoError(b, addr.GetFrom(msg))
 	}
 }
 
 func TestXORMappedAddress_GetFrom(t *testing.T) {
 	m := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	copy(m.TransactionID[:], transactionID)
 	addrValue, err := hex.DecodeString("00019cd5f49f38ae")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	m.Add(AttrXORMappedAddress, addrValue)
 	addr := new(XORMappedAddress)
-	if err = addr.GetFrom(m); err != nil {
-		t.Error(err)
-	}
-	if !addr.IP.Equal(net.ParseIP("213.141.156.236")) {
-		t.Error("bad IP", addr.IP, "!=", "213.141.156.236")
-	}
-	if addr.Port != 48583 {
-		t.Error("bad Port", addr.Port, "!=", 48583)
-	}
+	assert.NoError(t, addr.GetFrom(m))
+	assert.True(t, addr.IP.Equal(net.ParseIP("213.141.156.236")))
+	assert.Equal(t, 48583, addr.Port)
 	t.Run("UnexpectedEOF", func(t *testing.T) {
 		m := New()
 		// {0, 1} is correct addr family.
 		m.Add(AttrXORMappedAddress, []byte{0, 1, 3, 4})
 		addr := new(XORMappedAddress)
-		if err = addr.GetFrom(m); !errors.Is(err, io.ErrUnexpectedEOF) {
-			t.Errorf("len(v) = 4 should render <%s> error, got <%s>",
-				io.ErrUnexpectedEOF, err,
-			)
-		}
+		assert.ErrorIs(t, addr.GetFrom(m), io.ErrUnexpectedEOF, "len(v) = 4 should return io.ErrUnexpectedEOF")
 	})
 	t.Run("AttrOverflowErr", func(t *testing.T) {
 		m := New()
 		// {0, 1} is correct addr family.
 		m.Add(AttrXORMappedAddress, []byte{0, 1, 3, 4, 5, 6, 7, 8, 9, 1, 1, 1, 1, 1, 2, 3, 4})
 		addr := new(XORMappedAddress)
-		if err := addr.GetFrom(m); !IsAttrSizeOverflow(err) {
-			t.Errorf("AddTo should return *AttrOverflowErr, got: %v", err)
-		}
+		assert.True(t, IsAttrSizeOverflow(addr.GetFrom(m)), "GetFrom should return *AttrOverflowErr")
 	})
 }
 
 func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
 	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	copy(msg.TransactionID[:], transactionID)
 	expectedIP := net.ParseIP("213.141.156.236")
 	expectedPort := 21254
 	addr := new(XORMappedAddress)
 
-	if err = addr.GetFrom(msg); err == nil {
-		t.Fatal(err, "should be nil")
-	}
+	assert.Error(t, addr.GetFrom(msg))
 
 	addr.IP = expectedIP
 	addr.Port = expectedPort
@@ -115,20 +90,15 @@ func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
 
 	mRes := New()
 	binary.BigEndian.PutUint16(msg.Raw[20+4:20+4+2], 0x21)
-	if _, err = mRes.ReadFrom(bytes.NewReader(msg.Raw)); err != nil {
-		t.Fatal(err)
-	}
-	if err = addr.GetFrom(msg); err == nil {
-		t.Fatal(err, "should not be nil")
-	}
+	_, err = mRes.ReadFrom(bytes.NewReader(msg.Raw))
+	assert.NoError(t, err)
+	assert.Error(t, addr.GetFrom(msg))
 }
 
 func TestXORMappedAddress_AddTo(t *testing.T) {
 	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	copy(msg.TransactionID[:], transactionID)
 	expectedIP := net.ParseIP("213.141.156.236")
 	expectedPort := 21254
@@ -136,31 +106,20 @@ func TestXORMappedAddress_AddTo(t *testing.T) {
 		IP:   net.ParseIP("213.141.156.236"),
 		Port: expectedPort,
 	}
-	if err = addr.AddTo(msg); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, addr.AddTo(msg))
 	msg.WriteHeader()
 	mRes := New()
-	if _, err = mRes.Write(msg.Raw); err != nil {
-		t.Fatal(err)
-	}
-	if err = addr.GetFrom(mRes); err != nil {
-		t.Fatal(err)
-	}
-	if !addr.IP.Equal(expectedIP) {
-		t.Errorf("%s (got) != %s (expected)", addr.IP, expectedIP)
-	}
-	if addr.Port != expectedPort {
-		t.Error("bad Port", addr.Port, "!=", expectedPort)
-	}
+	_, err = mRes.Write(msg.Raw)
+	assert.NoError(t, err)
+	assert.NoError(t, addr.GetFrom(mRes))
+	assert.True(t, addr.IP.Equal(expectedIP), "Expected %s, got %s", expectedIP, addr.IP)
+	assert.Equal(t, expectedPort, addr.Port)
 }
 
 func TestXORMappedAddress_AddTo_IPv6(t *testing.T) {
 	msg := New()
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	copy(msg.TransactionID[:], transactionID)
 	expectedIP := net.ParseIP("fe80::dc2b:44ff:fe20:6009")
 	expectedPort := 21254
@@ -172,19 +131,12 @@ func TestXORMappedAddress_AddTo_IPv6(t *testing.T) {
 	msg.WriteHeader()
 
 	mRes := New()
-	if _, err = mRes.ReadFrom(msg.reader()); err != nil {
-		t.Fatal(err)
-	}
+	_, err = mRes.ReadFrom(msg.reader())
+	assert.NoError(t, err)
 	gotAddr := new(XORMappedAddress)
-	if err = gotAddr.GetFrom(msg); err != nil {
-		t.Fatal(err)
-	}
-	if !gotAddr.IP.Equal(expectedIP) {
-		t.Error("bad IP", gotAddr.IP, "!=", expectedIP)
-	}
-	if gotAddr.Port != expectedPort {
-		t.Error("bad Port", gotAddr.Port, "!=", expectedPort)
-	}
+	assert.NoError(t, gotAddr.GetFrom(mRes))
+	assert.True(t, gotAddr.IP.Equal(expectedIP), "Expected %s, got %s", expectedIP, gotAddr.IP)
+	assert.Equal(t, expectedPort, gotAddr.Port)
 }
 
 func TestXORMappedAddress_AddTo_Invalid(t *testing.T) {
@@ -193,9 +145,7 @@ func TestXORMappedAddress_AddTo_Invalid(t *testing.T) {
 		IP:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		Port: 21254,
 	}
-	if err := addr.AddTo(m); !errors.Is(err, ErrBadIPLength) {
-		t.Errorf("AddTo should return %q, got: %v", ErrBadIPLength, err)
-	}
+	assert.ErrorIs(t, addr.AddTo(m), ErrBadIPLength)
 }
 
 func TestXORMappedAddress_String(t *testing.T) {
@@ -219,12 +169,6 @@ func TestXORMappedAddress_String(t *testing.T) {
 		},
 	}
 	for i, c := range tt {
-		if got := c.in.String(); got != c.out {
-			t.Errorf("[%d]: XORMappesAddres.String() %s (got) != %s (expected)",
-				i,
-				got,
-				c.out,
-			)
-		}
+		assert.Equalf(t, c.out, c.in.String(), "[%d]: XORMappesAddres.String()", i)
 	}
 }

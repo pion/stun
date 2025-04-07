@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"hash"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type hmacTest struct {
@@ -524,26 +526,17 @@ func hmacTests() []hmacTest { //nolint:maintidx
 func TestHMAC(t *testing.T) {
 	for i, tt := range hmacTests() {
 		hsh := New(tt.hash, tt.key)
-		if s := hsh.Size(); s != tt.size {
-			t.Errorf("Size: got %v, want %v", s, tt.size)
-		}
-		if b := hsh.BlockSize(); b != tt.blocksize {
-			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
-		}
+		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
+		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
 		for j := 0; j < 4; j++ { //nolint:varnamelen
 			n, err := hsh.Write(tt.in)
-			if n != len(tt.in) || err != nil {
-				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
-
-				continue
-			}
+			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
+			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
-				if sum != tt.out {
-					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
-				}
+				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}
 
 			// Second iteration: make sure reset works.
@@ -568,18 +561,10 @@ func TestEqual(t *testing.T) {
 	b := []byte("test1")
 	c := []byte("test2")
 
-	if !Equal(b, b) {
-		t.Error("Equal failed with equal arguments")
-	}
-	if Equal(a, b) {
-		t.Error("Equal accepted a prefix of the second argument")
-	}
-	if Equal(b, a) {
-		t.Error("Equal accepted a prefix of the first argument")
-	}
-	if Equal(b, c) {
-		t.Error("Equal accepted unequal slices")
-	}
+	assert.True(t, Equal(b, b), "Equal failed with equal arguments")
+	assert.False(t, Equal(a, b), "Equal accepted a prefix of the second argument")
+	assert.False(t, Equal(b, a), "Equal accepted a prefix of the first argument")
+	assert.False(t, Equal(b, c), "Equal accepted unequal slices")
 }
 
 func BenchmarkHMACSHA256_1K(b *testing.B) {

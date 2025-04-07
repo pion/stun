@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/pion/stun/v3/internal/testutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkBuildOverhead(b *testing.B) {
@@ -59,21 +60,12 @@ func TestMessage_Apply(t *testing.T) {
 		integrity,
 		Fingerprint,
 	)
-	if err != nil {
-		t.Fatal("failed to build:", err)
-	}
-	if err = msg.Check(Fingerprint, integrity); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := decoded.Write(msg.Raw); err != nil {
-		t.Fatal(err)
-	}
-	if !decoded.Equal(msg) {
-		t.Error("not equal")
-	}
-	if err := integrity.Check(decoded); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err, "failed to build")
+	assert.NoError(t, msg.Check(Fingerprint, integrity))
+	_, err = decoded.Write(msg.Raw)
+	assert.NoError(t, err)
+	assert.True(t, decoded.Equal(msg))
+	assert.NoError(t, integrity.Check(decoded))
 }
 
 type errReturner struct {
@@ -97,25 +89,17 @@ func (e errReturner) GetFrom(*Message) error {
 func TestHelpersErrorHandling(t *testing.T) {
 	m := New()
 	errReturn := errReturner{Err: errTError}
-	if err := m.Build(errReturn); !errors.Is(err, errReturn.Err) {
-		t.Error(err, "!=", errReturn.Err)
-	}
-	if err := m.Check(errReturn); !errors.Is(err, errReturn.Err) {
-		t.Error(err, "!=", errReturn.Err)
-	}
-	if err := m.Parse(errReturn); !errors.Is(err, errReturn.Err) {
-		t.Error(err, "!=", errReturn.Err)
-	}
+	assert.ErrorIs(t, m.Build(errReturn), errReturn.Err)
+	assert.ErrorIs(t, m.Check(errReturn), errReturn.Err)
+	assert.ErrorIs(t, m.Parse(errReturn), errReturn.Err)
 	t.Run("MustBuild", func(t *testing.T) {
 		t.Run("Positive", func(*testing.T) {
 			MustBuild(NewTransactionIDSetter(transactionID{}))
 		})
 		defer func() {
-			if p, ok := recover().(error); !ok || !errors.Is(p, errReturn.Err) {
-				t.Errorf("%s != %s",
-					p, errReturn.Err,
-				)
-			}
+			p, ok := recover().(error)
+			assert.True(t, ok)
+			assert.ErrorIs(t, p, errReturn.Err)
 		}()
 		MustBuild(errReturn)
 	})
@@ -123,91 +107,62 @@ func TestHelpersErrorHandling(t *testing.T) {
 
 func TestMessage_ForEach(t *testing.T) { //nolint:cyclop
 	initial := New()
-	if err := initial.Build(
+	assert.NoError(t, initial.Build(
 		NewRealm("realm1"), NewRealm("realm2"),
-	); err != nil {
-		t.Fatal(err)
-	}
+	))
 	newMessage := func() *Message {
 		m := New()
-		if err := m.Build(
+		assert.NoError(t, m.Build(
 			NewRealm("realm1"), NewRealm("realm2"),
-		); err != nil {
-			t.Fatal(err)
-		}
+		))
 
 		return m
 	}
 	t.Run("NoResults", func(t *testing.T) {
 		m := newMessage()
-		if !m.Equal(initial) {
-			t.Error("m should be equal to initial")
-		}
-		if err := m.ForEach(AttrUsername, func(*Message) error {
-			t.Error("should not be called")
+		assert.True(t, m.Equal(initial), "m should be equal to initial")
+		assert.NoError(t, m.ForEach(AttrUsername, func(*Message) error {
+			assert.Fail(t, "should not be called")
 
 			return nil
-		}); err != nil {
-			t.Fatal(err)
-		}
-		if !m.Equal(initial) {
-			t.Error("m should be equal to initial")
-		}
+		}))
+		assert.True(t, m.Equal(initial), "m should be equal to initial")
 	})
 	t.Run("ReturnOnError", func(t *testing.T) {
 		m := newMessage()
 		var calls int
-		if err := m.ForEach(AttrRealm, func(*Message) error {
+		err := m.ForEach(AttrRealm, func(*Message) error {
 			if calls > 0 {
-				t.Error("called multiple times")
+				assert.Fail(t, "called multiple times")
 			}
 			calls++
 
 			return ErrAttributeNotFound
-		}); !errors.Is(err, ErrAttributeNotFound) {
-			t.Fatal(err)
-		}
-		if !m.Equal(initial) {
-			t.Error("m should be equal to initial")
-		}
+		})
+		assert.ErrorIs(t, err, ErrAttributeNotFound)
+		assert.True(t, m.Equal(initial), "m should be equal to initial")
 	})
 	t.Run("Positive", func(t *testing.T) {
 		msg := newMessage()
 		var realms []string
-		if err := msg.ForEach(AttrRealm, func(m *Message) error {
+		assert.NoError(t, msg.ForEach(AttrRealm, func(m *Message) error {
 			var realm Realm
-			if err := realm.GetFrom(m); err != nil {
-				return err
-			}
+			assert.NoError(t, realm.GetFrom(m))
 			realms = append(realms, realm.String())
 
 			return nil
-		}); err != nil {
-			t.Fatal(err)
-		}
-		if len(realms) != 2 {
-			t.Fatal("expected 2 realms")
-		}
-		if realms[0] != "realm1" {
-			t.Error("bad value for 1 realm")
-		}
-		if realms[1] != "realm2" {
-			t.Error("bad value for 2 realm")
-		}
-		if !msg.Equal(initial) {
-			t.Error("m should be equal to initial")
-		}
+		}))
+		assert.Len(t, realms, 2)
+		assert.Equal(t, "realm1", realms[0], "bad value for 1 realm")
+		assert.Equal(t, "realm2", realms[1], "bad value for 2 realm")
+		assert.True(t, msg.Equal(initial), "m should be equal to initial")
 		t.Run("ZeroAlloc", func(t *testing.T) {
 			msg = newMessage()
 			var realm Realm
 			testutil.ShouldNotAllocate(t, func() {
-				if err := msg.ForEach(AttrRealm, realm.GetFrom); err != nil {
-					t.Fatal(err)
-				}
+				assert.NoError(t, msg.ForEach(AttrRealm, realm.GetFrom))
 			})
-			if !msg.Equal(initial) {
-				t.Error("m should be equal to initial")
-			}
+			assert.True(t, msg.Equal(initial), "m should be equal to initial")
 		})
 	})
 }

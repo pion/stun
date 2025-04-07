@@ -7,6 +7,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func FuzzMessage(f *testing.F) {
@@ -26,21 +28,12 @@ func FuzzMessage(f *testing.F) {
 		}
 
 		msg2 := New()
-		if _, err := msg2.Write(msg1.Raw); err != nil {
-			t.Fatalf("Failed to write: %s", err)
-		}
+		_, err := msg2.Write(msg1.Raw)
+		assert.NoError(t, err, "Failed to write")
 
-		if msg2.TransactionID != msg1.TransactionID {
-			t.Fatal("Transaction ID mismatch")
-		}
-
-		if msg2.Type != msg1.Type {
-			t.Fatal("Type mismatch")
-		}
-
-		if len(msg2.Attributes) != len(msg1.Attributes) {
-			t.Fatal("Attributes length mismatch")
-		}
+		assert.Equal(t, msg1.TransactionID, msg2.TransactionID, "Transaction ID mismatch")
+		assert.Equal(t, msg1.Type, msg2.Type, "Type mismatch")
+		assert.Equal(t, len(msg1.Attributes), len(msg2.Attributes), "Attributes length mismatch")
 	})
 }
 
@@ -51,15 +44,11 @@ func FuzzType(f *testing.F) {
 		t1 := MessageType{}
 		t1.ReadValue(v)
 		v2 := t1.Value()
-		if v != v2 {
-			t.Fatal("v != v2")
-		}
+		assert.Equal(t, v, v2, "v != v2")
 
 		t2 := MessageType{}
 		t2.ReadValue(v2)
-		if t2 != t1 {
-			t.Fatal("t2 != t1")
-		}
+		assert.Equal(t, t1, t2, "t2 != t1")
 	})
 }
 
@@ -94,20 +83,19 @@ func FuzzSetters(f *testing.F) {
 		m1.WriteHeader()
 		m1.Add(attr.t, value)
 		err := attr.g.GetFrom(m1)
-		if errors.Is(err, ErrAttributeNotFound) {
-			t.Fatalf("Unexpected 404: %s", err)
-		}
+		assert.False(t, errors.Is(err, ErrAttributeNotFound))
 		if err != nil {
 			return
 		}
 
 		m2.WriteHeader()
-		if err = attr.g.AddTo(m2); err != nil {
+		err = attr.g.AddTo(m2)
+		if err != nil {
 			// We allow decoding some text attributes
 			// when their length is too big, but
 			// not encoding.
 			if !IsAttrSizeOverflow(err) {
-				t.Fatal(err)
+				assert.NoError(t, err)
 			}
 
 			return
@@ -115,14 +103,10 @@ func FuzzSetters(f *testing.F) {
 
 		m3.WriteHeader()
 		v, err := m2.Get(attr.t)
-		if err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, err)
 		m3.Add(attr.t, v)
 
-		if !m2.Equal(m3) {
-			t.Fatalf("Not equal: %s != %s", m2, m3)
-		}
+		assert.True(t, m2.Equal(m3), "Not equal: %s != %s", m2, m3)
 	})
 }
 

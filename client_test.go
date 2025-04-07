@@ -18,6 +18,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -88,13 +90,9 @@ func BenchmarkClient_Do(b *testing.B) {
 	client, err := NewClient(noopConnection{},
 		WithAgent(agent),
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(b, err)
 	defer func() {
-		if closeErr := client.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(b, client.Close())
 	}()
 
 	noopF := func(Event) {
@@ -163,9 +161,8 @@ func TestClosedOrPanic(t *testing.T) {
 	func() {
 		defer func() {
 			r, ok := recover().(error)
-			if !ok || !errors.Is(r, io.EOF) {
-				t.Error(r)
-			}
+			assert.True(t, ok, "should be error")
+			assert.ErrorIs(t, r, io.EOF)
 		}()
 		closedOrPanic(io.EOF)
 	}()
@@ -203,46 +200,32 @@ func TestClient_Start(t *testing.T) { //nolint:cyclop
 		},
 	}
 	client, err := NewClient(conn)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Error(err)
-		}
-		if err := client.Close(); err == nil {
-			t.Error("second close should fail")
-		}
-		if err := client.Do(MustBuild(TransactionID), nil); err == nil {
-			t.Error("Do after Close should fail")
-		}
+		assert.NoError(t, client.Close())
+		assert.Error(t, client.Close(), "second close should fail")
+		assert.Error(t, client.Do(MustBuild(TransactionID), nil), "Do after Close should fail")
 	}()
 	msg := MustBuild(response, BindingRequest)
 	t.Log("init")
 	got := make(chan struct{})
 	write <- struct{}{}
 	t.Log("starting the first transaction")
-	if err := client.Start(msg, func(event Event) {
+	assert.NoError(t, client.Start(msg, func(event Event) {
 		t.Log("got first transaction callback")
-		if event.Error != nil {
-			t.Error(event.Error)
-		}
+		assert.NoError(t, event.Error)
 		got <- struct{}{}
-	}); err != nil {
-		t.Error(err)
-	}
+	}))
 	t.Log("starting the second transaction")
-	if err := client.Start(msg, func(Event) {
-		t.Error("should not be called")
-	}); !errors.Is(err, ErrTransactionExists) {
-		t.Errorf("unexpected error %v", err)
-	}
+	assert.ErrorIs(t, client.Start(msg, func(Event) {
+		assert.Fail(t, "should not be called")
+	}), ErrTransactionExists)
 	read <- struct{}{}
 	select {
 	case <-got:
 		// pass
 	case <-time.After(time.Millisecond * 10):
-		t.Error("timed out")
+		assert.Fail(t, "timed out")
 	}
 }
 
@@ -256,34 +239,20 @@ func TestClient_Do(t *testing.T) {
 		},
 	}
 	client, err := NewClient(conn)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Error(err)
-		}
-		if err := client.Close(); err == nil {
-			t.Error("second close should fail")
-		}
-		if err := client.Do(MustBuild(TransactionID), nil); err == nil {
-			t.Error("Do after Close should fail")
-		}
+		assert.NoError(t, client.Close())
+		assert.Error(t, client.Close(), "second close should fail")
+		assert.Error(t, client.Do(MustBuild(TransactionID), nil), "Do after Close should fail")
 	}()
 	m := MustBuild(
 		NewTransactionIDSetter(response.TransactionID),
 	)
-	if err := client.Do(m, func(event Event) {
-		if event.Error != nil {
-			t.Error(event.Error)
-		}
-	}); err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, client.Do(m, func(event Event) {
+		assert.NoError(t, event.Error)
+	}))
 	m = MustBuild(TransactionID)
-	if err := client.Do(m, nil); err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, client.Do(m, nil))
 }
 
 func TestCloseErr_Error(t *testing.T) {
@@ -299,11 +268,7 @@ func TestCloseErr_Error(t *testing.T) {
 			ConnectionErr: io.ErrUnexpectedEOF,
 		}, "failed to close: unexpected EOF (connection), <nil> (agent)"},
 	} {
-		if out := testCase.Err.Error(); out != testCase.Out {
-			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
-				id, testCase.Err, out, testCase.Out,
-			)
-		}
+		assert.Equal(t, testCase.Out, testCase.Err.Error(), "[%d]: Error(%#v)", id, testCase.Err)
 	}
 }
 
@@ -320,11 +285,7 @@ func TestStopErr_Error(t *testing.T) {
 			Cause: io.ErrUnexpectedEOF,
 		}, "error while stopping due to unexpected EOF: <nil>"},
 	} {
-		if out := testcase.Err.Error(); out != testcase.Out {
-			t.Errorf("[%d]: Error(%#v) %q (got) != %q (expected)",
-				id, testcase.Err, out, testcase.Out,
-			)
-		}
+		assert.Equal(t, testcase.Out, testcase.Err.Error(), "[%d]: Error(%#v)", id, testcase.Err)
 	}
 }
 
@@ -365,25 +326,15 @@ func TestClientAgentError(t *testing.T) {
 			startErr: io.ErrUnexpectedEOF,
 		}),
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, client.Close())
 	}()
 	m := MustBuild(NewTransactionIDSetter(response.TransactionID))
-	if err := client.Do(m, nil); err != nil {
-		t.Error(err)
-	}
-	if err := client.Do(m, func(event Event) {
-		if event.Error == nil {
-			t.Error("error expected")
-		}
-	}); !errors.Is(err, io.ErrUnexpectedEOF) {
-		t.Error("error expected")
-	}
+	assert.NoError(t, client.Do(m, nil))
+	assert.ErrorIs(t, client.Do(m, func(event Event) {
+		assert.Error(t, event.Error, "error expected")
+	}), io.ErrUnexpectedEOF)
 }
 
 func TestClientConnErr(t *testing.T) {
@@ -393,21 +344,13 @@ func TestClientConnErr(t *testing.T) {
 		},
 	}
 	client, err := NewClient(conn)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, client.Close())
 	}()
 	m := MustBuild(TransactionID)
-	if err := client.Do(m, nil); err == nil {
-		t.Error("error expected")
-	}
-	if err := client.Do(m, NoopHandler()); err == nil {
-		t.Error("error expected")
-	}
+	assert.Error(t, client.Do(m, nil), "error expected")
+	assert.Error(t, client.Do(m, NoopHandler()), "error expected")
 }
 
 func TestClientConnErrStopErr(t *testing.T) {
@@ -421,26 +364,19 @@ func TestClientConnErrStopErr(t *testing.T) {
 			stopErr: io.ErrUnexpectedEOF,
 		}),
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, client.Close())
 	}()
 	m := MustBuild(TransactionID)
-	if err := client.Do(m, NoopHandler()); err == nil {
-		t.Error("error expected")
-	}
+	assert.Error(t, client.Do(m, NoopHandler()), "error expected")
 }
 
 func TestCallbackWaitHandler_setCallback(t *testing.T) {
 	c := callbackWaitHandler{}
 	defer func() {
-		if err := recover(); err == nil {
-			t.Error("should panic")
-		}
+		err := recover()
+		assert.NotNil(t, err, "should panic")
 	}()
 	c.setCallback(nil)
 }
@@ -450,56 +386,39 @@ func TestCallbackWaitHandler_HandleEvent(t *testing.T) {
 		cond: sync.NewCond(new(sync.Mutex)),
 	}
 	defer func() {
-		if err := recover(); err == nil {
-			t.Error("should panic")
-		}
+		err := recover()
+		assert.NotNil(t, err, "should panic")
 	}()
 	c.HandleEvent(Event{})
 }
 
 func TestNewClientNoConnection(t *testing.T) {
 	c, err := NewClient(nil)
-	if c != nil {
-		t.Error("c should be nil")
-	}
-	if !errors.Is(err, ErrNoConnection) {
-		t.Error("bad error")
-	}
+	assert.Nil(t, c, "c should be nil")
+	assert.ErrorIs(t, err, ErrNoConnection, "bad error")
 }
 
 func TestDial(t *testing.T) {
 	c, err := Dial("udp4", "localhost:3458")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err = c.Close(); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, c.Close())
 	}()
 }
 
 func TestDialURI(t *testing.T) {
 	u, err := ParseURI("stun:localhost")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	c, err := DialURI(u, &DialConfig{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err = c.Close(); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, c.Close())
 	}()
 }
 
 func TestDialError(t *testing.T) {
 	_, err := Dial("bad?network", "?????")
-	if err == nil {
-		t.Fatal("error expected")
-	}
+	assert.Error(t, err, "error expected")
 }
 
 func TestClientCloseErr(t *testing.T) {
@@ -516,13 +435,11 @@ func TestClientCloseErr(t *testing.T) {
 			closeErr: io.ErrUnexpectedEOF,
 		}),
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err, ok := c.Close().(CloseErr); !ok || !errors.Is(err.AgentErr, io.ErrUnexpectedEOF) { //nolint:errorlint
-			t.Error("unexpected close err")
-		}
+		err, ok := c.Close().(CloseErr) //nolint:errorlint
+		assert.True(t, ok, "should be CloseErr")
+		assert.ErrorIs(t, err.AgentErr, io.ErrUnexpectedEOF, "unexpected close err")
 	}()
 }
 
@@ -542,12 +459,8 @@ func TestWithNoConnClose(t *testing.T) {
 		}),
 		WithNoConnClose(),
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := c.Close(); err != nil {
-		t.Error("unexpected non-nil error")
-	}
+	assert.NoError(t, err)
+	assert.NoError(t, c.Close(), "unexpected non-nil error")
 }
 
 type gcWaitAgent struct {
@@ -598,28 +511,20 @@ func TestClientGC(t *testing.T) {
 		WithAgent(agent),
 		WithTimeoutRate(time.Millisecond),
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err = c.Close(); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, c.Close())
 	}()
 	select {
 	case <-agent.gc:
 	case <-time.After(time.Millisecond * 200):
-		t.Error("timed out")
+		assert.Fail(t, "timed out")
 	}
 }
 
 func TestClientCheckInit(t *testing.T) {
-	if err := (&Client{}).Indicate(nil); !errors.Is(err, ErrClientNotInitialized) {
-		t.Error("unexpected error")
-	}
-	if err := (&Client{}).Do(nil, nil); !errors.Is(err, ErrClientNotInitialized) {
-		t.Error("unexpected error")
-	}
+	assert.ErrorIs(t, (&Client{}).Indicate(nil), ErrClientNotInitialized)
+	assert.ErrorIs(t, (&Client{}).Do(nil, nil), ErrClientNotInitialized)
 }
 
 func captureLog() (*bytes.Buffer, func()) {
@@ -645,9 +550,7 @@ func TestClientFinalizer(t *testing.T) {
 		},
 	}
 	client, err := NewClient(conn)
-	if err != nil {
-		log.Panic(err)
-	}
+	assert.NoError(t, err)
 	clientFinalizer(client)
 	clientFinalizer(client)
 	response := MustBuild(TransactionID, BindingSuccess)
@@ -663,9 +566,7 @@ func TestClientFinalizer(t *testing.T) {
 			closeErr: io.ErrUnexpectedEOF,
 		}),
 	)
-	if err != nil {
-		log.Panic(err)
-	}
+	assert.NoError(t, err)
 	clientFinalizer(client)
 	reader := bufio.NewScanner(buf)
 	var lines int
@@ -676,17 +577,11 @@ func TestClientFinalizer(t *testing.T) {
 			"<nil> (connection), unexpected EOF (agent)",
 	}
 	for reader.Scan() {
-		if reader.Text() != expectedLines[lines] {
-			t.Error(reader.Text(), "!=", expectedLines[lines])
-		}
+		assert.Equal(t, expectedLines[lines], reader.Text())
 		lines++
 	}
-	if reader.Err() != nil {
-		t.Error(err)
-	}
-	if lines != 3 {
-		t.Error("incorrect count of log lines:", lines)
-	}
+	assert.NoError(t, reader.Err())
+	assert.Equal(t, 3, lines, "incorrect count of log lines")
 }
 
 func TestCallbackWaitHandler(*testing.T) {
@@ -784,9 +679,7 @@ func TestClientRetransmission(t *testing.T) {
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connR.Close())
 	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
@@ -814,36 +707,22 @@ func TestClientRetransmission(t *testing.T) {
 		WithCollector(collector),
 		WithRTO(time.Millisecond),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	client.SetRTO(time.Second)
 	gotReads := make(chan struct{})
 	go func() {
 		buf := make([]byte, 1500)
 		readN, readErr := connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		readN, readErr = connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		gotReads <- struct{}{}
 	}()
-	if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
-		if event.Error != nil {
-			t.Error("failed")
-		}
-	}); doErr != nil {
-		t.Fatal(doErr)
-	}
+	assert.NoError(t, client.Do(MustBuild(response, BindingRequest), func(event Event) {
+		assert.NoError(t, event.Error, "failed")
+	}))
 	<-gotReads
 }
 
@@ -854,9 +733,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) { //nolint:cyclop
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connR.Close())
 	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
@@ -874,9 +751,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) { //nolint:cyclop
 		WithClock(clock),
 		WithCollector(collector),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	client.SetRTO(time.Second)
 	conns := new(sync.WaitGroup)
 	wg := new(sync.WaitGroup)
@@ -891,29 +766,21 @@ func testClientDoConcurrent(t *testing.T, concurrency int) { //nolint:cyclop
 					if errors.Is(readErr, io.EOF) {
 						break
 					}
-					t.Error(readErr)
+					assert.NoError(t, readErr)
 				}
-				if !IsMessage(buf[:readN]) {
-					t.Error("should be STUN")
-				}
+				assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 			}
 		}()
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if doErr := client.Do(MustBuild(TransactionID, BindingRequest), func(event Event) {
-				if event.Error != nil {
-					t.Error("failed")
-				}
-			}); doErr != nil {
-				t.Error(doErr)
-			}
+			assert.NoError(t, client.Do(MustBuild(TransactionID, BindingRequest), func(event Event) {
+				assert.NoError(t, event.Error, "failed")
+			}))
 		}()
 	}
 	wg.Wait()
-	if connErr := connR.Close(); connErr != nil {
-		t.Error(connErr)
-	}
+	assert.NoError(t, connR.Close())
 	conns.Wait()
 }
 
@@ -942,24 +809,22 @@ func (c errorCollector) Close() error { return c.closeError }
 func TestNewClient(t *testing.T) {
 	t.Run("SetCallbackError", func(t *testing.T) {
 		setHandlerError := errClientSetHandler
-		if _, createErr := NewClient(noopConnection{},
+		_, createErr := NewClient(noopConnection{},
 			WithAgent(&errorAgent{
 				setHandlerError: setHandlerError,
 			}),
-		); !errors.Is(createErr, setHandlerError) {
-			t.Errorf("unexpected error returned: %v", createErr)
-		}
+		)
+		assert.ErrorIs(t, createErr, setHandlerError, "unexpected error returned")
 	})
 	t.Run("CollectorStartError", func(t *testing.T) {
 		startError := errClientStart
-		if _, createErr := NewClient(noopConnection{},
+		_, createErr := NewClient(noopConnection{},
 			WithAgent(&TestAgent{}),
 			WithCollector(errorCollector{
 				startError: startError,
 			}),
-		); !errors.Is(createErr, startError) {
-			t.Errorf("unexpected error returned: %v", createErr)
-		}
+		)
+		assert.ErrorIs(t, createErr, startError, "unexpected error returned")
 	})
 }
 
@@ -972,13 +837,9 @@ func TestClient_Close(t *testing.T) {
 			}),
 			WithAgent(&TestAgent{}),
 		)
-		if createErr != nil {
-			t.Errorf("unexpected create error returned: %v", createErr)
-		}
+		assert.NoError(t, createErr, "unexpected create error returned")
 		gotCloseErr := c.Close()
-		if !errors.Is(gotCloseErr, closeErr) {
-			t.Errorf("unexpected close error returned: %v", gotCloseErr)
-		}
+		assert.ErrorIs(t, gotCloseErr, closeErr, "unexpected close error returned")
 	})
 }
 
@@ -992,19 +853,13 @@ func TestClientDefaultHandler(t *testing.T) {
 	client, createErr := NewClient(noopConnection{},
 		WithAgent(agent),
 		WithHandler(func(e Event) {
-			if called {
-				t.Error("should not be called twice")
-			}
+			assert.False(t, called, "should not be called twice")
 			called = true
-			if e.TransactionID != id {
-				t.Error("wrong transaction ID")
-			}
+			assert.Equal(t, id, e.TransactionID, "wrong transaction ID")
 			handlerCalled <- struct{}{}
 		}),
 	)
-	if createErr != nil {
-		t.Fatal(createErr)
-	}
+	assert.NoError(t, createErr)
 	go func() {
 		agent.h(Event{
 			TransactionID: id,
@@ -1014,11 +869,9 @@ func TestClientDefaultHandler(t *testing.T) {
 	case <-handlerCalled:
 		// pass
 	case <-time.After(time.Millisecond * 100):
-		t.Fatal("timed out")
+		assert.Fail(t, "timed out")
 	}
-	if closeErr := client.Close(); closeErr != nil {
-		t.Error(closeErr)
-	}
+	assert.NoError(t, client.Close())
 	// Handler call should be ignored.
 	agent.h(Event{})
 }
@@ -1030,15 +883,9 @@ func TestClientClosedStart(t *testing.T) {
 	c, createErr := NewClient(noopConnection{},
 		WithAgent(a),
 	)
-	if createErr != nil {
-		t.Fatal(createErr)
-	}
-	if closeErr := c.Close(); closeErr != nil {
-		t.Error(closeErr)
-	}
-	if startErr := c.start(&clientTransaction{}); !errors.Is(startErr, ErrClientClosed) {
-		t.Error("should error")
-	}
+	assert.NoError(t, createErr)
+	assert.NoError(t, c.Close())
+	assert.ErrorIs(t, c.start(&clientTransaction{}), ErrClientClosed)
 }
 
 func TestWithNoRetransmit(t *testing.T) {
@@ -1046,9 +893,7 @@ func TestWithNoRetransmit(t *testing.T) {
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connL.Close())
 	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
@@ -1062,7 +907,7 @@ func TestWithNoRetransmit(t *testing.T) {
 				Error:         ErrTransactionTimeOut,
 			})
 		} else {
-			t.Error("there should be no second attempt")
+			assert.Fail(t, "there should be no second attempt")
 			go agent.h(Event{
 				TransactionID: id,
 				Error:         ErrTransactionTimeOut,
@@ -1078,28 +923,18 @@ func TestWithNoRetransmit(t *testing.T) {
 		WithRTO(0),
 		WithNoRetransmit,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	gotReads := make(chan struct{})
 	go func() {
 		buf := make([]byte, 1500)
 		readN, readErr := connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		gotReads <- struct{}{}
 	}()
-	if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
-		if !errors.Is(event.Error, ErrTransactionTimeOut) {
-			t.Error("unexpected error")
-		}
-	}); doErr != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, client.Do(MustBuild(response, BindingRequest), func(event Event) {
+		assert.ErrorIs(t, event.Error, ErrTransactionTimeOut, "unexpected error")
+	}))
 	<-gotReads
 }
 
@@ -1114,9 +949,7 @@ func TestClientRTOStartErr(t *testing.T) { //nolint:cyclop
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connL.Close())
 	}()
 	collector := new(manualCollector)
 	shouldWait := false
@@ -1169,9 +1002,7 @@ func TestClientRTOStartErr(t *testing.T) { //nolint:cyclop
 				t.Log("clock locked")
 				<-clockLocked
 				t.Log("closing client")
-				if closeErr := client.Close(); closeErr != nil {
-					t.Error(closeErr)
-				}
+				assert.NoError(t, client.Close())
 				t.Log("client closed, unlocking clock")
 				clockWait <- struct{}{}
 				t.Log("clock unlocked")
@@ -1186,44 +1017,30 @@ func TestClientRTOStartErr(t *testing.T) { //nolint:cyclop
 		WithCollector(collector),
 		WithRTO(time.Millisecond),
 	)
-	if startClientErr != nil {
-		t.Fatal(startClientErr)
-	}
+	assert.NoError(t, startClientErr)
 	go func() {
 		buf := make([]byte, 1500)
 		readN, readErr := connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		readN, readErr = connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		gotReads <- struct{}{}
 	}()
 	t.Log("starting")
 	done := make(chan struct{})
 	go func() {
-		if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
-			if !errors.Is(event.Error, ErrClientClosed) {
-				t.Error(event.Error)
-			}
-		}); doErr != nil {
-			t.Error(doErr)
-		}
+		assert.NoError(t, client.Do(MustBuild(response, BindingRequest), func(event Event) {
+			assert.ErrorIs(t, event.Error, ErrClientClosed)
+		}))
 		done <- struct{}{}
 	}()
 	select {
 	case <-done:
 		// ok
 	case <-time.After(time.Second * 5):
-		t.Error("timeout")
+		assert.Fail(t, "timeout")
 	}
 }
 
@@ -1232,9 +1049,7 @@ func TestClientRTOWriteErr(t *testing.T) { //nolint:cyclop
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connL.Close())
 	}()
 	collector := new(manualCollector)
 	shouldWait := false
@@ -1291,9 +1106,7 @@ func TestClientRTOWriteErr(t *testing.T) { //nolint:cyclop
 				t.Log("clock locked")
 				<-clockLocked
 				t.Log("closing connection")
-				if closeErr := connL.Close(); closeErr != nil {
-					panic(closeErr)
-				}
+				assert.NoError(t, connL.Close())
 				t.Log("connection closed, unlocking clock")
 				clockWait <- struct{}{}
 				t.Log("clock unlocked")
@@ -1308,52 +1121,33 @@ func TestClientRTOWriteErr(t *testing.T) { //nolint:cyclop
 		WithCollector(collector),
 		WithRTO(time.Millisecond),
 	)
-	if startClientErr != nil {
-		t.Fatal(startClientErr)
-	}
+	assert.NoError(t, startClientErr)
 	go func() {
 		buf := make([]byte, 1500)
 		readN, readErr := connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		readN, readErr = connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		gotReads <- struct{}{}
 	}()
 	t.Log("starting")
 	done := make(chan struct{})
 	go func() {
-		if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
+		assert.NoError(t, client.Do(MustBuild(response, BindingRequest), func(event Event) {
 			var e StopErr
-			if !errors.As(event.Error, &e) {
-				t.Error(event.Error)
-			} else {
-				if !errors.Is(e.Err, agentStopErr) {
-					t.Error("incorrect agent error")
-				}
-				if !errors.Is(e.Cause, io.ErrClosedPipe) {
-					t.Error("incorrect connection error")
-				}
-			}
-		}); doErr != nil {
-			t.Error(doErr)
-		}
+			assert.ErrorAs(t, event.Error, &e)
+			assert.ErrorIs(t, e.Err, agentStopErr, "incorrect agent error")
+			assert.ErrorIs(t, e.Cause, io.ErrClosedPipe, "incorrect connection error")
+		}))
 		done <- struct{}{}
 	}()
 	select {
 	case <-done:
 		// ok
 	case <-time.After(time.Second * 5):
-		t.Error("timeout")
+		assert.Fail(t, "timeout")
 	}
 }
 
@@ -1362,9 +1156,7 @@ func TestClientRTOAgentErr(t *testing.T) {
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connL.Close())
 	}()
 	collector := new(manualCollector)
 	clock := callbackClock(time.Now)
@@ -1396,33 +1188,23 @@ func TestClientRTOAgentErr(t *testing.T) {
 		WithCollector(collector),
 		WithRTO(time.Millisecond),
 	)
-	if startClientErr != nil {
-		t.Fatal(startClientErr)
-	}
+	assert.NoError(t, startClientErr)
 	go func() {
 		buf := make([]byte, 1500)
 		readN, readErr := connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		gotReads <- struct{}{}
 	}()
 	t.Log("starting")
-	if doErr := client.Do(MustBuild(response, BindingRequest), func(event Event) {
-		if !errors.Is(event.Error, agentStartErr) {
-			t.Error(event.Error)
-		}
-	}); doErr != nil {
-		t.Error(doErr)
-	}
+	assert.NoError(t, client.Do(MustBuild(response, BindingRequest), func(event Event) {
+		assert.ErrorIs(t, event.Error, agentStartErr)
+	}))
 	select {
 	case <-gotReads:
 		// ok
 	case <-time.After(time.Second * 5):
-		t.Error("reads timeout")
+		assert.Fail(t, "reads timeout")
 	}
 }
 
@@ -1431,9 +1213,7 @@ func TestClient_HandleProcessError(t *testing.T) {
 	response.Encode()
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connL.Close())
 	}()
 	collector := new(manualCollector)
 	clock := callbackClock(time.Now)
@@ -1451,14 +1231,10 @@ func TestClient_HandleProcessError(t *testing.T) {
 		WithCollector(collector),
 		WithRTO(time.Millisecond),
 	)
-	if startClientErr != nil {
-		t.Fatal(startClientErr)
-	}
+	assert.NoError(t, startClientErr)
 	go func() {
 		_, readErr := connL.Write(response.Raw)
-		if readErr != nil {
-			t.Error(readErr)
-		}
+		assert.NoError(t, readErr)
 		gotWrites <- struct{}{}
 	}()
 	t.Log("starting")
@@ -1466,20 +1242,16 @@ func TestClient_HandleProcessError(t *testing.T) {
 	case <-gotWrites:
 		// ok
 	case <-time.After(time.Second * 5):
-		t.Error("reads timeout")
+		assert.Fail(t, "reads timeout")
 	}
-	if closeErr := client.Close(); closeErr != nil {
-		t.Error(closeErr)
-	}
+	assert.NoError(t, client.Close())
 }
 
 func TestClientImmediateTimeout(t *testing.T) {
 	response := MustBuild(TransactionID, BindingSuccess)
 	connL, connR := net.Pipe()
 	defer func() {
-		if closeErr := connL.Close(); closeErr != nil {
-			panic(closeErr)
-		}
+		assert.NoError(t, connL.Close())
 	}()
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
@@ -1488,16 +1260,14 @@ func TestClientImmediateTimeout(t *testing.T) {
 	attempt := 0
 	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
 		if attempt == 0 {
-			if deadline.Before(clock.current.Add(rto / 2)) {
-				t.Error("deadline too fast")
-			}
+			assert.False(t, deadline.Before(clock.current.Add(rto/2)), "deadline too fast")
 			attempt++
 			go agent.h(Event{
 				TransactionID: id,
 				Message:       response,
 			})
 		} else {
-			t.Error("there should be no second attempt")
+			assert.Fail(t, "there should be no second attempt")
 			go agent.h(Event{
 				TransactionID: id,
 				Error:         ErrTransactionTimeOut,
@@ -1512,25 +1282,17 @@ func TestClientImmediateTimeout(t *testing.T) {
 		WithCollector(collector),
 		WithRTO(rto),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	gotReads := make(chan struct{})
 	go func() {
 		buf := make([]byte, 1500)
 		readN, readErr := connL.Read(buf)
-		if readErr != nil {
-			t.Error(readErr)
-		}
-		if !IsMessage(buf[:readN]) {
-			t.Error("should be STUN")
-		}
+		assert.NoError(t, readErr)
+		assert.True(t, IsMessage(buf[:readN]), "should be STUN")
 		gotReads <- struct{}{}
 	}()
 	client.Start(MustBuild(response, BindingRequest), func(e Event) { //nolint:errcheck,gosec
-		if errors.Is(e.Error, ErrTransactionTimeOut) {
-			t.Error("unexpected error")
-		}
+		assert.NoError(t, e.Error, "unexpected error")
 	})
 	<-gotReads
 }

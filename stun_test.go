@@ -6,6 +6,8 @@ package stun
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type errorReader struct{}
@@ -21,9 +23,7 @@ func (errorReader) Read([]byte) (int, error) {
 
 func TestReadFullHelper(t *testing.T) {
 	defer func() {
-		if r := recover(); r == nil {
-			t.Error("should panic")
-		}
+		assert.NotNil(t, recover(), "should panic")
 	}()
 	readFullOrPanic(errorReader{}, make([]byte, 1))
 }
@@ -36,9 +36,7 @@ func (errorWriter) Write([]byte) (int, error) {
 
 func TestWriteHelper(t *testing.T) {
 	defer func() {
-		if r := recover(); r == nil {
-			t.Error("should panic")
-		}
+		assert.NotNil(t, recover(), "should panic")
 	}()
 	writeOrPanic(errorWriter{}, make([]byte, 1))
 }

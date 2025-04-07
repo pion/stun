@@ -6,6 +6,8 @@ package stun
 import (
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRFC5769(t *testing.T) { //nolint:cyclop
@@ -32,19 +34,11 @@ func TestRFC5769(t *testing.T) { //nolint:cyclop
 				"\xe5\x7a\x3b\xcf",
 			),
 		}
-		if err := m.Decode(); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, m.Decode())
 		software := new(Software)
-		if err := software.GetFrom(m); err != nil {
-			t.Error(err)
-		}
-		if software.String() != "STUN test client" {
-			t.Error("bad software: ", software)
-		}
-		if err := Fingerprint.Check(m); err != nil {
-			t.Error("check failed: ", err)
-		}
+		assert.NoError(t, software.GetFrom(m))
+		assert.Equal(t, "STUN test client", software.String())
+		assert.NoError(t, Fingerprint.Check(m))
 		t.Run("Long-Term credentials", func(t *testing.T) {
 			msg := &Message{
 				Raw: []byte("\x00\x01\x00\x60" +
@@ -64,40 +58,24 @@ func TestRFC5769(t *testing.T) { //nolint:cyclop
 					"\x2e\x85\xc9\xa2\x8c\xa8\x96\x66",
 				),
 			}
-			if err := msg.Decode(); err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, msg.Decode())
 			u := new(Username)
-			if err := u.GetFrom(msg); err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, u.GetFrom(msg))
 			expectedUsername := "\u30DE\u30C8\u30EA\u30C3\u30AF\u30B9"
-			if u.String() != expectedUsername {
-				t.Errorf("username: %q (got) != %q (exp)", u, expectedUsername)
-			}
+			assert.Equal(t, expectedUsername, u.String())
 			n := new(Nonce)
-			if err := n.GetFrom(msg); err != nil {
-				t.Error(err)
-			}
-			if n.String() != "f//499k954d6OL34oL9FSTvy64sA" {
-				t.Error("bad nonce")
-			}
+			assert.NoError(t, n.GetFrom(msg))
+			assert.Equal(t, "f//499k954d6OL34oL9FSTvy64sA", n.String())
 			r := new(Realm)
-			if err := r.GetFrom(msg); err != nil {
-				t.Error(err)
-			}
-			if r.String() != "example.org" { //nolint:goconst
-				t.Error("bad realm")
-			}
+			assert.NoError(t, r.GetFrom(msg))
+			assert.Equal(t, "example.org", r.String())
 			// checking HMAC
 			i := NewLongTermIntegrity(
 				"\u30DE\u30C8\u30EA\u30C3\u30AF\u30B9",
 				"example.org",
 				"TheMatrIX",
 			)
-			if err := i.Check(msg); err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, i.Check(msg))
 		})
 	})
 	t.Run("Response", func(t *testing.T) {
@@ -117,32 +95,18 @@ func TestRFC5769(t *testing.T) { //nolint:cyclop
 					"\xc0\x7d\x4c\x96",
 				),
 			}
-			if err := msg.Decode(); err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, msg.Decode())
+
 			software := new(Software)
-			if err := software.GetFrom(msg); err != nil {
-				t.Error(err)
-			}
-			if software.String() != "test vector" {
-				t.Error("bad software: ", software)
-			}
-			if err := Fingerprint.Check(msg); err != nil {
-				t.Error("Check failed: ", err)
-			}
+			assert.NoError(t, software.GetFrom(msg))
+			assert.Equal(t, "test vector", software.String())
+			assert.NoError(t, Fingerprint.Check(msg))
 			addr := new(XORMappedAddress)
-			if err := addr.GetFrom(msg); err != nil {
-				t.Error(err)
-			}
-			if !addr.IP.Equal(net.ParseIP("192.0.2.1")) {
-				t.Error("bad IP")
-			}
-			if addr.Port != 32853 {
-				t.Error("bad Port")
-			}
-			if err := Fingerprint.Check(msg); err != nil {
-				t.Error("check failed: ", err)
-			}
+			assert.NoError(t, addr.GetFrom(msg))
+			expected := "192.0.2.1"
+			assert.Equalf(t, expected, addr.IP.String(), "Expected %s, got %s", expected, addr.IP)
+			assert.Equal(t, 32853, addr.Port)
+			assert.NoError(t, Fingerprint.Check(msg))
 		})
 		t.Run("IPv6", func(t *testing.T) {
 			msg := &Message{
@@ -162,32 +126,20 @@ func TestRFC5769(t *testing.T) { //nolint:cyclop
 					"\xc8\xfb\x0b\x4c",
 				),
 			}
-			if err := msg.Decode(); err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, msg.Decode())
 			software := new(Software)
-			if err := software.GetFrom(msg); err != nil {
-				t.Error(err)
-			}
-			if software.String() != "test vector" {
-				t.Error("bad software: ", software)
-			}
-			if err := Fingerprint.Check(msg); err != nil {
-				t.Error("Check failed: ", err)
-			}
+			assert.NoError(t, software.GetFrom(msg))
+			assert.Equal(t, "test vector", software.String())
+			assert.NoError(t, Fingerprint.Check(msg))
 			addr := new(XORMappedAddress)
-			if err := addr.GetFrom(msg); err != nil {
-				t.Error(err)
-			}
-			if !addr.IP.Equal(net.ParseIP("2001:db8:1234:5678:11:2233:4455:6677")) {
-				t.Error("bad IP")
-			}
-			if addr.Port != 32853 {
-				t.Error("bad Port")
-			}
-			if err := Fingerprint.Check(msg); err != nil {
-				t.Error("check failed: ", err)
-			}
+			assert.NoError(t, addr.GetFrom(msg))
+			expectedIP := "2001:db8:1234:5678:11:2233:4455:6677"
+			assert.Truef(
+				t, addr.IP.Equal(net.ParseIP(expectedIP)),
+				"Expected %s, got %s", expectedIP, addr.IP,
+			)
+			assert.Equal(t, 32853, addr.Port)
+			assert.NoError(t, Fingerprint.Check(msg))
 		})
 	})
 }

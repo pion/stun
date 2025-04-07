@@ -6,6 +6,8 @@ package testutil
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // ShouldNotAllocate fails if f allocates.
@@ -17,7 +19,5 @@ func ShouldNotAllocate(t *testing.T, f func()) {
 
 		return
 	}
-	if a := testing.AllocsPerRun(10, f); a > 0 {
-		t.Errorf("Allocations detected: %f", a)
-	}
+	assert.Zero(t, testing.AllocsPerRun(10, f))
 }

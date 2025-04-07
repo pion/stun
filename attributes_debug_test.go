@@ -6,7 +6,11 @@
 
 package stun
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestAttrOverflowErr_Error(t *testing.T) {
 	err := AttrOverflowErr{
@@ -14,9 +18,7 @@ func TestAttrOverflowErr_Error(t *testing.T) {
 		Max:  50,
 		Type: AttrLifetime,
 	}
-	if err.Error() != "incorrect length of LIFETIME attribute: 100 exceeds maximum 50" {
-		t.Error("bad error string", err)
-	}
+	assert.Equal(t, "incorrect length of LIFETIME attribute: 100 exceeds maximum 50", err.Error())
 }
 
 func TestAttrLengthErr_Error(t *testing.T) {
@@ -25,7 +27,5 @@ func TestAttrLengthErr_Error(t *testing.T) {
 		Expected: 15,
 		Got:      99,
 	}
-	if err.Error() != "incorrect length of ERROR-CODE attribute: got 99, expected 15" {
-		t.Errorf("bad error string: %s", err)
-	}
+	assert.Equal(t, "incorrect length of ERROR-CODE attribute: got 99, expected 15", err.Error())
 }

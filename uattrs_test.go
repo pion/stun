@@ -5,6 +5,8 @@ package stun
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnknownAttributes(t *testing.T) {
@@ -13,33 +15,19 @@ func TestUnknownAttributes(t *testing.T) {
 		AttrDontFragment,
 		AttrChannelNumber,
 	}
-	if attr.String() != "DONT-FRAGMENT, CHANNEL-NUMBER" {
-		t.Error("bad String:", attr)
-	}
-	if (UnknownAttributes{}).String() != "<nil>" {
-		t.Error("bad blank string")
-	}
-	if err := attr.AddTo(msg); err != nil {
-		t.Error(err)
-	}
+	assert.Equal(t, "DONT-FRAGMENT, CHANNEL-NUMBER", attr.String())
+	assert.Equal(t, "<nil>", (UnknownAttributes{}).String())
+	assert.NoError(t, attr.AddTo(msg))
 	t.Run("GetFrom", func(t *testing.T) {
 		attrs := make(UnknownAttributes, 10)
-		if err := attrs.GetFrom(msg); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, attrs.GetFrom(msg))
 		for i, at := range *attr {
-			if at != attrs[i] {
-				t.Error("expected", at, "!=", attrs[i])
-			}
+			assert.Equal(t, at, attrs[i])
 		}
 		mBlank := new(Message)
-		if err := attrs.GetFrom(mBlank); err == nil {
-			t.Error("should error")
-		}
+		assert.Error(t, attrs.GetFrom(mBlank))
 		mBlank.Add(AttrUnknownAttributes, []byte{1, 2, 3})
-		if err := attrs.GetFrom(mBlank); err == nil {
-			t.Error("should error")
-		}
+		assert.Error(t, attrs.GetFrom(mBlank))
 	})
 }
 

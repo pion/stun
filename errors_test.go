@@ -6,6 +6,8 @@ package stun
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDecodeErr_IsInvalidCookie(t *testing.T) {
@@ -14,25 +16,13 @@ func TestDecodeErr_IsInvalidCookie(t *testing.T) {
 	decoded := new(Message)
 	m.Raw[4] = 55
 	_, err := decoded.Write(m.Raw)
-	if err == nil {
-		t.Fatal("should error")
-	}
+	assert.Error(t, err, "should error")
 	expected := "BadFormat for message/cookie: " +
 		"3712a442 is invalid magic cookie (should be 2112a442)"
-	if err.Error() != expected {
-		t.Error(err, "!=", expected)
-	}
+	assert.Equal(t, expected, err.Error(), "error message mismatch")
 	var dErr *DecodeErr
-	if !errors.As(err, &dErr) {
-		t.Error("not decode error")
-	}
-	if !dErr.IsInvalidCookie() {
-		t.Error("IsInvalidCookie = false, should be true")
-	}
-	if !dErr.IsPlaceChildren("cookie") {
-		t.Error("bad children")
-	}
-	if !dErr.IsPlaceParent("message") {
-		t.Error("bad parent")
-	}
+	assert.True(t, errors.As(err, &dErr), "not decode error")
+	assert.True(t, dErr.IsInvalidCookie(), "IsInvalidCookie = false, should be true")
+	assert.True(t, dErr.IsPlaceChildren("cookie"), "bad children")
+	assert.True(t, dErr.IsPlaceParent("message"), "bad parent")
 }

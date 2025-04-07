@@ -8,6 +8,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkHMACSHA1_512(b *testing.B) {
@@ -44,26 +46,17 @@ func TestHMACReset(t *testing.T) {
 	for i, tt := range hmacTests() {
 		hsh := New(tt.hash, tt.key)
 		hsh.(*hmac).resetTo(tt.key) //nolint:forcetypeassert
-		if s := hsh.Size(); s != tt.size {
-			t.Errorf("Size: got %v, want %v", s, tt.size)
-		}
-		if b := hsh.BlockSize(); b != tt.blocksize {
-			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
-		}
+		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
+		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
 		for j := 0; j < 2; j++ {
 			n, err := hsh.Write(tt.in)
-			if n != len(tt.in) || err != nil {
-				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
-
-				continue
-			}
+			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
+			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
-				if sum != tt.out {
-					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
-				}
+				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}
 
 			// Second iteration: make sure reset works.
@@ -78,26 +71,17 @@ func TestHMACPool_SHA1(t *testing.T) { //nolint:dupl,cyclop
 			continue
 		}
 		hsh := AcquireSHA1(tt.key)
-		if s := hsh.Size(); s != tt.size {
-			t.Errorf("Size: got %v, want %v", s, tt.size)
-		}
-		if b := hsh.BlockSize(); b != tt.blocksize {
-			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
-		}
+		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
+		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
 		for j := 0; j < 2; j++ {
 			n, err := hsh.Write(tt.in)
-			if n != len(tt.in) || err != nil {
-				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
-
-				continue
-			}
+			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
+			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
-				if sum != tt.out {
-					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
-				}
+				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}
 
 			// Second iteration: make sure reset works.
@@ -113,26 +97,17 @@ func TestHMACPool_SHA256(t *testing.T) { //nolint:dupl,cyclop
 			continue
 		}
 		hsh := AcquireSHA256(tt.key)
-		if s := hsh.Size(); s != tt.size {
-			t.Errorf("Size: got %v, want %v", s, tt.size)
-		}
-		if b := hsh.BlockSize(); b != tt.blocksize {
-			t.Errorf("BlockSize: got %v, want %v", b, tt.blocksize)
-		}
+		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
+		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
 		for j := 0; j < 2; j++ {
 			n, err := hsh.Write(tt.in)
-			if n != len(tt.in) || err != nil {
-				t.Errorf("test %d.%d: Write(%d) = %d, %v", i, j, len(tt.in), n, err)
-
-				continue
-			}
+			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
+			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
 			for k := 0; k < 2; k++ {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
-				if sum != tt.out {
-					t.Errorf("test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
-				}
+				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}
 
 			// Second iteration: make sure reset works.
@@ -150,7 +125,7 @@ func TestAssertBlockSize(t *testing.T) {
 	t.Run("Negative", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r == nil {
-				t.Error("should panic")
+				assert.Fail(t, "should panic")
 			}
 		}()
 		h := AcquireSHA256(make([]byte, 0, 1024))

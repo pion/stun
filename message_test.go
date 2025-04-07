@@ -21,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type attributeEncoder interface {
@@ -50,12 +52,9 @@ func TestMessageBuffer(t *testing.T) {
 	m.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	m.WriteHeader()
 	mDecoded := New()
-	if _, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw)); err != nil {
-		t.Error(err)
-	}
-	if !mDecoded.Equal(m) {
-		t.Error(mDecoded, "!", m)
-	}
+	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+	assert.NoError(t, err)
+	assert.True(t, mDecoded.Equal(m), "mDecoded != m")
 }
 
 func BenchmarkMessage_Write(b *testing.B) {
@@ -86,9 +85,7 @@ func TestMessageType_Value(t *testing.T) {
 	}
 	for _, tt := range tests {
 		b := tt.in.Value()
-		if b != tt.out {
-			t.Errorf("Value(%s) -> %s, want %s", tt.in, bUint16(b), bUint16(tt.out))
-		}
+		assert.Equal(t, tt.out, b, "Value(%s) -> %s, want %s", tt.in, bUint16(b), bUint16(tt.out))
 	}
 }
 
@@ -104,9 +101,7 @@ func TestMessageType_ReadValue(t *testing.T) {
 	for _, tt := range tests {
 		m := MessageType{}
 		m.ReadValue(tt.in)
-		if m != tt.out {
-			t.Errorf("ReadValue(%s) -> %s, want %s", bUint16(tt.in), m, tt.out)
-		}
+		assert.Equal(t, tt.out, m, "ReadValue(%s) -> %s, want %s", bUint16(tt.in), m, tt.out)
 	}
 }
 
@@ -121,12 +116,8 @@ func TestMessageType_ReadWriteValue(t *testing.T) {
 		m := MessageType{}
 		v := tt.Value()
 		m.ReadValue(v)
-		if m != tt {
-			t.Errorf("ReadValue(%s -> %s) = %s, should be %s", tt, bUint16(v), m, tt)
-			if m.Method != tt.Method {
-				t.Errorf("%s != %s", bUint16(uint16(m.Method)), bUint16(uint16(tt.Method)))
-			}
-		}
+		assert.Equal(t, tt, m, "ReadValue(%s -> %s) = %s, should be %s", tt, bUint16(v), m, tt)
+		assert.Equal(t, tt.Method, m.Method, "%s != %s", bUint16(uint16(m.Method)), bUint16(uint16(tt.Method)))
 	}
 }
 
@@ -137,32 +128,26 @@ func TestMessage_WriteTo(t *testing.T) {
 	msg.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	msg.WriteHeader()
 	buf := new(bytes.Buffer)
-	if _, err := msg.WriteTo(buf); err != nil {
-		t.Fatal(err)
-	}
+	_, err := msg.WriteTo(buf)
+	assert.NoError(t, err)
 	mDecoded := New()
-	if _, err := mDecoded.ReadFrom(buf); err != nil {
-		t.Error(err)
-	}
-	if !mDecoded.Equal(msg) {
-		t.Error(mDecoded, "!", msg)
-	}
+	_, err = mDecoded.ReadFrom(buf)
+	assert.NoError(t, err)
+	assert.True(t, mDecoded.Equal(msg), "mDecoded != msg")
 }
 
 func TestMessage_Cookie(t *testing.T) {
 	buf := make([]byte, 20)
 	mDecoded := New()
-	if _, err := mDecoded.ReadFrom(bytes.NewReader(buf)); err == nil {
-		t.Error("should error")
-	}
+	_, err := mDecoded.ReadFrom(bytes.NewReader(buf))
+	assert.Error(t, err, "should error")
 }
 
 func TestMessage_LengthLessHeaderSize(t *testing.T) {
 	buf := make([]byte, 8)
 	mDecoded := New()
-	if _, err := mDecoded.ReadFrom(bytes.NewReader(buf)); err == nil {
-		t.Error("should error")
-	}
+	_, err := mDecoded.ReadFrom(bytes.NewReader(buf))
+	assert.Error(t, err, "should error")
 }
 
 func TestMessage_BadLength(t *testing.T) {
@@ -176,9 +161,8 @@ func TestMessage_BadLength(t *testing.T) {
 	m.WriteHeader()
 	m.Raw[20+3] = 10 // set attr length = 10
 	mDecoded := New()
-	if _, err := mDecoded.Write(m.Raw); err == nil {
-		t.Error("should error")
-	}
+	_, err := mDecoded.Write(m.Raw)
+	assert.Error(t, err, "should error")
 }
 
 func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
@@ -197,13 +181,8 @@ func TestMessage_AttrLengthLessThanHeader(t *testing.T) {
 	binary.BigEndian.PutUint16(m.Raw[2:4], 2) // rewrite to bad length
 	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+2]))
 	var e *DecodeErr
-	if errors.As(err, &e) {
-		if !e.IsPlace(DecodeErrPlace{"attribute", "header"}) {
-			t.Error(e, "bad place")
-		}
-	} else {
-		t.Error(err, "should be bad format")
-	}
+	assert.ErrorAs(t, err, &e)
+	assert.True(t, e.IsPlace(DecodeErrPlace{"attribute", "header"}), "bad place")
 }
 
 func TestMessage_AttrSizeLessThanLength(t *testing.T) {
@@ -226,13 +205,8 @@ func TestMessage_AttrSizeLessThanLength(t *testing.T) {
 	mDecoded := New()
 	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw[:20+5]))
 	var e *DecodeErr
-	if errors.As(err, &e) {
-		if !e.IsPlace(DecodeErrPlace{"attribute", "value"}) {
-			t.Error(e, "bad place")
-		}
-	} else {
-		t.Error(err, "should be bad format")
-	}
+	assert.ErrorAs(t, err, &e)
+	assert.True(t, e.IsPlace(DecodeErrPlace{"attribute", "value"}), "bad place")
 }
 
 type unexpectedEOFReader struct{}
@@ -244,9 +218,7 @@ func (r unexpectedEOFReader) Read([]byte) (int, error) {
 func TestMessage_ReadFromError(t *testing.T) {
 	mDecoded := New()
 	_, err := mDecoded.ReadFrom(unexpectedEOFReader{})
-	if !errors.Is(err, io.ErrUnexpectedEOF) {
-		t.Error(err, "should be", io.ErrUnexpectedEOF)
-	}
+	assert.ErrorIs(t, err, io.ErrUnexpectedEOF, "should be", io.ErrUnexpectedEOF)
 }
 
 func BenchmarkMessageType_Value(b *testing.B) {
@@ -321,9 +293,7 @@ func BenchmarkMessage_ReadBytes(b *testing.B) {
 
 func TestMessageClass_String(t *testing.T) {
 	defer func() {
-		if err := recover(); err == nil {
-			t.Error(err, "should be not nil")
-		}
+		assert.NotNil(t, recover())
 	}()
 
 	v := [...]MessageClass{
@@ -333,14 +303,12 @@ func TestMessageClass_String(t *testing.T) {
 		ClassIndication,
 	}
 	for _, k := range v {
-		if k.String() == "" {
-			t.Error(k, "bad stringer")
-		}
+		assert.NotEmpty(t, k.String(), "%v bad stringer", k)
 	}
 
 	// should panic
 	p := MessageClass(0x05).String()
-	t.Error("should panic!", p)
+	assert.Fail(t, "should panic", p)
 }
 
 func TestAttrType_String(t *testing.T) {
@@ -358,46 +326,26 @@ func TestAttrType_String(t *testing.T) {
 		AttrFingerprint,
 	}
 	for _, k := range attrType {
-		if k.String() == "" {
-			t.Error(k, "bad stringer")
-		}
-		if strings.HasPrefix(k.String(), "0x") {
-			t.Error(k, "bad stringer")
-		}
+		assert.NotEmpty(t, k.String(), "%v bad stringer", k)
+		assert.False(t, strings.HasPrefix(k.String(), "0x"), "%v bad stringer", k)
 	}
 	vNonStandard := AttrType(0x512)
-	if !strings.HasPrefix(vNonStandard.String(), "0x512") {
-		t.Error(vNonStandard, "bad prefix")
-	}
+	assert.True(t, strings.HasPrefix(vNonStandard.String(), "0x512"), "%v bad prefix", vNonStandard)
 }
 
 func TestMethod_String(t *testing.T) {
-	if MethodBinding.String() != "Binding" {
-		t.Error("binding is not binding!")
-	}
-	if Method(0x616).String() != "0x616" {
-		t.Error("Bad stringer", Method(0x616))
-	}
+	assert.Equal(t, "Binding", MethodBinding.String(), "binding is not binding!")
+	assert.Equal(t, "0x616", Method(0x616).String(), "Bad stringer")
 }
 
 func TestAttribute_Equal(t *testing.T) {
-	attr1 := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
-	attr2 := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}}
-	if !attr1.Equal(attr2) {
-		t.Error("should equal")
-	}
-	if attr1.Equal(RawAttribute{Type: 0x2}) {
-		t.Error("should not equal")
-	}
-	if attr1.Equal(RawAttribute{Length: 0x2}) {
-		t.Error("should not equal")
-	}
-	if attr1.Equal(RawAttribute{Length: 0x3}) {
-		t.Error("should not equal")
-	}
-	if attr1.Equal(RawAttribute{Length: 2, Value: []byte{0x1, 0x3}}) {
-		t.Error("should not equal")
-	}
+	attr1 := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}, Type: 0x1}
+	attr2 := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}, Type: 0x1}
+	assert.True(t, attr1.Equal(attr2))
+	assert.False(t, attr1.Equal(RawAttribute{Type: 0x2}))
+	assert.False(t, attr1.Equal(RawAttribute{Length: 0x2}))
+	assert.False(t, attr1.Equal(RawAttribute{Length: 0x3}))
+	assert.False(t, attr1.Equal(RawAttribute{Length: 2, Value: []byte{0x1, 0x3}}))
 }
 
 func TestMessage_Equal(t *testing.T) { //nolint:cyclop
@@ -405,39 +353,23 @@ func TestMessage_Equal(t *testing.T) { //nolint:cyclop
 	attrs := Attributes{attr}
 	msg1 := &Message{Attributes: attrs, Length: 4 + 2}
 	msg2 := &Message{Attributes: attrs, Length: 4 + 2}
-	if !msg1.Equal(msg2) {
-		t.Error("should equal")
-	}
-	if msg1.Equal(&Message{Type: MessageType{Class: 128}}) {
-		t.Error("should not equal")
-	}
+	assert.True(t, msg1.Equal(msg2))
+	assert.False(t, msg1.Equal(&Message{Type: MessageType{Class: 128}}))
 	tID := [TransactionIDSize]byte{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 	}
-	if msg1.Equal(&Message{TransactionID: tID}) {
-		t.Error("should not equal")
-	}
-	if msg1.Equal(&Message{Length: 3}) {
-		t.Error("should not equal")
-	}
+	assert.False(t, msg1.Equal(&Message{TransactionID: tID}))
+	assert.False(t, msg1.Equal(&Message{Length: 3}))
 	tAttrs := Attributes{
 		{Length: 1, Value: []byte{0x1}, Type: 0x1},
 	}
-	if msg1.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
-		t.Error("should not equal")
-	}
+	assert.False(t, msg1.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}))
 	tAttrs = Attributes{
 		{Length: 2, Value: []byte{0x1, 0x1}, Type: 0x2},
 	}
-	if msg1.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}) {
-		t.Error("should not equal")
-	}
-	if !(*Message)(nil).Equal(nil) {
-		t.Error("nil should be equal to nil")
-	}
-	if msg1.Equal(nil) {
-		t.Error("non-nil should not be equal to nil")
-	}
+	assert.False(t, msg1.Equal(&Message{Attributes: tAttrs, Length: 4 + 2}))
+	assert.True(t, (*Message)(nil).Equal(nil), "nil should be equal to nil")
+	assert.False(t, msg1.Equal(nil), "non-nil should not be equal to nil")
 	t.Run("Nil attributes", func(t *testing.T) {
 		msg1 := &Message{
 			Attributes: nil,
@@ -447,61 +379,43 @@ func TestMessage_Equal(t *testing.T) { //nolint:cyclop
 			Attributes: attrs,
 			Length:     4 + 2,
 		}
-		if msg1.Equal(msg2) {
-			t.Error("should not equal")
-		}
-		if msg2.Equal(msg1) {
-			t.Error("should not equal")
-		}
+		assert.False(t, msg1.Equal(msg2))
+		assert.False(t, msg2.Equal(msg1))
 		msg2.Attributes = nil
-		if !msg1.Equal(msg2) {
-			t.Error("should equal")
-		}
+		assert.True(t, msg1.Equal(msg2))
 	})
 	t.Run("Attributes length", func(t *testing.T) {
 		attr := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}, Type: 0x1}
 		attr1 := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}, Type: 0x1}
 		a := &Message{Attributes: Attributes{attr}, Length: 4 + 2}
 		b := &Message{Attributes: Attributes{attr, attr1}, Length: 4 + 2}
-		if a.Equal(b) {
-			t.Error("should not equal")
-		}
+		assert.False(t, a.Equal(b))
 	})
 	t.Run("Attributes values", func(t *testing.T) {
 		attr := RawAttribute{Length: 2, Value: []byte{0x1, 0x2}, Type: 0x1}
 		attr1 := RawAttribute{Length: 2, Value: []byte{0x1, 0x1}, Type: 0x1}
 		a := &Message{Attributes: Attributes{attr, attr}, Length: 4 + 2}
 		b := &Message{Attributes: Attributes{attr, attr1}, Length: 4 + 2}
-		if a.Equal(b) {
-			t.Error("should not equal")
-		}
+		assert.False(t, a.Equal(b))
 	})
 }
 
 func TestMessageGrow(t *testing.T) {
 	m := New()
 	m.grow(512)
-	if len(m.Raw) < 512 {
-		t.Error("Bad length", len(m.Raw))
-	}
+	assert.GreaterOrEqual(t, len(m.Raw), 512)
 }
 
 func TestMessageGrowSmaller(t *testing.T) {
 	m := New()
 	m.grow(2)
-	if cap(m.Raw) < 20 {
-		t.Error("Bad capacity", cap(m.Raw))
-	}
-	if len(m.Raw) < 20 {
-		t.Error("Bad length", len(m.Raw))
-	}
+	assert.GreaterOrEqual(t, cap(m.Raw), 20)
+	assert.GreaterOrEqual(t, len(m.Raw), 20)
 }
 
 func TestMessage_String(t *testing.T) {
 	m := New()
-	if m.String() == "" {
-		t.Error("bad string")
-	}
+	assert.NotEmpty(t, m.String())
 }
 
 func TestIsMessage(t *testing.T) {
@@ -525,9 +439,7 @@ func TestIsMessage(t *testing.T) {
 		}, true}, // 6
 	}
 	for i, v := range tt {
-		if got := IsMessage(v.in); got != v.out {
-			t.Errorf("tt[%d]: IsMessage(%+v) %v != %v", i, v.in, got, v.out)
-		}
+		assert.Equal(t, v.out, IsMessage(v.in), "tt[%d]: IsMessage(%+v)", i, v.in)
 	}
 }
 
@@ -553,18 +465,12 @@ func loadData(tb testing.TB, name string) []byte {
 
 	name = filepath.Join("testdata", name)
 	f, err := os.Open(name) //nolint:gosec
-	if err != nil {
-		tb.Fatal(err)
-	}
+	assert.NoError(tb, err)
 	defer func() {
-		if errClose := f.Close(); errClose != nil {
-			tb.Fatal(errClose)
-		}
+		assert.NoError(tb, f.Close())
 	}()
 	v, err := io.ReadAll(f)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	assert.NoError(tb, err)
 
 	return v
 }
@@ -573,9 +479,7 @@ func TestExampleChrome(t *testing.T) {
 	buf := loadData(t, "ex1_chrome.stun")
 	m := New()
 	_, err := m.Write(buf)
-	if err != nil {
-		t.Errorf("Failed to parse ex1_chrome: %s", err)
-	}
+	assert.NoError(t, err, "Failed to parse ex1_chrome")
 }
 
 func TestMessageFromBrowsers(t *testing.T) {
@@ -583,9 +487,7 @@ func TestMessageFromBrowsers(t *testing.T) {
 	reader := csv.NewReader(bytes.NewReader(loadData(t, "frombrowsers.csv")))
 	reader.Comment = '#'
 	_, err := reader.Read() // skipping header
-	if err != nil {
-		t.Fatal("failed to skip header of csv: ", err)
-	}
+	assert.NoError(t, err, "failed to skip header of csv")
 	crcTable := crc64.MakeTable(crc64.ISO)
 	msg := New()
 	for {
@@ -593,23 +495,14 @@ func TestMessageFromBrowsers(t *testing.T) {
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		if err != nil {
-			t.Fatal("failed to read csv line: ", err)
-		}
+		assert.NoError(t, err, "failed to read csv line")
 		data, err := base64.StdEncoding.DecodeString(line[1])
-		if err != nil {
-			t.Fatal("failed to decode ", line[1], " as base64: ", err)
-		}
+		assert.NoError(t, err)
 		b, err := strconv.ParseUint(line[2], 10, 64)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if b != crc64.Checksum(data, crcTable) {
-			t.Error("crc64 check failed for ", line[1])
-		}
-		if _, err = msg.Write(data); err != nil {
-			t.Error("failed to decode ", line[1], " as message: ", err)
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, b, crc64.Checksum(data, crcTable), "crc64 check failed for %s", line[1])
+		_, err = msg.Write(data)
+		assert.NoError(t, err, "failed to decode %s as message: %s", line[1], err)
 		msg.Reset()
 	}
 }
@@ -619,9 +512,7 @@ func BenchmarkMessage_NewTransactionID(b *testing.B) {
 	m := new(Message)
 	m.WriteHeader()
 	for i := 0; i < b.N; i++ {
-		if err := m.NewTransactionID(); err != nil {
-			b.Fatal(err)
-		}
+		assert.NoError(b, m.NewTransactionID())
 	}
 }
 
@@ -633,12 +524,8 @@ func BenchmarkMessageFull(b *testing.B) {
 		IP: net.IPv4(213, 1, 223, 5),
 	}
 	for i := 0; i < b.N; i++ {
-		if err := addr.AddTo(msg); err != nil {
-			b.Fatal(err)
-		}
-		if err := s.AddTo(msg); err != nil {
-			b.Fatal(err)
-		}
+		assert.NoError(b, addr.AddTo(msg))
+		assert.NoError(b, s.AddTo(msg))
 		msg.WriteAttributes()
 		msg.WriteHeader()
 		Fingerprint.AddTo(msg) //nolint:errcheck,gosec
@@ -655,12 +542,8 @@ func BenchmarkMessageFullHardcore(b *testing.B) {
 		IP: net.IPv4(213, 1, 223, 5),
 	}
 	for i := 0; i < b.N; i++ {
-		if err := addr.AddTo(msg); err != nil {
-			b.Fatal(err)
-		}
-		if err := s.AddTo(msg); err != nil {
-			b.Fatal(err)
-		}
+		assert.NoError(b, addr.AddTo(msg))
+		assert.NoError(b, s.AddTo(msg))
 		msg.WriteHeader()
 		msg.Reset()
 	}
@@ -684,12 +567,8 @@ func BenchmarkMessage_WriteHeader(b *testing.B) {
 func TestMessage_Contains(t *testing.T) {
 	m := new(Message)
 	m.Add(AttrSoftware, []byte("value"))
-	if !m.Contains(AttrSoftware) {
-		t.Error("message should contain software")
-	}
-	if m.Contains(AttrNonce) {
-		t.Error("message should not contain nonce")
-	}
+	assert.True(t, m.Contains(AttrSoftware), "message should contain software")
+	assert.False(t, m.Contains(AttrNonce), "message should not contain nonce")
 }
 
 func ExampleMessage() {
@@ -787,13 +666,9 @@ func TestAllocations(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
 			m.Reset()
 			m.WriteHeader()
-			if err := s.AddTo(m); err != nil {
-				t.Errorf("[%d] failed to add", i)
-			}
+			assert.NoError(t, s.AddTo(m), "[%d] failed to add", i)
 		})
-		if allocs > 0 {
-			t.Errorf("[%d] allocated %.0f", i, allocs)
-		}
+		assert.Zero(t, allocs, "[%d] allocated", i)
 	}
 }
 
@@ -818,9 +693,7 @@ func TestAllocationsGetters(t *testing.T) {
 		Fingerprint,
 	}
 	msg := New()
-	if err := msg.Build(setters...); err != nil {
-		t.Error("failed to build", err)
-	}
+	assert.NoError(t, msg.Build(setters...))
 	getters := []Getter{
 		new(Nonce),
 		new(Username),
@@ -832,66 +705,48 @@ func TestAllocationsGetters(t *testing.T) {
 		g := g
 		i := i
 		allocs := testing.AllocsPerRun(10, func() {
-			if err := g.GetFrom(msg); err != nil {
-				t.Errorf("[%d] failed to get", i)
-			}
+			assert.NoError(t, g.GetFrom(msg), "[%d] failed to get", i)
 		})
-		if allocs > 0 {
-			t.Errorf("[%d] allocated %.0f", i, allocs)
-		}
+		assert.Zero(t, allocs, "[%d] allocated", i)
 	}
 }
 
 func TestMessageFullSize(t *testing.T) {
 	msg := new(Message)
-	if err := msg.Build(BindingRequest,
+	assert.NoError(t, msg.Build(BindingRequest,
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
 		NewSoftware("pion/stun"),
 		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
-	); err != nil {
-		t.Fatal(err)
-	}
+	))
 	msg.Raw = msg.Raw[:len(msg.Raw)-10]
 
 	decoder := new(Message)
 	decoder.Raw = msg.Raw[:len(msg.Raw)-10]
-	if err := decoder.Decode(); err == nil {
-		t.Error("decode on truncated buffer should error")
-	}
+	assert.Error(t, decoder.Decode(), "decode on truncated buffer should error")
 }
 
 func TestMessage_CloneTo(t *testing.T) {
 	msg := new(Message)
-	if err := msg.Build(BindingRequest,
+	assert.NoError(t, msg.Build(BindingRequest,
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
 		NewSoftware("pion/stun"),
 		NewLongTermIntegrity("username", "realm", "password"),
 		Fingerprint,
-	); err != nil {
-		t.Fatal(err)
-	}
+	))
 	msg.Encode()
 	msg2 := new(Message)
-	if err := msg.CloneTo(msg2); err != nil {
-		t.Fatal(err)
-	}
-	if !msg2.Equal(msg) {
-		t.Fatal("not equal")
-	}
+	assert.NoError(t, msg.CloneTo(msg2))
+	assert.True(t, msg2.Equal(msg), "cloned message should equal original")
 	// Corrupting m and checking that b is not corrupted.
 	s, ok := msg2.Attributes.Get(AttrSoftware)
-	if !ok {
-		t.Fatal("no software attribute")
-	}
+	assert.True(t, ok)
 	s.Value[0] = 'k'
-	if msg2.Equal(msg) {
-		t.Fatal("should not be equal")
-	}
+	assert.False(t, msg2.Equal(msg), "should not be equal")
 }
 
 func BenchmarkMessage_CloneTo(b *testing.B) {
@@ -919,29 +774,21 @@ func BenchmarkMessage_CloneTo(b *testing.B) {
 
 func TestMessage_AddTo(t *testing.T) {
 	msg := new(Message)
-	if err := msg.Build(BindingRequest,
+	assert.NoError(t, msg.Build(BindingRequest,
 		NewTransactionIDSetter([TransactionIDSize]byte{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 		}),
 		Fingerprint,
-	); err != nil {
-		t.Fatal(err)
-	}
+	))
 	msg.Encode()
 	b := new(Message)
-	if err := msg.CloneTo(b); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, msg.CloneTo(b))
 	msg.TransactionID = [TransactionIDSize]byte{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 2,
 	}
-	if b.Equal(msg) {
-		t.Fatal("should not be equal")
-	}
+	assert.False(t, b.Equal(msg), "should not be equal")
 	msg.AddTo(b) //nolint:errcheck,gosec
-	if !b.Equal(msg) {
-		t.Fatal("should be equal")
-	}
+	assert.True(t, b.Equal(msg), "should be equal")
 }
 
 func BenchmarkMessage_AddTo(b *testing.B) {
@@ -966,9 +813,7 @@ func BenchmarkMessage_AddTo(b *testing.B) {
 
 func TestDecode(t *testing.T) {
 	t.Run("Nil", func(t *testing.T) {
-		if err := Decode(nil, nil); !errors.Is(err, ErrDecodeToNil) {
-			t.Errorf("unexpected error: %v", err)
-		}
+		assert.ErrorIs(t, Decode(nil, nil), ErrDecodeToNil)
 	})
 	msg := New()
 	msg.Type = MessageType{Method: MethodBinding, Class: ClassRequest}
@@ -976,22 +821,14 @@ func TestDecode(t *testing.T) {
 	msg.Add(AttrErrorCode, []byte{0xff, 0xfe, 0xfa})
 	msg.WriteHeader()
 	mDecoded := New()
-	if err := Decode(msg.Raw, mDecoded); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if !mDecoded.Equal(msg) {
-		t.Error("decoded result is not equal to encoded message")
-	}
+	assert.NoError(t, Decode(msg.Raw, mDecoded))
+	assert.True(t, mDecoded.Equal(msg), "decoded result is not equal to encoded message")
 	t.Run("ZeroAlloc", func(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
 			mDecoded.Reset()
-			if err := Decode(msg.Raw, mDecoded); err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, Decode(msg.Raw, mDecoded))
 		})
-		if allocs > 0 {
-			t.Error("unexpected allocations")
-		}
+		assert.Zero(t, allocs, "unexpected allocations")
 	})
 }
 
@@ -1021,25 +858,19 @@ func TestMessage_MarshalBinary(t *testing.T) {
 		},
 	)
 	data, err := msg.MarshalBinary()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	// Reset m.Raw to check retention.
 	for i := range msg.Raw {
 		msg.Raw[i] = 0
 	}
-	if err := msg.UnmarshalBinary(data); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, msg.UnmarshalBinary(data))
 
 	// Reset data to check retention.
 	for i := range data {
 		data[i] = 0
 	}
-	if err := msg.Decode(); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, msg.Decode())
 }
 
 func TestMessage_GobDecode(t *testing.T) {
@@ -1050,23 +881,17 @@ func TestMessage_GobDecode(t *testing.T) {
 		},
 	)
 	data, err := msg.GobEncode()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	// Reset m.Raw to check retention.
 	for i := range msg.Raw {
 		msg.Raw[i] = 0
 	}
-	if err := msg.GobDecode(data); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, msg.GobDecode(data))
 
 	// Reset data to check retention.
 	for i := range data {
 		data[i] = 0
 	}
-	if err := msg.Decode(); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, msg.Decode())
 }

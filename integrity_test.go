@@ -4,40 +4,29 @@
 package stun
 
 import (
-	"bytes"
 	"encoding/hex"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMessageIntegrity_AddTo_Simple(t *testing.T) {
 	integrity := NewLongTermIntegrity("user", "realm", "pass")
 	expected, err := hex.DecodeString("8493fbc53ba582fb4c044c456bdc40eb")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Equal(expected, integrity) {
-		t.Error(ErrIntegrityMismatch)
-	}
+	assert.NoError(t, err)
+	assert.EqualValues(t, expected, integrity)
 	t.Run("Check", func(t *testing.T) {
 		m := new(Message)
 		m.WriteHeader()
-		if err := integrity.AddTo(m); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, integrity.AddTo(m))
 		NewSoftware("software").AddTo(m) //nolint:errcheck,gosec
 		m.WriteHeader()
 		dM := new(Message)
 		dM.Raw = m.Raw
-		if err := dM.Decode(); err != nil {
-			t.Error(err)
-		}
-		if err := integrity.Check(dM); err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, dM.Decode())
+		assert.NoError(t, integrity.Check(dM))
 		dM.Raw[24] += 12 // HMAC now invalid
-		if integrity.Check(dM) == nil {
-			t.Error("should be invalid")
-		}
+		assert.Error(t, integrity.Check(dM))
 	})
 }
 
@@ -47,38 +36,23 @@ func TestMessageIntegrityWithFingerprint(t *testing.T) {
 	msg.WriteHeader()
 	NewSoftware("software").AddTo(msg) //nolint:errcheck,gosec
 	integrity := NewShortTermIntegrity("pwd")
-	if integrity.String() != "KEY: 0x707764" {
-		t.Error("bad string", integrity)
-	}
-	if err := integrity.Check(msg); err == nil {
-		t.Error("should error")
-	}
-	if err := integrity.AddTo(msg); err != nil {
-		t.Fatal(err)
-	}
-	if err := Fingerprint.AddTo(msg); err != nil {
-		t.Fatal(err)
-	}
-	if err := integrity.Check(msg); err != nil {
-		t.Fatal(err)
-	}
+	assert.Equal(t, "KEY: 0x707764", integrity.String())
+	assert.NoError(t, integrity.AddTo(msg))
+	assert.NoError(t, integrity.AddTo(msg))
+	assert.NoError(t, integrity.Check(msg))
+	assert.NoError(t, Fingerprint.AddTo(msg))
+	assert.NoError(t, integrity.Check(msg))
 	msg.Raw[24] = 33
-	if err := integrity.Check(msg); err == nil {
-		t.Fatal("mismatch expected")
-	}
+	assert.Error(t, integrity.Check(msg))
 }
 
 func TestMessageIntegrity(t *testing.T) {
 	m := new(Message)
 	i := NewShortTermIntegrity("password")
 	m.WriteHeader()
-	if err := i.AddTo(m); err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, i.AddTo(m))
 	_, err := m.Get(AttrMessageIntegrity)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestMessageIntegrityBeforeFingerprint(t *testing.T) {
@@ -86,9 +60,7 @@ func TestMessageIntegrityBeforeFingerprint(t *testing.T) {
 	m.WriteHeader()
 	Fingerprint.AddTo(m) //nolint:errcheck,gosec
 	i := NewShortTermIntegrity("password")
-	if err := i.AddTo(m); err == nil {
-		t.Error("should error")
-	}
+	assert.Error(t, i.AddTo(m))
 }
 
 func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
@@ -99,9 +71,7 @@ func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
 	b.SetBytes(int64(len(m.Raw)))
 	for i := 0; i < b.N; i++ {
 		m.WriteHeader()
-		if err := integrity.AddTo(m); err != nil {
-			b.Error(err)
-		}
+		assert.NoError(b, integrity.AddTo(m))
 		m.Reset()
 	}
 }
@@ -114,13 +84,9 @@ func BenchmarkMessageIntegrity_Check(b *testing.B) {
 	b.ReportAllocs()
 	m.WriteHeader()
 	b.SetBytes(int64(len(m.Raw)))
-	if err := integrity.AddTo(m); err != nil {
-		b.Error(err)
-	}
+	assert.NoError(b, integrity.AddTo(m))
 	m.WriteLength()
 	for i := 0; i < b.N; i++ {
-		if err := integrity.Check(m); err != nil {
-			b.Fatal(err)
-		}
+		assert.NoError(b, integrity.Check(m))
 	}
 }

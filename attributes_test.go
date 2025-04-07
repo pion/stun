@@ -6,6 +6,8 @@ package stun
 import (
 	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkMessage_GetNotFound(b *testing.B) {
@@ -31,16 +33,10 @@ func TestRawAttribute_AddTo(t *testing.T) {
 		Type:  AttrData,
 		Value: v,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	gotV, gotErr := m.Get(AttrData)
-	if gotErr != nil {
-		t.Fatal(gotErr)
-	}
-	if !bytes.Equal(gotV, v) {
-		t.Error("value mismatch")
-	}
+	assert.NoError(t, gotErr)
+	assert.True(t, bytes.Equal(gotV, v), "value mismatch")
 }
 
 func TestMessage_GetNoAllocs(t *testing.T) {
@@ -52,17 +48,13 @@ func TestMessage_GetNoAllocs(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
 			msg.Get(AttrSoftware) //nolint:errcheck,gosec
 		})
-		if allocs > 0 {
-			t.Error("allocated memory, but should not")
-		}
+		assert.Zero(t, allocs, "allocated memory, but should not")
 	})
 	t.Run("Not found", func(t *testing.T) {
 		allocs := testing.AllocsPerRun(10, func() {
 			msg.Get(AttrOrigin) //nolint:errcheck,gosec
 		})
-		if allocs > 0 {
-			t.Error("allocated memory, but should not")
-		}
+		assert.Zero(t, allocs, "allocated memory, but should not")
 	})
 }
 
@@ -83,11 +75,8 @@ func TestPadding(t *testing.T) {
 		{40, 40}, // 10
 	}
 	for i, c := range tt {
-		if got := nearestPaddedValueLength(c.in); got != c.out {
-			t.Errorf("[%d]: padd(%d) %d (got) != %d (expected)",
-				i, c.in, got, c.out,
-			)
-		}
+		got := nearestPaddedValueLength(c.in)
+		assert.Equal(t, c.out, got, "[%d]: padd(%d)", i, c.in)
 	}
 }
 
@@ -102,9 +91,8 @@ func TestAttrTypeRange(t *testing.T) {
 		a := a
 		t.Run(a.String(), func(t *testing.T) {
 			a := a
-			if a.Optional() || !a.Required() {
-				t.Error("should be required")
-			}
+			assert.True(t, a.Required(), "should be required")
+			assert.False(t, a.Optional(), "should be required")
 		})
 	}
 	for _, a := range []AttrType{
@@ -114,9 +102,8 @@ func TestAttrTypeRange(t *testing.T) {
 	} {
 		a := a
 		t.Run(a.String(), func(t *testing.T) {
-			if a.Required() || !a.Optional() {
-				t.Error("should be optional")
-			}
+			assert.False(t, a.Required(), "should be optional")
+			assert.True(t, a.Optional(), "should be optional")
 		})
 	}
 }
