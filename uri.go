@@ -233,7 +233,7 @@ func parseProto(raw string) (ProtoType, error) {
 
 	var proto ProtoType
 	if rawProto := qArgs.Get("transport"); rawProto != "" {
-		if proto = NewProtoType(rawProto); proto == ProtoType(0) {
+		if proto = NewProtoType(rawProto); proto == ProtoTypeUnknown {
 			return ProtoTypeUnknown, ErrProtoType
 		}
 
