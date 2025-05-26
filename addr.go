@@ -84,14 +84,12 @@ func (a *MappedAddress) GetFromAs(m *Message, t AttrType) error {
 	}
 	// Ensuring len(a.IP) == ipLen and reusing a.IP.
 	if len(a.IP) < ipLen {
-		a.IP = a.IP[:cap(a.IP)]
-		for len(a.IP) < ipLen {
-			a.IP = append(a.IP, 0)
+		a.IP = make(net.IP, ipLen)
+	} else {
+		a.IP = a.IP[:ipLen]
+		for i := range a.IP {
+			a.IP[i] = 0
 		}
-	}
-	a.IP = a.IP[:ipLen]
-	for i := range a.IP {
-		a.IP[i] = 0
 	}
 	a.Port = int(bin.Uint16(value[2:4]))
 	copy(a.IP, value[4:])
