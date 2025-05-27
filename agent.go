@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+type transactionID [TransactionIDSize]byte
+
 // NoopHandler just discards any event.
 func NoopHandler() Handler {
 	return func(Event) {}
@@ -53,7 +55,7 @@ type Handler func(e Event)
 // Event is passed to Handler describing the transaction event.
 // Do not reuse outside Handler.
 type Event struct {
-	TransactionID [TransactionIDSize]byte
+	TransactionID transactionID
 	Message       *Message
 	Error         error
 }
@@ -77,7 +79,7 @@ var (
 
 // StopWithError removes transaction from list and calls handler with
 // provided error. Can return ErrTransactionNotExists and ErrAgentClosed.
-func (a *Agent) StopWithError(id [TransactionIDSize]byte, err error) error {
+func (a *Agent) StopWithError(id transactionID, err error) error {
 	a.mux.Lock()
 	if a.closed {
 		a.mux.Unlock()
@@ -101,7 +103,7 @@ func (a *Agent) StopWithError(id [TransactionIDSize]byte, err error) error {
 
 // Stop stops transaction by id with ErrTransactionStopped, blocking
 // until handler returns.
-func (a *Agent) Stop(id [TransactionIDSize]byte) error {
+func (a *Agent) Stop(id transactionID) error {
 	return a.StopWithError(id, ErrTransactionStopped)
 }
 
@@ -113,7 +115,7 @@ var ErrAgentClosed = errors.New("agent is closed")
 // Could return ErrAgentClosed, ErrTransactionExists.
 //
 // Agent handler is guaranteed to be eventually called.
-func (a *Agent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
+func (a *Agent) Start(id transactionID, deadline time.Time) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	if a.closed {
@@ -241,5 +243,3 @@ func (a *Agent) Close() error {
 
 	return nil
 }
-
-type transactionID [TransactionIDSize]byte

@@ -272,8 +272,8 @@ type Connection interface {
 type ClientAgent interface {
 	Process(*Message) error
 	Close() error
-	Start(id [TransactionIDSize]byte, deadline time.Time) error
-	Stop(id [TransactionIDSize]byte) error
+	Start(id transactionID, deadline time.Time) error
+	Stop(id transactionID) error
 	Collect(time.Time) error
 	SetHandler(h Handler) error
 }

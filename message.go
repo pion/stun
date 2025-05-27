@@ -30,7 +30,7 @@ const (
 
 // NewTransactionID returns new random transaction ID using crypto/rand
 // as source.
-func NewTransactionID() (b [TransactionIDSize]byte) {
+func NewTransactionID() (b transactionID) {
 	readFullOrPanic(rand.Reader, b[:])
 
 	return b

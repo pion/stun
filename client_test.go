@@ -54,7 +54,7 @@ func (TestAgent) Collect(time.Time) error { return nil }
 
 func (TestAgent) Process(*Message) error { return nil }
 
-func (n *TestAgent) Start(id [TransactionIDSize]byte, _ time.Time) error {
+func (n *TestAgent) Start(id transactionID, _ time.Time) error {
 	n.e <- Event{
 		TransactionID: id,
 	}
@@ -62,7 +62,7 @@ func (n *TestAgent) Start(id [TransactionIDSize]byte, _ time.Time) error {
 	return nil
 }
 
-func (n *TestAgent) Stop([TransactionIDSize]byte) error {
+func (n *TestAgent) Stop(transactionID) error {
 	return nil
 }
 
@@ -304,11 +304,11 @@ func (errorAgent) Collect(time.Time) error { return nil }
 
 func (errorAgent) Process(*Message) error { return nil }
 
-func (a errorAgent) Start([TransactionIDSize]byte, time.Time) error {
+func (a errorAgent) Start(transactionID, time.Time) error {
 	return a.startErr
 }
 
-func (a errorAgent) Stop([TransactionIDSize]byte) error {
+func (a errorAgent) Stop(transactionID) error {
 	return a.stopErr
 }
 
@@ -471,7 +471,7 @@ func (a *gcWaitAgent) SetHandler(Handler) error {
 	return nil
 }
 
-func (a *gcWaitAgent) Stop([TransactionIDSize]byte) error {
+func (a *gcWaitAgent) Stop(transactionID) error {
 	return nil
 }
 
@@ -491,7 +491,7 @@ func (a *gcWaitAgent) Process(*Message) error {
 	return nil
 }
 
-func (a *gcWaitAgent) Start([TransactionIDSize]byte, time.Time) error {
+func (a *gcWaitAgent) Start(transactionID, time.Time) error {
 	return nil
 }
 
@@ -636,8 +636,8 @@ func (m *manualClock) Now() time.Time {
 }
 
 type manualAgent struct {
-	start   func(id [TransactionIDSize]byte, deadline time.Time) error
-	stop    func(id [TransactionIDSize]byte) error
+	start   func(id transactionID, deadline time.Time) error
+	stop    func(id transactionID) error
 	process func(m *Message) error
 	h       Handler
 }
@@ -662,11 +662,11 @@ func (n *manualAgent) Process(m *Message) error {
 	return nil
 }
 
-func (n *manualAgent) Start(id [TransactionIDSize]byte, deadline time.Time) error {
+func (n *manualAgent) Start(id transactionID, deadline time.Time) error {
 	return n.start(id, deadline)
 }
 
-func (n *manualAgent) Stop(id [TransactionIDSize]byte) error {
+func (n *manualAgent) Stop(id transactionID) error {
 	if n.stop != nil {
 		return n.stop(id)
 	}
@@ -685,7 +685,7 @@ func TestClientRetransmission(t *testing.T) {
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
 	attempt := 0
-	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
+	agent.start = func(id transactionID, _ time.Time) error {
 		if attempt == 0 {
 			attempt++
 			go agent.h(Event{
@@ -738,7 +738,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) { //nolint:cyclop
 	collector := new(manualCollector)
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
-	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
+	agent.start = func(id transactionID, _ time.Time) error {
 		go agent.h(Event{
 			TransactionID: id,
 			Message:       response,
@@ -899,7 +899,7 @@ func TestWithNoRetransmit(t *testing.T) {
 	clock := &manualClock{current: time.Now()}
 	agent := &manualAgent{}
 	attempt := 0
-	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
+	agent.start = func(id transactionID, _ time.Time) error {
 		if attempt == 0 {
 			attempt++
 			go agent.h(Event{
@@ -981,7 +981,7 @@ func TestClientRTOStartErr(t *testing.T) { //nolint:cyclop
 		client         *Client
 		startClientErr error
 	)
-	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
+	agent.start = func(id transactionID, _ time.Time) error {
 		t.Log("start", attempt)
 		if attempt == 0 {
 			attempt++
@@ -1082,10 +1082,10 @@ func TestClientRTOWriteErr(t *testing.T) { //nolint:cyclop
 		startClientErr error
 	)
 	agentStopErr := errClientAgentCantStop
-	agent.stop = func([TransactionIDSize]byte) error {
+	agent.stop = func(transactionID) error {
 		return agentStopErr
 	}
-	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
+	agent.start = func(id transactionID, _ time.Time) error {
 		t.Log("start", attempt)
 		if attempt == 0 {
 			attempt++
@@ -1168,7 +1168,7 @@ func TestClientRTOAgentErr(t *testing.T) {
 		startClientErr error
 	)
 	agentStartErr := errClientStartRefused
-	agent.start = func(id [TransactionIDSize]byte, _ time.Time) error {
+	agent.start = func(id transactionID, _ time.Time) error {
 		t.Log("start", attempt)
 		if attempt == 0 {
 			attempt++
@@ -1258,7 +1258,7 @@ func TestClientImmediateTimeout(t *testing.T) {
 	rto := time.Second * 1
 	agent := &manualAgent{}
 	attempt := 0
-	agent.start = func(id [TransactionIDSize]byte, deadline time.Time) error {
+	agent.start = func(id transactionID, deadline time.Time) error {
 		if attempt == 0 {
 			assert.False(t, deadline.Before(clock.current.Add(rto/2)), "deadline too fast")
 			attempt++
