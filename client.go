@@ -319,7 +319,7 @@ func (t *clientTransaction) handle(e Event) {
 }
 
 var clientTransactionPool = &sync.Pool{ //nolint:gochecknoglobals
-	New: func() interface{} {
+	New: func() any {
 		return &clientTransaction{
 			raw: make([]byte, 1500),
 		}
@@ -562,7 +562,7 @@ func (s *callbackWaitHandler) setCallback(f func(event Event)) {
 }
 
 var callbackWaitHandlerPool = sync.Pool{ //nolint:gochecknoglobals
-	New: func() interface{} {
+	New: func() any {
 		return &callbackWaitHandler{
 			cond: sync.NewCond(new(sync.Mutex)),
 		}
@@ -618,7 +618,7 @@ type buffer struct {
 }
 
 var bufferPool = &sync.Pool{ //nolint:gochecknoglobals
-	New: func() interface{} {
+	New: func() any {
 		return &buffer{buf: make([]byte, 2048)}
 	},
 }

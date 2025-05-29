@@ -38,7 +38,7 @@ func (h *hmac) resetTo(key []byte) {
 }
 
 var hmacSHA1Pool = &sync.Pool{ //nolint:gochecknoglobals
-	New: func() interface{} {
+	New: func() any {
 		h := New(sha1.New, make([]byte, sha1.BlockSize))
 
 		return h
@@ -62,7 +62,7 @@ func PutSHA1(h hash.Hash) {
 }
 
 var hmacSHA256Pool = &sync.Pool{ //nolint:gochecknoglobals
-	New: func() interface{} {
+	New: func() any {
 		h := New(sha256.New, make([]byte, sha256.BlockSize))
 
 		return h
