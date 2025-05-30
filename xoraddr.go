@@ -103,15 +103,14 @@ func (a *XORMappedAddress) GetFromAs(msg *Message, attr AttrType) error {
 	}
 	// Ensuring len(a.IP) == ipLen and reusing a.IP.
 	if len(a.IP) < ipLen {
-		a.IP = a.IP[:cap(a.IP)]
-		for len(a.IP) < ipLen {
-			a.IP = append(a.IP, 0)
+		a.IP = make(net.IP, ipLen)
+	} else {
+		a.IP = a.IP[:ipLen]
+		for i := range a.IP {
+			a.IP[i] = 0
 		}
 	}
-	a.IP = a.IP[:ipLen]
-	for i := range a.IP {
-		a.IP[i] = 0
-	}
+
 	if len(value) <= 4 {
 		return io.ErrUnexpectedEOF
 	}
