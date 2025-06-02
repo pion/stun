@@ -53,7 +53,7 @@ type Handler func(e Event)
 // Event is passed to Handler describing the transaction event.
 // Do not reuse outside Handler.
 type Event struct {
-	TransactionID [TransactionIDSize]byte
+	TransactionID transactionID
 	Message       *Message
 	Error         error
 }
