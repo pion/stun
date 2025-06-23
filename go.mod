@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/pion/dtls/v3 v3.0.6
-	github.com/pion/logging v0.2.3
+	github.com/pion/logging v0.2.4
 	github.com/pion/transport/v3 v3.0.7
 	github.com/stretchr/testify v1.10.0
 )
