@@ -286,7 +286,7 @@ type Client struct {
 	close       chan struct{}
 	rtoRate     time.Duration
 	maxAttempts int32
-	closed      bool
+	closed      atomic.Bool
 	closeConn   bool // should call c.Close() while closing
 	wg          sync.WaitGroup
 	clock       Clock
@@ -346,11 +346,11 @@ func (t *clientTransaction) nextTimeout(now time.Time) time.Time {
 //
 // Could return ErrClientClosed, ErrTransactionExists.
 func (c *Client) start(t *clientTransaction) error {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	if c.closed {
+	if c.closed.Load() {
 		return ErrClientClosed
 	}
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	_, exists := c.t[t.id]
 	if exists {
 		return ErrTransactionExists
@@ -486,14 +486,10 @@ func (c *Client) Close() error {
 	if err := c.checkInit(); err != nil {
 		return err
 	}
-	c.mux.Lock()
-	if c.closed {
-		c.mux.Unlock()
-
+	if c.closed.Load() {
 		return ErrClientClosed
 	}
-	c.closed = true
-	c.mux.Unlock()
+	c.closed.Store(true)
 	if closeErr := c.collector.Close(); closeErr != nil {
 		return closeErr
 	}
@@ -624,12 +620,10 @@ var bufferPool = &sync.Pool{ //nolint:gochecknoglobals
 }
 
 func (c *Client) handleAgentCallback(event Event) { //nolint:cyclop
-	c.mux.Lock()
-	if c.closed {
-		c.mux.Unlock()
-
+	if c.closed.Load() {
 		return
 	}
+	c.mux.Lock()
 	transaction, found := c.t[event.TransactionID]
 	if found {
 		delete(c.t, transaction.id)
@@ -705,10 +699,7 @@ func (c *Client) Start(msg *Message, handler Handler) error {
 	if err := c.checkInit(); err != nil {
 		return err
 	}
-	c.mux.RLock()
-	closed := c.closed
-	c.mux.RUnlock()
-	if closed {
+	if c.closed.Load() {
 		return ErrClientClosed
 	}
 	if handler != nil {
