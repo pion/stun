@@ -93,7 +93,7 @@ func TestParseURL(t *testing.T) {
 			case errors.As(err, &urlError):
 				err = urlError.Err
 			case errors.As(err, &addrError):
-				err = fmt.Errorf(addrError.Err) //nolint:goerr113, govet
+				err = fmt.Errorf(addrError.Err) //nolint:err113, govet
 			}
 			assert.EqualError(t, err, testCase.expectedErr.Error(), "testCase: %d %v", i, testCase)
 		}

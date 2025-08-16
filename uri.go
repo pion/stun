@@ -104,9 +104,9 @@ const (
 // string naming the transport protocol type.
 func NewProtoType(raw string) ProtoType {
 	switch raw {
-	case "udp":
+	case "udp": //nolint:goconst
 		return ProtoTypeUDP
-	case "tcp":
+	case "tcp": //nolint:goconst
 		return ProtoTypeTCP
 	default:
 		return ProtoTypeUnknown
@@ -155,21 +155,23 @@ func ParseURI(raw string) (*URI, error) { //nolint:gocognit,cyclop
 		if errors.As(err, &e) {
 			if e.Err == "missing port in address" {
 				nextRawURL := uri.Scheme.String() + ":" + rawParts.Opaque
-				switch {
-				case uri.Scheme == SchemeTypeSTUN || uri.Scheme == SchemeTypeTURN:
+				switch uri.Scheme {
+				case SchemeTypeSTUN, SchemeTypeTURN:
 					nextRawURL += ":3478"
 					if rawParts.RawQuery != "" {
 						nextRawURL += "?" + rawParts.RawQuery
 					}
 
 					return ParseURI(nextRawURL)
-				case uri.Scheme == SchemeTypeSTUNS || uri.Scheme == SchemeTypeTURNS:
+				case SchemeTypeSTUNS, SchemeTypeTURNS:
 					nextRawURL += ":5349"
 					if rawParts.RawQuery != "" {
 						nextRawURL += "?" + rawParts.RawQuery
 					}
 
 					return ParseURI(nextRawURL)
+				default:
+					return nil, ErrSchemeType
 				}
 			}
 		}

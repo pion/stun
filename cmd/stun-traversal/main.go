@@ -105,7 +105,7 @@ func main() { //nolint:gocognit,cyclop
 				}
 
 			default:
-				log.Panicln("unknown message", message)
+				log.Panicln("unknown message", string(message))
 			}
 
 		case peerStr := <-peerAddrChan:
