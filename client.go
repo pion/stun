@@ -94,7 +94,7 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 		}
 
 	case (uri.Scheme == SchemeTypeTURNS || uri.Scheme == SchemeTypeSTUNS) && uri.Proto == ProtoTypeTCP:
-		tlsCfg := cfg.TLSConfig //nolint:govet
+		tlsCfg := cfg.TLSConfig.Clone()
 		tlsCfg.ServerName = uri.Host
 
 		tcpConn, err := nw.Dial("tcp", addr)
@@ -102,7 +102,7 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
-		conn = tls.Client(tcpConn, &tlsCfg)
+		conn = tls.Client(tcpConn, tlsCfg)
 
 	default:
 		return nil, ErrUnsupportedURI
