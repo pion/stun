@@ -1,6 +1,6 @@
 module github.com/pion/stun/v3
 
-go 1.20
+go 1.21
 
 require (
 	github.com/pion/dtls/v3 v3.0.7
