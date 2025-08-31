@@ -25,7 +25,7 @@ func test(network string) { //nolint:cyclop
 		username = "user"
 		password = "secret"
 	)
-	conn, err := net.Dial(addr.Network(), addr.String())
+	conn, err := net.Dial(addr.Network(), addr.String()) // nolint: noctx
 	if err != nil {
 		log.Fatalln("failed to dial conn:", err) //nolint
 	}

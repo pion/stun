@@ -27,7 +27,7 @@ var ErrUnsupportedURI = fmt.Errorf("invalid schema or transport")
 // Dial connects to the address on the named network and then
 // initializes Client on that connection, returning error if any.
 func Dial(network, address string) (*Client, error) {
-	conn, err := net.Dial(network, address)
+	conn, err := net.Dial(network, address) //nolint: noctx
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 		}
 
 	case (uri.Scheme == SchemeTypeTURNS || uri.Scheme == SchemeTypeSTUNS) && uri.Proto == ProtoTypeTCP:
-		tlsCfg := cfg.TLSConfig //nolint:govet
+		tlsCfg := cfg.TLSConfig //nolint:govet, copylocks
 		tlsCfg.ServerName = uri.Host
 
 		tcpConn, err := nw.Dial("tcp", addr)
