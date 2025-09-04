@@ -113,7 +113,6 @@ func (a *MappedAddress) AddToAs(msg *Message, attrType AttrType) error {
 		return ErrBadIPLength
 	}
 	value := make([]byte, 128)
-	value[0] = 0 // first 8 bits are zeroes
 	bin.PutUint16(value[0:2], family)
 	bin.PutUint16(value[2:4], uint16(a.Port)) //nolint:gosec //G115
 	copy(value[4:], ip)
