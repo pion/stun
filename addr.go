@@ -24,26 +24,17 @@ type MappedAddress struct {
 // AlternateServer represents ALTERNATE-SERVER attribute.
 //
 // RFC 5389 Section 15.11.
-type AlternateServer struct {
-	IP   net.IP
-	Port int
-}
+type AlternateServer = MappedAddress
 
 // ResponseOrigin represents RESPONSE-ORIGIN attribute.
 //
 // RFC 5780 Section 7.3.
-type ResponseOrigin struct {
-	IP   net.IP
-	Port int
-}
+type ResponseOrigin = MappedAddress
 
 // OtherAddress represents OTHER-ADDRESS attribute.
 //
 // RFC 5780 Section 7.4.
-type OtherAddress struct {
-	IP   net.IP
-	Port int
-}
+type OtherAddress = MappedAddress
 
 // AddTo adds ALTERNATE-SERVER attribute to message.
 func (s *AlternateServer) AddTo(m *Message) error {
