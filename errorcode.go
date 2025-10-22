@@ -163,3 +163,19 @@ var errorReasons = map[ErrorCode][]byte{
 	CodeAddrFamilyNotSupported: []byte("Address Family not Supported"),
 	CodePeerAddrFamilyMismatch: []byte("Peer Address Family Mismatch"),
 }
+
+// TurnError represents an error from a TURN response.
+type TurnError struct {
+	StunMessageType MessageType
+	ErrorCodeAttr   ErrorCodeAttribute
+}
+
+// Error returns the formatted TURN error message.
+func (e TurnError) Error() string {
+	return fmt.Sprintf("%s (error %d)", e.StunMessageType, e.ErrorCodeAttr.Code)
+}
+
+// String returns the error message as a string.
+func (e TurnError) String() string {
+	return e.Error()
+}
