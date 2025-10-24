@@ -172,7 +172,7 @@ type TurnError struct {
 
 // Error returns the formatted TURN error message.
 func (e TurnError) Error() string {
-	return fmt.Sprintf("%s (error %d)", e.StunMessageType, e.ErrorCodeAttr.Code)
+	return fmt.Sprintf("%s (error %s)", e.StunMessageType, e.ErrorCodeAttr.String())
 }
 
 // String returns the error message as a string.

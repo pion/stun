@@ -98,7 +98,7 @@ func TestTurnError(t *testing.T) {
 			Reason: []byte("Forbidden"),
 		},
 	}
-	expected := "CreatePermission error response (error 403)"
+	expected := "CreatePermission error response (error 403: Forbidden)"
 	assert.Equal(t, expected, te.Error())
 	assert.Equal(t, expected, te.String())
 }
