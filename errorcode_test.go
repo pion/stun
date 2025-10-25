@@ -89,3 +89,16 @@ func TestErrorCode(t *testing.T) {
 	attr.Reason = make([]byte, 2048)
 	assert.Error(t, attr.AddTo(m), "should error")
 }
+
+func TestTurnError(t *testing.T) {
+	te := TurnError{
+		StunMessageType: NewType(MethodCreatePermission, ClassErrorResponse),
+		ErrorCodeAttr: ErrorCodeAttribute{
+			Code:   CodeForbidden,
+			Reason: []byte("Forbidden"),
+		},
+	}
+	expected := "CreatePermission error response (error 403: Forbidden)"
+	assert.Equal(t, expected, te.Error())
+	assert.Equal(t, expected, te.String())
+}
