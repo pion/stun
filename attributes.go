@@ -171,6 +171,14 @@ func (t AttrType) String() string {
 	return s
 }
 
+// Known returns true if AttrType is known and implemented
+// by this library.
+func (t AttrType) Known() bool {
+	_, valid := attrNames()[t]
+
+	return valid
+}
+
 // RawAttribute is a Type-Length-Value (TLV) object that
 // can be added to a STUN message. Attributes are divided into two
 // types: comprehension-required and comprehension-optional.  STUN
