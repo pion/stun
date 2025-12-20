@@ -80,4 +80,7 @@ Value,Name,Reference
 0xC05D,GOOG-DELTA-ACK,[Jonas_Oreland]
 0xC05E-0xC05F,Unassigned,
 0xC060,GOOG-MESSAGE-INTEGRITY-32,[Jonas_Oreland]
-0xC061-0xFFFF,Unassigned,
+0xC061-0xC06F,Unassigned,
+0xC070,DTLS-IN-STUN,[Philipp_Hancke]
+0xC071,DTLS-IN-STUN-ACKNOWLEDGEMENT,[Philipp_Hancke]
+0xC072-0xFFFF,Unassigned,
