@@ -120,6 +120,12 @@ const (
 	AttrAlternateDomain        AttrType = 0x8003 // ALTERNATE-DOMAIN
 )
 
+// Attributes from SPED.
+const (
+	AttrDtlsInStun    AttrType = 0xC070
+	AttrDtlsInStunAck AttrType = 0xC071
+)
+
 // Value returns uint16 representation of attribute type.
 func (t AttrType) Value() uint16 {
 	return uint16(t)
@@ -158,6 +164,8 @@ func attrNames() map[AttrType]string {
 		AttrUserhash:               "USERHASH",
 		AttrPasswordAlgorithms:     "PASSWORD-ALGORITHMS",
 		AttrAlternateDomain:        "ALTERNATE-DOMAIN",
+		AttrDtlsInStun:             "DTLS-IN-STUN",
+		AttrDtlsInStunAck:          "DTLS-IN-STUN-ACKNOWLEDGEMENT",
 	}
 }
 
@@ -257,7 +265,7 @@ func nearestPaddedValueLength(l int) int {
 	return n
 }
 
-// This method converts uint16 vlue to AttrType. If it finds an old attribute
+// This method converts an uint16 value to AttrType. If it finds an old attribute
 // type value, it also translates it to the new value to enable backward
 // compatibility. (See: https://github.com/pion/stun/issues/21)
 func compatAttrType(val uint16) AttrType {
