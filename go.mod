@@ -3,9 +3,9 @@ module github.com/pion/stun/v3
 go 1.21
 
 require (
-	github.com/pion/dtls/v3 v3.0.9
+	github.com/pion/dtls/v3 v3.0.10
 	github.com/pion/logging v0.2.4
-	github.com/pion/transport/v3 v3.1.1
+	github.com/pion/transport/v4 v4.0.1
 	github.com/stretchr/testify v1.11.1
 )
 
