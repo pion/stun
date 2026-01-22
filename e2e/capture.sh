@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+# SPDX-FileCopyrightText: 2026 The Pion community <https://pion.ly>
 # SPDX-License-Identifier: MIT
 
 echo "net: $INTERFACE $SUBNET"
