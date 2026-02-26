@@ -9,6 +9,7 @@ package stun
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pion/dtls/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -414,6 +416,56 @@ func TestDialURI(t *testing.T) {
 	defer func() {
 		assert.NoError(t, c.Close())
 	}()
+}
+
+func TestDialURINilConfigs(t *testing.T) {
+	// DialConfig with nil TLSConfig/DTLSConfig should work the same as zero-value configs.
+	u, err := ParseURI("stun:localhost")
+	assert.NoError(t, err)
+
+	c, err := DialURI(u, &DialConfig{
+		TLSConfig:  nil,
+		DTLSConfig: nil,
+	})
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, c.Close())
+	}()
+}
+
+func TestDialURITLSConfigNotMutated(t *testing.T) {
+	// Verify that the caller's TLS config is not modified by DialURI.
+	tlsCfg := &tls.Config{
+		ServerName: "original-server-name",
+		MinVersion: tls.VersionTLS12,
+	}
+
+	u, err := ParseURI("stuns:localhost:3478")
+	assert.NoError(t, err)
+
+	// The dial will fail since there's no TLS server, but the config
+	// should still not be mutated regardless.
+	_, _ = DialURI(u, &DialConfig{TLSConfig: tlsCfg})
+
+	assert.Equal(t, "original-server-name", tlsCfg.ServerName,
+		"DialURI must not mutate the caller's TLS config")
+}
+
+func TestDialURIDTLSConfigNotMutated(t *testing.T) {
+	// Verify that the caller's DTLS config is not modified by DialURI.
+	dtlsCfg := &dtls.Config{
+		ServerName: "original-server-name",
+	}
+
+	u, err := ParseURI("turns:localhost:3478?transport=udp")
+	assert.NoError(t, err)
+
+	// The dial will fail since there's no DTLS server, but the config
+	// should still not be mutated regardless.
+	_, _ = DialURI(u, &DialConfig{DTLSConfig: dtlsCfg})
+
+	assert.Equal(t, "original-server-name", dtlsCfg.ServerName,
+		"DialURI must not mutate the caller's DTLS config")
 }
 
 func TestDialError(t *testing.T) {
