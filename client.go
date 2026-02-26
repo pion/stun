@@ -37,8 +37,8 @@ func Dial(network, address string) (*Client, error) {
 
 // DialConfig is used to pass configuration to DialURI().
 type DialConfig struct {
-	DTLSConfig dtls.Config
-	TLSConfig  tls.Config
+	DTLSConfig *dtls.Config
+	TLSConfig  *tls.Config
 
 	Net transport.Net
 }
@@ -76,7 +76,10 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 		}
 
 	case uri.Scheme == SchemeTypeTURNS && uri.Proto == ProtoTypeUDP:
-		dtlsCfg := cfg.DTLSConfig // Copy
+		var dtlsCfg dtls.Config
+		if cfg.DTLSConfig != nil {
+			dtlsCfg = *cfg.DTLSConfig
+		}
 		dtlsCfg.ServerName = uri.Host
 
 		udpAddr, err := net.ResolveUDPAddr("udp", addr)
@@ -94,7 +97,10 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 		}
 
 	case (uri.Scheme == SchemeTypeTURNS || uri.Scheme == SchemeTypeSTUNS) && uri.Proto == ProtoTypeTCP:
-		tlsCfg := cfg.TLSConfig //nolint:govet, copylocks
+		var tlsCfg tls.Config
+		if cfg.TLSConfig != nil {
+			tlsCfg = *cfg.TLSConfig.Clone()
+		}
 		tlsCfg.ServerName = uri.Host
 
 		tcpConn, err := nw.Dial("tcp", addr)
