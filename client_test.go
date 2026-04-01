@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 //go:build !js
-// +build !js
 
 package stun
 
@@ -586,7 +585,7 @@ func TestClientFinalizer(t *testing.T) {
 
 func TestCallbackWaitHandler(*testing.T) {
 	h := callbackWaitHandlerPool.Get().(*callbackWaitHandler) //nolint:forcetypeassert
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		h.setCallback(func(Event) {})
 		go func() {
 			time.Sleep(time.Microsecond * 100)
@@ -755,7 +754,7 @@ func testClientDoConcurrent(t *testing.T, concurrency int) { //nolint:cyclop
 	client.SetRTO(time.Second)
 	conns := new(sync.WaitGroup)
 	wg := new(sync.WaitGroup)
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		conns.Add(1)
 		go func() {
 			defer conns.Done()
@@ -788,7 +787,6 @@ func TestClient_DoConcurrent(t *testing.T) {
 	for _, concurrency := range []int{
 		1, 5, 10, 25, 100, 500,
 	} {
-		concurrency := concurrency
 		t.Run(fmt.Sprintf("%d", concurrency), func(t *testing.T) {
 			testClientDoConcurrent(t, concurrency)
 		})

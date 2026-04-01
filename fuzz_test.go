@@ -115,7 +115,7 @@ func TestAttrPick(*testing.T) {
 		{new(XORMappedAddress), AttrXORMappedAddress},
 	}
 
-	for i := byte(0); i < 255; i++ {
+	for i := range byte(255) {
 		attrs.pick(i)
 	}
 }

@@ -3,7 +3,10 @@
 
 package stun
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // UnknownAttributes represents UNKNOWN-ATTRIBUTES attribute.
 //
@@ -11,19 +14,19 @@ import "errors"
 type UnknownAttributes []AttrType
 
 func (a UnknownAttributes) String() string {
-	s := ""
+	var s strings.Builder
 	if len(a) == 0 {
 		return "<nil>"
 	}
 	last := len(a) - 1
 	for i, t := range a {
-		s += t.String()
+		s.WriteString(t.String())
 		if i != last {
-			s += ", "
+			s.WriteString(", ")
 		}
 	}
 
-	return s
+	return s.String()
 }
 
 // type size is 16 bit.

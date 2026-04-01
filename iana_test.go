@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 //go:build !js
-// +build !js
 
 package stun
 
 import (
 	"bytes"
 	"encoding/csv"
+	"maps"
 	"strconv"
 	"strings"
 	"testing"
@@ -68,11 +68,9 @@ func TestIANA(t *testing.T) { //nolint:cyclop
 			attrTypes[name] = AttrType(val) //nolint:gosec // G115
 		}
 		// Not registered in IANA.
-		for k, v := range map[string]AttrType{
+		maps.Copy(attrTypes, map[string]AttrType{
 			"ORIGIN": 0x802F,
-		} {
-			attrTypes[k] = v
-		}
+		})
 		for val, name := range attrNames() {
 			mapped, ok := attrTypes[name]
 			assert.True(t, ok, "failed to find attribute %s in IANA", name)

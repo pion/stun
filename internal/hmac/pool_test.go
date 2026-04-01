@@ -48,13 +48,13 @@ func TestHMACReset(t *testing.T) {
 		hsh.(*hmac).resetTo(tt.key) //nolint:forcetypeassert
 		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
 		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
-		for j := 0; j < 2; j++ {
+		for j := range 2 {
 			n, err := hsh.Write(tt.in)
 			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
 			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
-			for k := 0; k < 2; k++ {
+			for k := range 2 {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}
@@ -73,13 +73,13 @@ func TestHMACPool_SHA1(t *testing.T) { //nolint:dupl,cyclop
 		hsh := AcquireSHA1(tt.key)
 		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
 		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
-		for j := 0; j < 2; j++ {
+		for j := range 2 {
 			n, err := hsh.Write(tt.in)
 			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
 			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
-			for k := 0; k < 2; k++ {
+			for k := range 2 {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}
@@ -99,13 +99,13 @@ func TestHMACPool_SHA256(t *testing.T) { //nolint:dupl,cyclop
 		hsh := AcquireSHA256(tt.key)
 		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
 		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
-		for j := 0; j < 2; j++ {
+		for j := range 2 {
 			n, err := hsh.Write(tt.in)
 			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
 			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
-			for k := 0; k < 2; k++ {
+			for k := range 2 {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}

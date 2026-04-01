@@ -158,6 +158,7 @@ func main() { //nolint:cyclop
 	notify := make(chan os.Signal, 1)
 	signal.Notify(notify, os.Interrupt, syscall.SIGTERM)
 	if isServer {
+		//nolint:gosec // G705 -- no xss.
 		log.Printf("Acting as server. Use following command to connect: %s %s", os.Args[0], gotAddr)
 
 		for {

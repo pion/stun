@@ -87,12 +87,12 @@ func TestAgent_GC(t *testing.T) { //nolint:cyclop
 			assert.False(t, errors.Is(e.Error, ErrTransactionTimeOut), "%x should not time out", id)
 		}
 	})
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		id := NewTransactionID()
 		shouldTimeOutID[id] = false
 		assert.NoError(t, agent.Start(id, deadline))
 	}
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		id := NewTransactionID()
 		shouldTimeOutID[id] = true
 		assert.NoError(t, agent.Start(id, deadlineNotGC))
@@ -105,7 +105,7 @@ func TestAgent_GC(t *testing.T) { //nolint:cyclop
 func BenchmarkAgent_GC(b *testing.B) {
 	agent := NewAgent(nil)
 	deadline := time.Now().AddDate(0, 0, 1)
-	for i := 0; i < agentCollectCap; i++ {
+	for range agentCollectCap {
 		assert.NoError(b, agent.Start(NewTransactionID(), deadline))
 	}
 	defer func() {
@@ -121,7 +121,7 @@ func BenchmarkAgent_GC(b *testing.B) {
 func BenchmarkAgent_Process(b *testing.B) {
 	agent := NewAgent(nil)
 	deadline := time.Now().AddDate(0, 0, 1)
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		assert.NoError(b, agent.Start(NewTransactionID(), deadline))
 	}
 	defer func() {

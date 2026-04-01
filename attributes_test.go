@@ -88,7 +88,6 @@ func TestAttrTypeRange(t *testing.T) {
 		AttrEvenPort,
 		AttrRequestedAddressFamily,
 	} {
-		a := a
 		t.Run(a.String(), func(t *testing.T) {
 			a := a
 			assert.True(t, a.Required(), "should be required")
@@ -100,7 +99,6 @@ func TestAttrTypeRange(t *testing.T) {
 		AttrICEControlled,
 		AttrOrigin,
 	} {
-		a := a
 		t.Run(a.String(), func(t *testing.T) {
 			assert.False(t, a.Required(), "should be optional")
 			assert.True(t, a.Optional(), "should be optional")

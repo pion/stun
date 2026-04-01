@@ -64,3 +64,6 @@ var ErrAttributeSizeInvalid = errors.New("attribute size is invalid")
 
 // ErrAttributeSizeOverflow means that decoded attribute size is too big.
 var ErrAttributeSizeOverflow = errors.New("attribute size overflow")
+
+// errInvalidErrorCode means that ErrorCode can't be encoded in ERROR-CODE.
+var errInvalidErrorCode = errors.New("invalid ErrorCode")

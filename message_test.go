@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 //go:build !js
-// +build !js
 
 package stun
 
@@ -661,8 +660,6 @@ func TestAllocations(t *testing.T) {
 	}
 	m := New()
 	for i, s := range setters {
-		s := s
-		i := i
 		allocs := testing.AllocsPerRun(10, func() {
 			m.Reset()
 			m.WriteHeader()
@@ -702,8 +699,6 @@ func TestAllocationsGetters(t *testing.T) {
 		new(ErrorCodeAttribute),
 	}
 	for i, g := range getters {
-		g := g
-		i := i
 		allocs := testing.AllocsPerRun(10, func() {
 			assert.NoError(t, g.GetFrom(msg), "[%d] failed to get", i)
 		})

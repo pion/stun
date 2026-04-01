@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 //go:build !debug
-// +build !debug
 
 package stun
 

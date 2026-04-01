@@ -111,7 +111,7 @@ func resolve(network string) net.Addr {
 		resolved   net.Addr
 		resolveErr error
 	)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		switch network {
 		case "udp":
 			resolved, resolveErr = net.ResolveUDPAddr("udp", addr)

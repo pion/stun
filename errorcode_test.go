@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 //go:build !js
-// +build !js
 
 package stun
 
@@ -88,6 +87,13 @@ func TestErrorCode(t *testing.T) {
 	assert.Error(t, attr.GetFrom(m), "attr should not be in message")
 	attr.Reason = make([]byte, 2048)
 	assert.Error(t, attr.AddTo(m), "should error")
+}
+
+func TestErrorCodeAttribute_AddToInvalidCode(t *testing.T) {
+	m := New()
+
+	assert.ErrorIs(t, (&ErrorCodeAttribute{Code: -1}).AddTo(m), errInvalidErrorCode)
+	assert.ErrorIs(t, (&ErrorCodeAttribute{Code: 25600}).AddTo(m), errInvalidErrorCode)
 }
 
 func TestTurnError(t *testing.T) {

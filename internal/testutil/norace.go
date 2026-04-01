@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 //go:build !race
-// +build !race
 
 package testutil
 

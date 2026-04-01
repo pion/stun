@@ -15,8 +15,8 @@ import (
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		fmt.Fprintln(os.Stderr, os.Args[0], "stun:stun.l.google.com:19302")
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])                //nolint:gosec // G705 -- no xss.
+		fmt.Fprintln(os.Stderr, os.Args[0], "stun:stun.l.google.com:19302") //nolint:gosec // G705 -- no xss.
 	}
 	flag.Parse()
 

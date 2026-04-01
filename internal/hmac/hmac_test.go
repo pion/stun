@@ -528,13 +528,13 @@ func TestHMAC(t *testing.T) {
 		hsh := New(tt.hash, tt.key)
 		assert.Equal(t, tt.size, hsh.Size(), "Size mismatch")
 		assert.Equal(t, tt.blocksize, hsh.BlockSize(), "BlockSize mismatch")
-		for j := 0; j < 4; j++ { //nolint:varnamelen
+		for j := range 4 { //nolint:varnamelen
 			n, err := hsh.Write(tt.in)
 			assert.Equal(t, len(tt.in), n, "test %d.%d: Write(%d) = %d", i, j, len(tt.in), n)
 			assert.NoError(t, err, "test %d.%d: Write error", i, j)
 
 			// Repetitive Sum() calls should return the same value
-			for k := 0; k < 2; k++ {
+			for k := range 2 {
 				sum := fmt.Sprintf("%x", hsh.Sum(nil))
 				assert.Equal(t, tt.out, sum, "test %d.%d.%d: have %s want %s", i, j, k, sum, tt.out)
 			}
