@@ -37,7 +37,7 @@ func Dial(network, address string) (*Client, error) {
 
 // DialConfig is used to pass configuration to DialURI().
 type DialConfig struct {
-	DTLSConfig dtls.Config
+	DTLSConfig dtls.Config //nolint:staticcheck
 	TLSConfig  tls.Config
 
 	Net transport.Net
@@ -89,7 +89,7 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
-		if conn, err = dtls.Client(udpConn, udpConn.RemoteAddr(), &dtlsCfg); err != nil {
+		if conn, err = dtls.Client(udpConn, udpConn.RemoteAddr(), &dtlsCfg); err != nil { //nolint:staticcheck
 			return nil, fmt.Errorf("failed to connect to '%s': %w", addr, err)
 		}
 
