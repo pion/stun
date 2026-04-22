@@ -4,6 +4,7 @@
 package stun
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 
@@ -61,6 +62,24 @@ func TestMessageIntegrityBeforeFingerprint(t *testing.T) {
 	Fingerprint.AddTo(m) //nolint:errcheck,gosec
 	i := NewShortTermIntegrity("password")
 	assert.Error(t, i.AddTo(m))
+}
+
+func TestAttributeAfterMessageIntegrity(t *testing.T) {
+	m := new(Message)
+	m.WriteHeader()
+	i := NewShortTermIntegrity("password")
+	assert.NoError(t, i.AddTo(m))
+	assert.NoError(t, NewSoftware("after").AddTo(m))
+	assert.NoError(t, Fingerprint.AddTo(m))
+
+	mDecoded := New()
+	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+	assert.NoError(t, err)
+
+	assert.NoError(t, i.Check(mDecoded))
+	assert.NoError(t, Fingerprint.Check(mDecoded))
+	_, found := mDecoded.Attributes.Get(AttrSoftware)
+	assert.False(t, found)
 }
 
 func BenchmarkMessageIntegrity_AddTo(b *testing.B) {
