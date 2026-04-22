@@ -367,7 +367,7 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 var ErrUnexpectedHeaderEOF = errors.New("unexpected EOF: not enough bytes to read header")
 
 // Decode decodes m.Raw into m.
-func (m *Message) Decode() error {
+func (m *Message) Decode() error { //nolint:cyclop
 	// decoding message header
 	buf := m.Raw
 	if len(buf) < messageHeaderSize {
@@ -399,6 +399,7 @@ func (m *Message) Decode() error {
 		offset = 0
 		b      = buf[messageHeaderSize:fullSize]
 	)
+	hadMessageIntegrity := false
 	for offset < size {
 		// checking that we have enough bytes to read header
 		if len(b) < attributeHeaderSize {
@@ -425,7 +426,17 @@ func (m *Message) Decode() error {
 		offset += aBuffL
 		b = b[aBuffL:]
 
-		m.Attributes = append(m.Attributes, attr)
+		// RFC 5389:
+		// With the exception of the FINGERPRINT attribute,
+		// which appears after MESSAGE-INTEGRITY, agents MUST ignore
+		// all other attributes that follow MESSAGE-INTEGRITY.
+		if !hadMessageIntegrity || (attr.Type == AttrMessageIntegrity) ||
+			(attr.Type == AttrMessageIntegritySHA256) || (attr.Type == AttrFingerprint) {
+			m.Attributes = append(m.Attributes, attr)
+		}
+		if attr.Type == AttrMessageIntegrity || attr.Type == AttrMessageIntegritySHA256 {
+			hadMessageIntegrity = true
+		}
 	}
 
 	return nil
