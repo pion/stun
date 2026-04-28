@@ -79,7 +79,100 @@ func TestAttributeAfterMessageIntegrity(t *testing.T) {
 	assert.NoError(t, i.Check(mDecoded))
 	assert.NoError(t, Fingerprint.Check(mDecoded))
 	_, found := mDecoded.Attributes.Get(AttrSoftware)
+	assert.True(t, found)
+}
+
+func TestAttributeAfterMessageIntegrityStrict(t *testing.T) {
+	m := new(Message)
+	m.WriteHeader()
+	i := NewShortTermIntegrity("password")
+	assert.NoError(t, i.AddTo(m))
+	assert.NoError(t, NewSoftware("after").AddTo(m))
+	assert.NoError(t, Fingerprint.AddTo(m))
+
+	mDecoded := NewWithOptions(WithStrict(true))
+	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+	assert.NoError(t, err)
+
+	assert.NoError(t, i.Check(mDecoded))
+	assert.NoError(t, Fingerprint.Check(mDecoded))
+	_, found := mDecoded.Attributes.Get(AttrSoftware)
 	assert.False(t, found)
+}
+
+func TestAttributeOrderingAfterMessageIntegritySHA256Strict(t *testing.T) {
+	t.Run("MI256, SOFTWARE, FINGERPRINT", func(t *testing.T) {
+		m := new(Message)
+		m.WriteHeader()
+		m.Add(AttrMessageIntegritySHA256, make([]byte, 32))
+		assert.NoError(t, NewSoftware("after").AddTo(m))
+		assert.NoError(t, Fingerprint.AddTo(m))
+
+		mDecoded := NewWithOptions(WithStrict(true))
+		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+		assert.NoError(t, err)
+
+		_, foundSoftware := mDecoded.Attributes.Get(AttrSoftware)
+		assert.False(t, foundSoftware)
+		assert.NoError(t, Fingerprint.Check(mDecoded))
+	})
+
+	t.Run("MI256, MI, FINGERPRINT", func(t *testing.T) {
+		m := new(Message)
+		m.WriteHeader()
+		m.Add(AttrMessageIntegritySHA256, make([]byte, 32))
+		m.Add(AttrMessageIntegrity, make([]byte, 20))
+		assert.NoError(t, Fingerprint.AddTo(m))
+
+		mDecoded := NewWithOptions(WithStrict(true))
+		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+		assert.NoError(t, err)
+
+		_, foundMI := mDecoded.Attributes.Get(AttrMessageIntegrity)
+		assert.False(t, foundMI)
+		_, foundMI256 := mDecoded.Attributes.Get(AttrMessageIntegritySHA256)
+		assert.True(t, foundMI256)
+		assert.NoError(t, Fingerprint.Check(mDecoded))
+	})
+
+	t.Run("MI, MI256, FINGERPRINT", func(t *testing.T) {
+		m := new(Message)
+		m.WriteHeader()
+		m.Add(AttrMessageIntegrity, make([]byte, 20))
+		m.Add(AttrMessageIntegritySHA256, make([]byte, 32))
+		assert.NoError(t, Fingerprint.AddTo(m))
+
+		mDecoded := NewWithOptions(WithStrict(true))
+		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+		assert.NoError(t, err)
+
+		_, foundMI := mDecoded.Attributes.Get(AttrMessageIntegrity)
+		assert.True(t, foundMI)
+		_, foundMI256 := mDecoded.Attributes.Get(AttrMessageIntegritySHA256)
+		assert.True(t, foundMI256)
+		assert.NoError(t, Fingerprint.Check(mDecoded))
+	})
+
+	t.Run("MI, MI, FINGERPRINT", func(t *testing.T) {
+		m := new(Message)
+		m.WriteHeader()
+		m.Add(AttrMessageIntegrity, make([]byte, 20))
+		m.Add(AttrMessageIntegrity, make([]byte, 20))
+		assert.NoError(t, Fingerprint.AddTo(m))
+
+		mDecoded := NewWithOptions(WithStrict(true))
+		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+		assert.NoError(t, err)
+
+		count := 0
+		for _, a := range mDecoded.Attributes {
+			if a.Type == AttrMessageIntegrity {
+				count++
+			}
+		}
+		assert.Equal(t, 1, count)
+		assert.NoError(t, Fingerprint.Check(mDecoded))
+	})
 }
 
 func BenchmarkMessageIntegrity_AddTo(b *testing.B) {

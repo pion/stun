@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pion/logging"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -824,6 +825,100 @@ func TestNewClient(t *testing.T) {
 		)
 		assert.ErrorIs(t, createErr, startError, "unexpected error returned")
 	})
+}
+
+func TestClientPassesMessageOptions(t *testing.T) {
+	connL, connR := net.Pipe()
+	defer func() {
+		assert.NoError(t, connL.Close())
+	}()
+
+	i := NewShortTermIntegrity("password")
+	msg := New()
+	msg.WriteHeader()
+	assert.NoError(t, i.AddTo(msg))
+	assert.NoError(t, NewSoftware("after").AddTo(msg))
+	assert.NoError(t, Fingerprint.AddTo(msg))
+
+	processed := make(chan struct{}, 1)
+	agent := &manualAgent{
+		process: func(m *Message) error {
+			_, found := m.Attributes.Get(AttrSoftware)
+			assert.False(t, found)
+			assert.NoError(t, i.Check(m))
+			assert.NoError(t, Fingerprint.Check(m))
+			processed <- struct{}{}
+
+			return nil
+		},
+	}
+
+	client, err := NewClient(connR,
+		WithAgent(agent),
+		WithStrictMode(true),
+	)
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, client.Close())
+	}()
+
+	_, err = connL.Write(msg.Raw)
+	assert.NoError(t, err)
+
+	select {
+	case <-processed:
+	case <-time.After(time.Second):
+		assert.Fail(t, "timed out waiting for decoded message")
+	}
+}
+
+func TestClientWithLoggerFactory(t *testing.T) {
+	connL, connR := net.Pipe()
+	defer func() {
+		assert.NoError(t, connL.Close())
+	}()
+
+	i := NewShortTermIntegrity("password")
+	msg := New()
+	msg.WriteHeader()
+	assert.NoError(t, i.AddTo(msg))
+	assert.NoError(t, NewSoftware("after").AddTo(msg))
+	assert.NoError(t, Fingerprint.AddTo(msg))
+
+	processed := make(chan struct{}, 1)
+	agent := &manualAgent{
+		process: func(m *Message) error {
+			_, found := m.Attributes.Get(AttrSoftware)
+			assert.True(t, found)
+			processed <- struct{}{}
+
+			return nil
+		},
+	}
+
+	loggerFactory := logging.NewDefaultLoggerFactory()
+	loggerFactory.DefaultLogLevel = logging.LogLevelWarn
+	var logOutput bytes.Buffer
+	loggerFactory.Writer = &logOutput
+
+	client, err := NewClient(connR,
+		WithAgent(agent),
+		WithLoggerFactory(loggerFactory),
+	)
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, client.Close())
+	}()
+
+	_, err = connL.Write(msg.Raw)
+	assert.NoError(t, err)
+
+	select {
+	case <-processed:
+	case <-time.After(time.Second):
+		assert.Fail(t, "timed out waiting for decoded message")
+	}
+	assert.Contains(t, logOutput.String(), "attribute SOFTWARE found after integrity attribute (retained)")
 }
 
 func TestClient_Close(t *testing.T) {

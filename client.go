@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/pion/dtls/v3"
+	"github.com/pion/logging"
 	"github.com/pion/transport/v4"
 	"github.com/pion/transport/v4/stdnet"
 )
@@ -174,6 +175,25 @@ func WithNoConnClose() ClientOption {
 	}
 }
 
+// WithStrictMode sets strict decode behavior for messages decoded by the client.
+func WithStrictMode(strict bool) ClientOption {
+	return func(c *Client) {
+		c.strict = strict
+	}
+}
+
+// WithLoggerFactory sets logger used by the client and decoded messages.
+func WithLoggerFactory(loggerFactory logging.LoggerFactory) ClientOption {
+	return func(c *Client) {
+		if loggerFactory == nil {
+			c.logger = nil
+
+			return
+		}
+		c.logger = loggerFactory.NewLogger("stun")
+	}
+}
+
 // WithNoRetransmit disables retransmissions and sets RTO to
 // defaultMaxAttempts * defaultRTO which will be effectively time out
 // if not set.
@@ -293,6 +313,8 @@ type Client struct {
 	handler     Handler
 	collector   Collector
 	t           map[transactionID]*clientTransaction
+	logger      logging.LeveledLogger
+	strict      bool
 
 	// mux guards closed and t
 	mux sync.RWMutex
@@ -413,7 +435,13 @@ func (c CloseErr) Error() string {
 
 func (c *Client) readUntilClosed() {
 	defer c.wg.Done()
-	m := new(Message)
+	options := []MessageOption{
+		WithStrict(c.strict),
+	}
+	if c.logger != nil {
+		options = append(options, withMessageLogger(c.logger))
+	}
+	m := NewWithOptions(options...)
 	m.Raw = make([]byte, 1024)
 	for {
 		select {
