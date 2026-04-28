@@ -833,10 +833,11 @@ func TestClientPassesMessageOptions(t *testing.T) {
 		assert.NoError(t, connL.Close())
 	}()
 
-	i := NewShortTermIntegrity("password")
+	integrity := NewShortTermIntegrity("password")
 	msg := New()
+	msg.Type = BindingRequest
 	msg.WriteHeader()
-	assert.NoError(t, i.AddTo(msg))
+	assert.NoError(t, integrity.AddTo(msg))
 	assert.NoError(t, NewSoftware("after").AddTo(msg))
 	assert.NoError(t, Fingerprint.AddTo(msg))
 
@@ -845,7 +846,7 @@ func TestClientPassesMessageOptions(t *testing.T) {
 		process: func(m *Message) error {
 			_, found := m.Attributes.Get(AttrSoftware)
 			assert.False(t, found)
-			assert.NoError(t, i.Check(m))
+			assert.NoError(t, integrity.Check(m))
 			assert.NoError(t, Fingerprint.Check(m))
 			processed <- struct{}{}
 

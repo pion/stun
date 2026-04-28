@@ -73,6 +73,7 @@ func TestXORMappedAddress_GetFrom(t *testing.T) {
 
 func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
 	msg := New()
+	msg.Type = BindingSuccess
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	assert.NoError(t, err)
 	copy(msg.TransactionID[:], transactionID)
@@ -117,6 +118,7 @@ func TestXORMappedAddress_AddTo(t *testing.T) {
 
 func TestXORMappedAddress_AddTo_IPv6(t *testing.T) {
 	msg := New()
+	msg.Type = BindingSuccess
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	assert.NoError(t, err)
 	copy(msg.TransactionID[:], transactionID)

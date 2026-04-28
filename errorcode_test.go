@@ -57,6 +57,7 @@ func TestErrorCodeAttribute_GetFrom(t *testing.T) {
 
 func TestMessage_AddErrorCode(t *testing.T) {
 	m := New()
+	m.Type = BindingError
 	transactionID, err := base64.StdEncoding.DecodeString("jxhBARZwX+rsC6er")
 	assert.NoError(t, err)
 	copy(m.TransactionID[:], transactionID)
