@@ -890,3 +890,18 @@ func TestMessage_GobDecode(t *testing.T) {
 	}
 	assert.NoError(t, msg.Decode())
 }
+
+func TestMessageReservedType(t *testing.T) {
+	m := New()
+	m.TransactionID = NewTransactionID()
+	m.WriteHeader()
+
+	// Backward-compat behavior.
+	mDecoded := NewWithOptions(WithStrict(false))
+	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
+	assert.NoError(t, err)
+
+	mDecodedStrict := NewWithOptions(WithStrict(true))
+	_, err = mDecodedStrict.ReadFrom(bytes.NewReader(m.Raw))
+	assert.ErrorIs(t, err, ErrInvalidType)
+}

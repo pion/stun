@@ -390,12 +390,22 @@ func (m *Message) ReadFrom(r io.Reader) (int64, error) {
 	}
 	m.Raw = tBuf[:n]
 
-	return int64(n), m.Decode()
+	if err = m.Decode(); err != nil {
+		return int64(n), err
+	}
+	if m.strict && m.Type.Value() == 0 {
+		return int64(n), ErrInvalidType
+	}
+
+	return int64(n), nil
 }
 
 // ErrUnexpectedHeaderEOF means that there were not enough bytes in
 // m.Raw to read header.
 var ErrUnexpectedHeaderEOF = errors.New("unexpected EOF: not enough bytes to read header")
+
+// ErrInvalidType means that the message type is 0 (reserved).
+var ErrInvalidType = errors.New("STUN message type 0 is reserved")
 
 // Decode decodes m.Raw into m.
 func (m *Message) Decode() error { //nolint:cyclop

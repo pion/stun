@@ -14,6 +14,7 @@ import (
 
 func TestSoftware_GetFrom(t *testing.T) {
 	msg := New()
+	msg.Type = BindingRequest
 	val := "Client v0.0.1"
 	msg.Add(AttrSoftware, []byte(val))
 	msg.WriteHeader()
@@ -108,6 +109,7 @@ func TestUsername(t *testing.T) {
 
 func TestRealm_GetFrom(t *testing.T) {
 	msg := New()
+	msg.Type = BindingRequest
 	val := "realm"
 	msg.Add(AttrRealm, []byte(val))
 	msg.WriteHeader()
@@ -137,6 +139,7 @@ func TestRealm_AddTo_Invalid(t *testing.T) {
 
 func TestNonce_GetFrom(t *testing.T) {
 	msg := New()
+	msg.Type = BindingRequest
 	val := "example.org"
 	msg.Add(AttrNonce, []byte(val))
 	msg.WriteHeader()
