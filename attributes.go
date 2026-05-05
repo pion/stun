@@ -131,46 +131,52 @@ func (t AttrType) Value() uint16 {
 	return uint16(t)
 }
 
-func attrNames() map[AttrType]string {
-	return map[AttrType]string{
-		AttrMappedAddress:          "MAPPED-ADDRESS",
-		AttrUsername:               "USERNAME",
-		AttrErrorCode:              "ERROR-CODE",
-		AttrMessageIntegrity:       "MESSAGE-INTEGRITY",
-		AttrUnknownAttributes:      "UNKNOWN-ATTRIBUTES",
-		AttrRealm:                  "REALM",
-		AttrNonce:                  "NONCE",
-		AttrXORMappedAddress:       "XOR-MAPPED-ADDRESS",
-		AttrSoftware:               "SOFTWARE",
-		AttrAlternateServer:        "ALTERNATE-SERVER",
-		AttrFingerprint:            "FINGERPRINT",
-		AttrPriority:               "PRIORITY",
-		AttrUseCandidate:           "USE-CANDIDATE",
-		AttrICEControlled:          "ICE-CONTROLLED",
-		AttrICEControlling:         "ICE-CONTROLLING",
-		AttrChannelNumber:          "CHANNEL-NUMBER",
-		AttrLifetime:               "LIFETIME",
-		AttrXORPeerAddress:         "XOR-PEER-ADDRESS",
-		AttrData:                   "DATA",
-		AttrXORRelayedAddress:      "XOR-RELAYED-ADDRESS",
-		AttrEvenPort:               "EVEN-PORT",
-		AttrRequestedTransport:     "REQUESTED-TRANSPORT",
-		AttrDontFragment:           "DONT-FRAGMENT",
-		AttrReservationToken:       "RESERVATION-TOKEN",
-		AttrConnectionID:           "CONNECTION-ID",
-		AttrRequestedAddressFamily: "REQUESTED-ADDRESS-FAMILY",
-		AttrMessageIntegritySHA256: "MESSAGE-INTEGRITY-SHA256",
-		AttrPasswordAlgorithm:      "PASSWORD-ALGORITHM",
-		AttrUserhash:               "USERHASH",
-		AttrPasswordAlgorithms:     "PASSWORD-ALGORITHMS",
-		AttrAlternateDomain:        "ALTERNATE-DOMAIN",
-		AttrDtlsInStun:             "DTLS-IN-STUN",
-		AttrDtlsInStunAck:          "DTLS-IN-STUN-ACKNOWLEDGEMENT",
-	}
+// attrNames maps each attribute type implemented by this library to its
+// human-readable name. It is consulted by AttrType.String() and by
+// AttrType.Known() (which determines whether an unknown
+// comprehension-required attribute should cause a message to be rejected
+// in strict mode), so it MUST be kept in sync with the attributes
+// actually implemented in the package.
+//
+//nolint:gochecknoglobals
+var attrNames = map[AttrType]string{
+	AttrMappedAddress:          "MAPPED-ADDRESS",
+	AttrUsername:               "USERNAME",
+	AttrErrorCode:              "ERROR-CODE",
+	AttrMessageIntegrity:       "MESSAGE-INTEGRITY",
+	AttrUnknownAttributes:      "UNKNOWN-ATTRIBUTES",
+	AttrRealm:                  "REALM",
+	AttrNonce:                  "NONCE",
+	AttrXORMappedAddress:       "XOR-MAPPED-ADDRESS",
+	AttrSoftware:               "SOFTWARE",
+	AttrAlternateServer:        "ALTERNATE-SERVER",
+	AttrFingerprint:            "FINGERPRINT",
+	AttrPriority:               "PRIORITY",
+	AttrUseCandidate:           "USE-CANDIDATE",
+	AttrICEControlled:          "ICE-CONTROLLED",
+	AttrICEControlling:         "ICE-CONTROLLING",
+	AttrChannelNumber:          "CHANNEL-NUMBER",
+	AttrLifetime:               "LIFETIME",
+	AttrXORPeerAddress:         "XOR-PEER-ADDRESS",
+	AttrData:                   "DATA",
+	AttrXORRelayedAddress:      "XOR-RELAYED-ADDRESS",
+	AttrEvenPort:               "EVEN-PORT",
+	AttrRequestedTransport:     "REQUESTED-TRANSPORT",
+	AttrDontFragment:           "DONT-FRAGMENT",
+	AttrReservationToken:       "RESERVATION-TOKEN",
+	AttrConnectionID:           "CONNECTION-ID",
+	AttrRequestedAddressFamily: "REQUESTED-ADDRESS-FAMILY",
+	AttrMessageIntegritySHA256: "MESSAGE-INTEGRITY-SHA256",
+	AttrPasswordAlgorithm:      "PASSWORD-ALGORITHM",
+	AttrUserhash:               "USERHASH",
+	AttrPasswordAlgorithms:     "PASSWORD-ALGORITHMS",
+	AttrAlternateDomain:        "ALTERNATE-DOMAIN",
+	AttrDtlsInStun:             "DTLS-IN-STUN",
+	AttrDtlsInStunAck:          "DTLS-IN-STUN-ACKNOWLEDGEMENT",
 }
 
 func (t AttrType) String() string {
-	s, ok := attrNames()[t]
+	s, ok := attrNames[t]
 	if !ok {
 		// Just return hex representation of unknown attribute type.
 		return fmt.Sprintf("0x%x", uint16(t))
@@ -182,7 +188,7 @@ func (t AttrType) String() string {
 // Known returns true if AttrType is known and implemented
 // by this library.
 func (t AttrType) Known() bool {
-	_, valid := attrNames()[t]
+	_, valid := attrNames[t]
 
 	return valid
 }
