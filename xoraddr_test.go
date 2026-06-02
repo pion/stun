@@ -69,6 +69,22 @@ func TestXORMappedAddress_GetFrom(t *testing.T) {
 		addr := new(XORMappedAddress)
 		assert.True(t, IsAttrSizeOverflow(addr.GetFrom(m)), "GetFrom should return *AttrOverflowErr")
 	})
+	t.Run("ShortValue", func(t *testing.T) {
+		// A zero-length XOR-MAPPED-ADDRESS value at the end of a tightly
+		// allocated buffer must not panic when reading the address family.
+		raw := []byte{
+			0x01, 0x01, 0x00, 0x04, // type=Binding success, length=4
+			0x21, 0x12, 0xA4, 0x42, // magic cookie
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // transaction ID
+			0x00, 0x20, 0x00, 0x00, // XOR-MAPPED-ADDRESS, length=0
+		}
+		// Cap == len so the decoded value slice has no spare capacity.
+		m := New()
+		m.Raw = raw[:len(raw):len(raw)]
+		assert.NoError(t, m.Decode())
+		addr := new(XORMappedAddress)
+		assert.ErrorIs(t, addr.GetFrom(m), io.ErrUnexpectedEOF, "short value should return io.ErrUnexpectedEOF, not panic")
+	})
 }
 
 func TestXORMappedAddress_GetFrom_Invalid(t *testing.T) {
