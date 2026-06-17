@@ -30,14 +30,14 @@ func (a UnknownAttributes) String() string {
 }
 
 // type size is 16 bit.
-const attrTypeSize = 4
+const attrTypeSize = 2
 
 // AddTo adds UNKNOWN-ATTRIBUTES attribute to message.
 func (a UnknownAttributes) AddTo(m *Message) error {
 	v := make([]byte, 0, attrTypeSize*20) // 20 should be enough
 	// If len(a.Types) > 20, there will be allocations.
 	for i, t := range a {
-		v = append(v, 0, 0, 0, 0) // 4 times by 0 (16 bits)
+		v = append(v, 0, 0) // 2 times by 0 (16 bits)
 		first := attrTypeSize * i
 		last := first + attrTypeSize
 		bin.PutUint16(v[first:last], t.Value())
