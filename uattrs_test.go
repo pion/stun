@@ -31,6 +31,22 @@ func TestUnknownAttributes(t *testing.T) {
 	})
 }
 
+func TestUnknownAttributesEncoding(t *testing.T) {
+	msg := new(Message)
+	attr := &UnknownAttributes{
+		AttrDontFragment,
+		AttrChannelNumber,
+	}
+	assert.NoError(t, attr.AddTo(msg))
+	assert.Equal(t, messageHeaderSize+attributeHeaderSize+4, len(msg.Raw))
+
+	encodedAttr := msg.Raw[messageHeaderSize:]
+	assert.Equal(t, AttrUnknownAttributes.Value(), bin.Uint16(encodedAttr[0:2]))
+	assert.Equal(t, uint16(4), bin.Uint16(encodedAttr[2:4]))
+	assert.Equal(t, AttrDontFragment.Value(), bin.Uint16(encodedAttr[4:6]))
+	assert.Equal(t, AttrChannelNumber.Value(), bin.Uint16(encodedAttr[6:8]))
+}
+
 func BenchmarkUnknownAttributes(b *testing.B) {
 	msg := new(Message)
 	attr := UnknownAttributes{
