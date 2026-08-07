@@ -89,7 +89,7 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 
 		dtlsOptions := append([]dtls.ClientOption{}, cfg.DTLSOptions...)
 		dtlsOptions = append(dtlsOptions, dtls.WithServerName(uri.Host))
-		dtlsConn, err := dtls.ClientWithOptions(udpConn, udpConn.RemoteAddr(), dtlsOptions...)
+		dtlsConn, err := dtls.Client(udpConn, udpConn.RemoteAddr(), dtlsOptions...)
 		if err != nil {
 			_ = udpConn.Close()
 
