@@ -16,7 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pion/dtls/v3"
+	"github.com/pion/dtls/v4"
 	"github.com/pion/logging"
 	"github.com/pion/transport/v5"
 	"github.com/pion/transport/v5/stdnet"
@@ -122,7 +122,7 @@ func DialURI(uri *URI, options ...DialOption) (*Client, error) { //nolint:cyclop
 
 		dtlsOptions := append([]dtls.ClientOption{}, cfg.dtlsOptions...)
 		dtlsOptions = append(dtlsOptions, dtls.WithServerName(uri.Host))
-		dtlsConn, err := dtls.ClientWithOptions(udpConn, udpConn.RemoteAddr(), dtlsOptions...)
+		dtlsConn, err := dtls.Client(udpConn, udpConn.RemoteAddr(), dtlsOptions...)
 		if err != nil {
 			_ = udpConn.Close()
 
