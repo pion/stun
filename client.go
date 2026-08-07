@@ -38,8 +38,8 @@ func Dial(network, address string) (*Client, error) {
 
 // DialConfig is used to pass configuration to DialURI().
 type DialConfig struct {
-	DTLSConfig dtls.Config //nolint:staticcheck
-	TLSConfig  tls.Config
+	DTLSOptions []dtls.ClientOption
+	TLSConfig   tls.Config
 
 	Net transport.Net
 }
@@ -77,9 +77,6 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 		}
 
 	case uri.Scheme == SchemeTypeTURNS && uri.Proto == ProtoTypeUDP:
-		dtlsCfg := cfg.DTLSConfig // Copy
-		dtlsCfg.ServerName = uri.Host
-
 		udpAddr, err := net.ResolveUDPAddr("udp", addr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve UDPAddr: %w", err)
@@ -90,9 +87,15 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
-		if conn, err = dtls.Client(udpConn, udpConn.RemoteAddr(), &dtlsCfg); err != nil { //nolint:staticcheck
+		dtlsOptions := append([]dtls.ClientOption{}, cfg.DTLSOptions...)
+		dtlsOptions = append(dtlsOptions, dtls.WithServerName(uri.Host))
+		dtlsConn, err := dtls.ClientWithOptions(udpConn, udpConn.RemoteAddr(), dtlsOptions...)
+		if err != nil {
+			_ = udpConn.Close()
+
 			return nil, fmt.Errorf("failed to connect to '%s': %w", addr, err)
 		}
+		conn = dtlsConn
 
 	case (uri.Scheme == SchemeTypeTURNS || uri.Scheme == SchemeTypeSTUNS) && uri.Proto == ProtoTypeTCP:
 		tlsCfg := cfg.TLSConfig //nolint:govet, copylocks
