@@ -890,7 +890,7 @@ func TestClientWithLoggerFactory(t *testing.T) {
 	agent := &manualAgent{
 		process: func(m *Message) error {
 			_, found := m.Attributes.Get(AttrSoftware)
-			assert.True(t, found)
+			assert.False(t, found)
 			processed <- struct{}{}
 
 			return nil
@@ -919,7 +919,7 @@ func TestClientWithLoggerFactory(t *testing.T) {
 	case <-time.After(time.Second):
 		assert.Fail(t, "timed out waiting for decoded message")
 	}
-	assert.Contains(t, logOutput.String(), "attribute SOFTWARE found after integrity attribute (retained)")
+	assert.Contains(t, logOutput.String(), "attribute SOFTWARE found after integrity attribute (dropped)")
 }
 
 func TestClient_Close(t *testing.T) {

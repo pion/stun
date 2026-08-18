@@ -80,29 +80,10 @@ func TestAttributeAfterMessageIntegrity(t *testing.T) {
 	assert.NoError(t, i.Check(mDecoded))
 	assert.NoError(t, Fingerprint.Check(mDecoded))
 	_, found := mDecoded.Attributes.Get(AttrSoftware)
-	assert.Equal(t, found, !mDecoded.strict)
-}
-
-func TestAttributeAfterMessageIntegrityStrict(t *testing.T) {
-	m := new(Message)
-	m.Type = BindingRequest
-	m.WriteHeader()
-	i := NewShortTermIntegrity("password")
-	assert.NoError(t, i.AddTo(m))
-	assert.NoError(t, NewSoftware("after").AddTo(m))
-	assert.NoError(t, Fingerprint.AddTo(m))
-
-	mDecoded := NewWithOptions(WithStrict(true))
-	_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
-	assert.NoError(t, err)
-
-	assert.NoError(t, i.Check(mDecoded))
-	assert.NoError(t, Fingerprint.Check(mDecoded))
-	_, found := mDecoded.Attributes.Get(AttrSoftware)
 	assert.False(t, found)
 }
 
-func TestAttributeOrderingAfterMessageIntegritySHA256Strict(t *testing.T) {
+func TestAttributeOrderingAfterMessageIntegritySHA256(t *testing.T) {
 	t.Run("MI256, SOFTWARE, FINGERPRINT", func(t *testing.T) {
 		m := new(Message)
 		m.Type = BindingRequest
@@ -111,7 +92,7 @@ func TestAttributeOrderingAfterMessageIntegritySHA256Strict(t *testing.T) {
 		assert.NoError(t, NewSoftware("after").AddTo(m))
 		assert.NoError(t, Fingerprint.AddTo(m))
 
-		mDecoded := NewWithOptions(WithStrict(true))
+		mDecoded := New()
 		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
 		assert.NoError(t, err)
 
@@ -128,7 +109,7 @@ func TestAttributeOrderingAfterMessageIntegritySHA256Strict(t *testing.T) {
 		m.Add(AttrMessageIntegrity, make([]byte, 20))
 		assert.NoError(t, Fingerprint.AddTo(m))
 
-		mDecoded := NewWithOptions(WithStrict(true))
+		mDecoded := New()
 		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
 		assert.NoError(t, err)
 
@@ -147,7 +128,7 @@ func TestAttributeOrderingAfterMessageIntegritySHA256Strict(t *testing.T) {
 		m.Add(AttrMessageIntegritySHA256, make([]byte, 32))
 		assert.NoError(t, Fingerprint.AddTo(m))
 
-		mDecoded := NewWithOptions(WithStrict(true))
+		mDecoded := New()
 		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
 		assert.NoError(t, err)
 
@@ -166,7 +147,7 @@ func TestAttributeOrderingAfterMessageIntegritySHA256Strict(t *testing.T) {
 		m.Add(AttrMessageIntegrity, make([]byte, 20))
 		assert.NoError(t, Fingerprint.AddTo(m))
 
-		mDecoded := NewWithOptions(WithStrict(true))
+		mDecoded := New()
 		_, err := mDecoded.ReadFrom(bytes.NewReader(m.Raw))
 		assert.NoError(t, err)
 
