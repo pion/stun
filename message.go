@@ -480,14 +480,11 @@ func (m *Message) Decode() error { //nolint:cyclop
 		afterMI256Only := !seenMI && seenMI256 && !isFingerprint
 		afterIntegrity := afterMI || afterMI256Only
 
-		if afterIntegrity && (m.logger != nil) {
-			action := "retained"
-			if m.strict {
-				action = "dropped"
+		if afterIntegrity {
+			if m.logger != nil {
+				m.logger.Warnf("attribute %s found after integrity attribute (dropped)", attr.Type.String())
 			}
-			m.logger.Warnf("attribute %s found after integrity attribute (%s)", attr.Type.String(), action)
-		}
-		if m.strict && afterIntegrity {
+
 			continue
 		}
 		m.Attributes = append(m.Attributes, attr)
