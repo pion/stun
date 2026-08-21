@@ -407,8 +407,13 @@ var ErrUnexpectedHeaderEOF = errors.New("unexpected EOF: not enough bytes to rea
 // ErrInvalidType means that the message type is 0 (reserved).
 var ErrInvalidType = errors.New("STUN message type 0 is reserved")
 
+// ErrUnknownComprehensionRequired means that the message contains an
+// attribute in the comprehension-required range (0x0000-0x7FFF) that
+// is not implemented by this library and therefore cannot be processed.
+var ErrUnknownComprehensionRequired = errors.New("unknown comprehension-required attribute")
+
 // Decode decodes m.Raw into m.
-func (m *Message) Decode() error { //nolint:cyclop
+func (m *Message) Decode() error { //nolint:gocognit,cyclop
 	// decoding message header
 	buf := m.Raw
 	if len(buf) < messageHeaderSize {
@@ -489,6 +494,18 @@ func (m *Message) Decode() error { //nolint:cyclop
 		}
 		if m.strict && afterIntegrity {
 			continue
+		}
+		if attr.Type.Required() && !attr.Type.Known() {
+			if m.strict {
+				if m.logger != nil {
+					m.logger.Errorf("unknown comprehension-required attribute %s", attr.Type.String())
+				}
+
+				return ErrUnknownComprehensionRequired
+			}
+			if m.logger != nil {
+				m.logger.Warnf("unknown comprehension-required attribute %s", attr.Type.String())
+			}
 		}
 		m.Attributes = append(m.Attributes, attr)
 		if isMI {
