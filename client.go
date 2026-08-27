@@ -441,19 +441,29 @@ func (c *Client) readUntilClosed() {
 	if c.logger != nil {
 		options = append(options, withMessageLogger(c.logger))
 	}
-	m := NewWithOptions(options...)
-	m.Raw = make([]byte, 1024)
+	msg := NewWithOptions(options...)
+	msg.Raw = make([]byte, 1024)
 	for {
 		select {
 		case <-c.close:
 			return
 		default:
 		}
-		_, err := m.ReadFrom(c.c)
-		if err == nil {
-			if pErr := c.a.Process(m); errors.Is(pErr, ErrAgentClosed) {
-				return
+		_, err := msg.ReadFrom(c.c)
+		if err != nil {
+			// The connection is unusable after a read error: the peer
+			// may have closed it, or the stream may be out of sync.
+			// Exiting the read loop avoids busy-spinning on a permanently
+			// failing connection; pending transactions will time out via
+			// the collector.
+			if c.logger != nil {
+				c.logger.Warnf("read loop stopped due to error: %v", err)
 			}
+
+			return
+		}
+		if pErr := c.a.Process(msg); errors.Is(pErr, ErrAgentClosed) {
+			return
 		}
 	}
 }
