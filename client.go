@@ -442,7 +442,14 @@ func (c *Client) readUntilClosed() {
 		options = append(options, withMessageLogger(c.logger))
 	}
 	msg := NewWithOptions(options...)
-	msg.Raw = make([]byte, 1024)
+	if isStreamConnection(c.c) {
+		c.readUntilClosedStream(msg)
+
+		return
+	}
+	// Datagram connections deliver one message per read, so the buffer
+	// must fit the largest possible STUN message to avoid truncation.
+	msg.Raw = make([]byte, maxMessageSize)
 	for {
 		select {
 		case <-c.close:
@@ -456,14 +463,103 @@ func (c *Client) readUntilClosed() {
 			// Exiting the read loop avoids busy-spinning on a permanently
 			// failing connection; pending transactions will time out via
 			// the collector.
-			if c.logger != nil {
-				c.logger.Warnf("read loop stopped due to error: %v", err)
-			}
+			c.warnReadLoop(err)
 
 			return
 		}
 		if pErr := c.a.Process(msg); errors.Is(pErr, ErrAgentClosed) {
 			return
+		}
+	}
+}
+
+// warnReadLoop logs a read loop termination if a logger is configured.
+func (c *Client) warnReadLoop(err error) {
+	if c.logger != nil {
+		c.logger.Warnf("read loop stopped due to error: %v", err)
+	}
+}
+
+// isStreamConnection reports whether conn delivers a byte stream (TCP,
+// TLS) instead of datagrams (UDP, DTLS). Connections that expose no local
+// address are treated as datagrams to preserve the previous behavior.
+func isStreamConnection(conn Connection) bool {
+	la, ok := conn.(interface{ LocalAddr() net.Addr })
+	if !ok {
+		return false
+	}
+	addr := la.LocalAddr()
+	if addr == nil {
+		return false
+	}
+
+	switch addr.Network() {
+	case "udp", "udp4", "udp6":
+		return false
+	default:
+		return true
+	}
+}
+
+// readUntilClosedStream reads and processes complete STUN messages from a
+// stream connection, reassembling fragmented messages and splitting
+// messages coalesced into a single read.
+func (c *Client) readUntilClosedStream(msg *Message) {
+	buf := make([]byte, 0, 1500)
+	scratch := make([]byte, 1500)
+	for {
+		select {
+		case <-c.close:
+			return
+		default:
+		}
+		if err := readFullMessage(c.c, msg, &buf, scratch); err != nil {
+			c.warnReadLoop(err)
+
+			return
+		}
+		if err := msg.Decode(); err != nil {
+			c.warnReadLoop(err)
+
+			return
+		}
+		if msg.strict && msg.Type.Value() == 0 {
+			c.warnReadLoop(ErrInvalidType)
+
+			return
+		}
+		if pErr := c.a.Process(msg); errors.Is(pErr, ErrAgentClosed) {
+			return
+		}
+	}
+}
+
+// readFullMessage reads from r until buf contains a complete STUN message,
+// extracts it into msg.Raw and leaves any trailing bytes in buf for the
+// next call.
+func readFullMessage(r io.Reader, msg *Message, buf *[]byte, scratch []byte) error {
+	for {
+		if size, ok := fullSTUNMessageSize(*buf); ok {
+			msg.Raw = append(msg.Raw[:0], (*buf)[:size]...)
+			copy(*buf, (*buf)[size:])
+			*buf = (*buf)[:len(*buf)-size]
+
+			return nil
+		}
+		n, err := r.Read(scratch)
+		if n > 0 {
+			*buf = append(*buf, scratch[:n]...)
+		}
+		if err != nil {
+			// The stream ended: deliver a final complete message if one
+			// is buffered, otherwise report the error.
+			if size, ok := fullSTUNMessageSize(*buf); ok {
+				msg.Raw = append(msg.Raw[:0], (*buf)[:size]...)
+
+				return nil
+			}
+
+			return err
 		}
 	}
 }
