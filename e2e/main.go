@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pion/stun/v3"
+	"github.com/pion/stun/v4"
 )
 
 func test(network string) { //nolint:cyclop

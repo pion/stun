@@ -9,9 +9,9 @@
   <a href="https://discord.gg/PngbdqpFbt"><img src="https://img.shields.io/badge/join-us%20on%20discord-gray.svg?longCache=true&logo=discord&colorB=brightblue" alt="join us on Discord"></a> <a href="https://bsky.app/profile/pion.ly"><img src="https://img.shields.io/badge/follow-us%20on%20bluesky-gray.svg?longCache=true&logo=bluesky&colorB=brightblue" alt="Follow us on Bluesky"></a>
   <br>
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/pion/stun/test.yaml">
-  <a href="https://pkg.go.dev/github.com/pion/stun/v3"><img src="https://pkg.go.dev/badge/github.com/pion/stun/v3.svg" alt="Go Reference"></a>
+  <a href="https://pkg.go.dev/github.com/pion/stun/v4"><img src="https://pkg.go.dev/badge/github.com/pion/stun/v4.svg" alt="Go Reference"></a>
   <a href="https://codecov.io/gh/pion/stun"><img src="https://codecov.io/gh/pion/stun/branch/master/graph/badge.svg" alt="Coverage Status"></a>
-  <a href="https://goreportcard.com/report/github.com/pion/stun/v3"><img src="https://goreportcard.com/badge/github.com/pion/stun/v3" alt="Go Report Card"></a>
+  <a href="https://goreportcard.com/report/github.com/pion/stun/v4"><img src="https://goreportcard.com/badge/github.com/pion/stun/v4" alt="Go Report Card"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 <br>
