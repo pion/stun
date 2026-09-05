@@ -71,7 +71,7 @@ func TestIANA(t *testing.T) { //nolint:cyclop
 		maps.Copy(attrTypes, map[string]AttrType{
 			"ORIGIN": 0x802F,
 		})
-		for val, name := range attrNames() {
+		for val, name := range attrNames {
 			mapped, ok := attrTypes[name]
 			assert.True(t, ok, "failed to find attribute %s in IANA", name)
 			assert.Equal(t, mapped, val, "%s: IANA %d != actual %d", name, mapped, val)
