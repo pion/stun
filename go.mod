@@ -5,7 +5,8 @@ go 1.24.0
 require (
 	github.com/pion/dtls/v3 v3.1.8
 	github.com/pion/logging v0.2.4
-	github.com/pion/transport/v4 v4.1.1
+	github.com/pion/transport/v4 v4.0.2
+	github.com/pion/transport/v5 v5.0.0
 	github.com/stretchr/testify v1.12.1
 )
 
