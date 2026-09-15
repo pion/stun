@@ -18,8 +18,8 @@ import (
 
 	"github.com/pion/dtls/v3"
 	"github.com/pion/logging"
-	"github.com/pion/transport/v4"
-	"github.com/pion/transport/v4/stdnet"
+	"github.com/pion/transport/v5"
+	"github.com/pion/transport/v5/stdnet"
 )
 
 // ErrUnsupportedURI is an error thrown if the user passes an unsupported STUN or TURN URI.
