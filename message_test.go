@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pion/logging"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -904,4 +905,50 @@ func TestMessageReservedType(t *testing.T) {
 	mDecodedStrict := NewWithOptions(WithStrict(true))
 	_, err = mDecodedStrict.ReadFrom(bytes.NewReader(m.Raw))
 	assert.ErrorIs(t, err, ErrInvalidType)
+}
+
+func TestMessageUnknownComprehensionRequired(t *testing.T) {
+	const unknownAttr AttrType = 0x7FFE // comprehension-required, not implemented
+
+	loggerFactory := logging.NewDefaultLoggerFactory()
+	loggerFactory.DefaultLogLevel = logging.LogLevelWarn
+	var logOutput bytes.Buffer
+	loggerFactory.Writer = &logOutput
+	logger := loggerFactory.NewLogger("stun")
+
+	m1 := New()
+	m1.Type = BindingRequest
+	m1.TransactionID = NewTransactionID()
+	m1.Add(unknownAttr, []byte{1, 2, 3, 4})
+	m1.WriteHeader()
+
+	// Backward-compat behavior: unknown attribute is retained.
+	mDecoded := NewWithOptions(WithStrict(false), withMessageLogger(logger))
+	_, err := mDecoded.ReadFrom(bytes.NewReader(m1.Raw))
+	assert.NoError(t, err)
+	_, found := mDecoded.Attributes.Get(unknownAttr)
+	assert.True(t, found)
+	assert.Contains(t, logOutput.String(), "unknown comprehension-required attribute 0x7ffe")
+
+	logOutput.Reset()
+
+	// Strict mode: decoding fails.
+	mDecodedStrict := NewWithOptions(WithStrict(true), withMessageLogger(logger))
+	_, err = mDecodedStrict.ReadFrom(bytes.NewReader(m1.Raw))
+	assert.ErrorIs(t, err, ErrUnknownComprehensionRequired)
+	assert.Contains(t, logOutput.String(), "unknown comprehension-required attribute 0x7ffe")
+
+	logOutput.Reset()
+
+	// Comprehension-optional unknown attribute is always retained.
+	const unknownOptional AttrType = 0xFFFE
+	m2 := New()
+	m2.Type = BindingRequest
+	m2.TransactionID = NewTransactionID()
+	m2.Add(unknownOptional, []byte{1, 2, 3, 4})
+	m2.WriteHeader()
+	mDecodedStrict2 := NewWithOptions(WithStrict(true), withMessageLogger(logger))
+	_, err = mDecodedStrict2.ReadFrom(bytes.NewReader(m2.Raw))
+	assert.NoError(t, err)
+	assert.Empty(t, logOutput.String())
 }
