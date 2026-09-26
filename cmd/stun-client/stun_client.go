@@ -8,7 +8,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
+	"strconv"
 
 	"github.com/pion/stun/v4"
 )
@@ -30,8 +32,13 @@ func main() {
 		log.Fatalf("Invalid URI '%s': %s", uriStr, err)
 	}
 
-	// we only try the first address, so restrict ourselves to IPv4
-	client, err := stun.DialURI(uri, &stun.DialConfig{})
+	var client *stun.Client
+	if uri.Scheme == stun.SchemeTypeSTUN {
+		// We only try the first address, so restrict ourselves to IPv4.
+		client, err = stun.Dial("udp4", net.JoinHostPort(uri.Host, strconv.Itoa(uri.Port)))
+	} else {
+		client, err = stun.DialURI(uri, &stun.DialConfig{})
+	}
 	if err != nil {
 		log.Fatalf("Failed to dial: %s", err)
 	}
