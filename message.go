@@ -27,9 +27,29 @@ const (
 	attributeHeaderSize = 4
 	messageHeaderSize   = 20
 
+	// maxMessageSize is the maximum possible STUN message size:
+	// the 20-byte header plus a body of up to 65535 bytes as encoded
+	// in the 16-bit message length field (RFC 5389 section 6).
+	maxMessageSize = messageHeaderSize + 0xffff
+
 	// TransactionIDSize is length of transaction id array (in bytes).
 	TransactionIDSize = 12 // 96 bit
 )
+
+// fullSTUNMessageSize returns the total size of the complete STUN message
+// at the start of buf (header plus body length from the length field), and
+// whether buf currently contains that many bytes.
+func fullSTUNMessageSize(buf []byte) (int, bool) {
+	if len(buf) < messageHeaderSize {
+		return 0, false
+	}
+	size := messageHeaderSize + int(bin.Uint16(buf[2:4]))
+	if len(buf) < size {
+		return 0, false
+	}
+
+	return size, true
+}
 
 // NewTransactionID returns new random transaction ID using crypto/rand
 // as source.
@@ -377,6 +397,11 @@ func (m *Message) WriteTo(w io.Writer) (int64, error) {
 // ReadFrom implements ReaderFrom. Reads message from r into m.Raw,
 // Decodes it and return error if any. If m.Raw is too small, will return
 // ErrUnexpectedEOF, ErrUnexpectedHeaderEOF or *DecodeErr.
+//
+// ReadFrom performs a single read and expects the whole message in it,
+// which matches datagram semantics (UDP, DTLS). Stream connections may
+// fragment or coalesce messages, so they must be handled by Client, which
+// reassembles complete messages before decoding.
 //
 // Can return *DecodeErr while decoding too.
 func (m *Message) ReadFrom(r io.Reader) (int64, error) {
