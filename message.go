@@ -650,13 +650,13 @@ func (t MessageType) Value() uint16 {
 
 	// Warning: Abandon all hope ye who enter here.
 	// Splitting M into A(M0-M3), B(M4-M6), D(M7-M11).
-	msg := uint16(t.Method)
-	a := msg & methodABits // A = M * 0b0000000000001111 (right 4 bits)
-	b := msg & methodBBits // B = M * 0b0000000001110000 (3 bits after A)
-	d := msg & methodDBits // D = M * 0b0000111110000000 (5 bits after B)
+	mthd := uint16(t.Method)
+	a := mthd & methodABits // A = M * 0b0000000000001111 (right 4 bits)
+	b := mthd & methodBBits // B = M * 0b0000000001110000 (3 bits after A)
+	d := mthd & methodDBits // D = M * 0b0000111110000000 (5 bits after B)
 
 	// Shifting to add "holes" for C0 (at 4 bit) and C1 (8 bit).
-	msg = a + (b << methodBShift) + (d << methodDShift)
+	mthd = a + (b << methodBShift) + (d << methodDShift)
 
 	// C0 is zero bit of C, C1 is first bit.
 	// C0 = C * 0b01, C1 = (C * 0b10) >> 1
@@ -669,7 +669,7 @@ func (t MessageType) Value() uint16 {
 	c1 := (c & c1Bit) << classC1Shift
 	class := c0 + c1
 
-	return msg + class
+	return mthd + class
 }
 
 // ReadValue decodes uint16 into MessageType.
