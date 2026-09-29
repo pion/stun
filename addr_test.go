@@ -137,3 +137,32 @@ func BenchmarkAlternateServer_AddTo(b *testing.B) {
 		m.Reset()
 	}
 }
+
+func TestMappedAddress_GetFrom_WrongValueLength(t *testing.T) {
+	ipv4 := []byte{0, 1, 0x15, 0x24, 122, 12, 34, 5}
+	ipv6 := append([]byte{0, 2, 0x15, 0x24}, make([]byte, net.IPv6len)...)
+	cases := map[string]struct {
+		value []byte
+		err   error
+	}{
+		"IPv4 truncated": {value: ipv4[:6], err: io.ErrUnexpectedEOF},
+		"IPv6 truncated": {value: ipv6[:12], err: io.ErrUnexpectedEOF},
+		"IPv4 too long":  {value: append(append([]byte{}, ipv4...), 1), err: ErrAttributeSizeOverflow},
+		"IPv4 exact":     {value: ipv4},
+		"IPv6 exact":     {value: ipv6},
+	}
+	for name, testCase := range cases {
+		t.Run(name, func(t *testing.T) {
+			msg := new(Message)
+			msg.Add(AttrMappedAddress, testCase.value)
+			addr := new(MappedAddress)
+			if testCase.err != nil {
+				assert.ErrorIs(t, addr.GetFrom(msg), testCase.err)
+
+				return
+			}
+			assert.NoError(t, addr.GetFrom(msg))
+			assert.Equal(t, 5412, addr.Port)
+		})
+	}
+}

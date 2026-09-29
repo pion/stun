@@ -63,9 +63,9 @@ func (a MappedAddress) String() string {
 	return net.JoinHostPort(a.IP.String(), strconv.Itoa(a.Port))
 }
 
-// GetFromAs decodes MAPPED-ADDRESS value in message m as an attribute of type t.
-func (a *MappedAddress) GetFromAs(m *Message, t AttrType) error {
-	value, err := m.Get(t)
+// GetFromAs decodes MAPPED-ADDRESS value in message m as an attribute of type attrType.
+func (a *MappedAddress) GetFromAs(m *Message, attrType AttrType) error {
+	value, err := m.Get(attrType)
 	if err != nil {
 		return err
 	}
@@ -90,6 +90,12 @@ func (a *MappedAddress) GetFromAs(m *Message, t AttrType) error {
 		for i := range a.IP {
 			a.IP[i] = 0
 		}
+	}
+	if err := CheckOverflow(attrType, len(value[4:]), len(a.IP)); err != nil {
+		return err
+	}
+	if len(value[4:]) < len(a.IP) {
+		return io.ErrUnexpectedEOF
 	}
 	a.Port = int(bin.Uint16(value[2:4]))
 	copy(a.IP, value[4:])

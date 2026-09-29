@@ -69,6 +69,17 @@ func TestXORMappedAddress_GetFrom(t *testing.T) {
 		addr := new(XORMappedAddress)
 		assert.True(t, IsAttrSizeOverflow(addr.GetFrom(m)), "GetFrom should return *AttrOverflowErr")
 	})
+	t.Run("TruncatedIP", func(t *testing.T) {
+		for name, value := range map[string][]byte{
+			"IPv4": {0, 1, 3, 4, 5, 6},
+			"IPv6": {0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+		} {
+			m := New()
+			m.Add(AttrXORMappedAddress, value)
+			addr := new(XORMappedAddress)
+			assert.ErrorIs(t, addr.GetFrom(m), io.ErrUnexpectedEOF, name)
+		}
+	})
 	t.Run("ShortValue", func(t *testing.T) {
 		// A zero-length XOR-MAPPED-ADDRESS value at the end of a tightly
 		// allocated buffer must not panic when reading the address family.

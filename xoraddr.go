@@ -117,6 +117,9 @@ func (a *XORMappedAddress) GetFromAs(msg *Message, attr AttrType) error {
 	if err := CheckOverflow(attr, len(value[4:]), len(a.IP)); err != nil {
 		return err
 	}
+	if len(value[4:]) < len(a.IP) {
+		return io.ErrUnexpectedEOF
+	}
 	a.Port = int(bin.Uint16(value[2:4])) ^ (magicCookie >> 16)
 	xorValue := make([]byte, 4+TransactionIDSize)
 	bin.PutUint32(xorValue[0:4], magicCookie)
