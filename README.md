@@ -40,7 +40,7 @@ func main() {
 	}
 
 	// Creating a "connection" to STUN server.
-	c, err := stun.DialURI(u, &stun.DialConfig{})
+	c, err := stun.DialURI(u)
 	if err != nil {
 		panic(err)
 	}

@@ -8,11 +8,14 @@ package stun
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"net/http/httptest"
 	"os"
 	"sync"
 	"testing"
@@ -409,7 +412,7 @@ func TestDial(t *testing.T) {
 func TestDialURI(t *testing.T) {
 	u, err := ParseURI("stun:localhost")
 	assert.NoError(t, err)
-	c, err := DialURI(u, &DialConfig{})
+	c, err := DialURI(u)
 	assert.NoError(t, err)
 	defer func() {
 		assert.NoError(t, c.Close())
@@ -1389,4 +1392,34 @@ func TestClientImmediateTimeout(t *testing.T) {
 		assert.NoError(t, e.Error, "unexpected error")
 	})
 	<-gotReads
+}
+
+func TestDialURITLSConfig(t *testing.T) {
+	server := httptest.NewTLSServer(nil)
+	defer server.Close()
+
+	roots := x509.NewCertPool()
+	roots.AddCert(server.Certificate())
+	config := &tls.Config{
+		RootCAs:    roots,
+		ServerName: "original.example",
+		MinVersion: tls.VersionTLS12,
+	}
+	option := WithTLSConfig(config)
+	for _, scheme := range []string{"stuns", "turns"} {
+		t.Run(scheme, func(t *testing.T) {
+			uri, err := ParseURI(scheme + ":" + server.Listener.Addr().String())
+			assert.NoError(t, err)
+			client, err := DialURI(uri, option)
+			assert.NoError(t, err)
+			defer func() { assert.NoError(t, client.Close()) }()
+
+			conn, ok := client.c.(*tls.Conn)
+			assert.True(t, ok)
+			assert.NoError(t, conn.SetDeadline(time.Now().Add(5*time.Second)))
+			assert.NoError(t, conn.HandshakeContext(t.Context()))
+			assert.NotEmpty(t, conn.ConnectionState().VerifiedChains)
+			assert.Equal(t, "original.example", config.ServerName)
+		})
+	}
 }

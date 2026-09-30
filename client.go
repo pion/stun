@@ -36,21 +36,54 @@ func Dial(network, address string) (*Client, error) {
 	return NewClient(conn)
 }
 
-// DialConfig is used to pass configuration to DialURI().
-type DialConfig struct {
-	DTLSOptions []dtls.ClientOption
-	TLSConfig   tls.Config
+type dialConfig struct {
+	dtlsOptions []dtls.ClientOption
+	tlsConfig   *tls.Config
+	net         transport.Net
+}
 
-	Net transport.Net
+// DialOption configures a connection opened by DialURI.
+type DialOption func(*dialConfig)
+
+// WithTLSConfig sets the TLS configuration. A nil configuration uses TLS defaults.
+// DialURI clones the configuration before setting ServerName to the URI host.
+func WithTLSConfig(config *tls.Config) DialOption {
+	return func(cfg *dialConfig) {
+		cfg.tlsConfig = config
+	}
+}
+
+// WithDTLSOptions appends DTLS client options.
+// DialURI sets the server name to the URI host after applying these options.
+func WithDTLSOptions(options ...dtls.ClientOption) DialOption {
+	return func(cfg *dialConfig) {
+		cfg.dtlsOptions = append(cfg.dtlsOptions, options...)
+	}
+}
+
+// WithNet sets the network used by DialURI. A nil network uses the standard network.
+func WithNet(network transport.Net) DialOption {
+	return func(cfg *dialConfig) {
+		cfg.net = network
+	}
 }
 
 // DialURI connect to the STUN/TURN URI and then
 // initializes Client on that connection, returning error if any.
-func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
+func DialURI(uri *URI, options ...DialOption) (*Client, error) { //nolint:cyclop
+	cfg := &dialConfig{}
+	for _, option := range options {
+		if option == nil {
+			continue
+		}
+
+		option(cfg)
+	}
+
 	var conn Connection
 	var err error
 
-	nw := cfg.Net
+	nw := cfg.net
 	if nw == nil {
 		nw, err = stdnet.NewNet()
 		if err != nil {
@@ -87,7 +120,7 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
-		dtlsOptions := append([]dtls.ClientOption{}, cfg.DTLSOptions...)
+		dtlsOptions := append([]dtls.ClientOption{}, cfg.dtlsOptions...)
 		dtlsOptions = append(dtlsOptions, dtls.WithServerName(uri.Host))
 		dtlsConn, err := dtls.ClientWithOptions(udpConn, udpConn.RemoteAddr(), dtlsOptions...)
 		if err != nil {
@@ -98,7 +131,10 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 		conn = dtlsConn
 
 	case (uri.Scheme == SchemeTypeTURNS || uri.Scheme == SchemeTypeSTUNS) && uri.Proto == ProtoTypeTCP:
-		tlsCfg := cfg.TLSConfig //nolint:govet, copylocks
+		tlsCfg := &tls.Config{} //nolint:gosec
+		if cfg.tlsConfig != nil {
+			tlsCfg = cfg.tlsConfig.Clone()
+		}
 		tlsCfg.ServerName = uri.Host
 
 		tcpConn, err := nw.Dial("tcp", addr)
@@ -106,7 +142,7 @@ func DialURI(uri *URI, cfg *DialConfig) (*Client, error) { //nolint:cyclop
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
 
-		conn = tls.Client(tcpConn, &tlsCfg)
+		conn = tls.Client(tcpConn, tlsCfg)
 
 	default:
 		return nil, ErrUnsupportedURI

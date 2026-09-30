@@ -88,7 +88,7 @@ func main() { //nolint:gocognit,cyclop
 		log.Print("Using crypto/rand as random source for transaction id")
 	}
 	for i := 0; i < *workers; i++ {
-		client, clientErr := stun.DialURI(uri, &stun.DialConfig{})
+		client, clientErr := stun.DialURI(uri)
 		if clientErr != nil {
 			log.Panicf("Failed to create client: %s", clientErr)
 		}

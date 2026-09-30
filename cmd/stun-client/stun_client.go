@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// we only try the first address, so restrict ourselves to IPv4
-	client, err := stun.DialURI(uri, &stun.DialConfig{})
+	client, err := stun.DialURI(uri)
 	if err != nil {
 		log.Fatalf("Failed to dial: %s", err)
 	}
