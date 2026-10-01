@@ -1,5 +1,5 @@
-github.com/pion/dtls/v4 v4.0.0-rc.2 h1:6otSstHEqFUpq6GVTMIudY37BTMIKNLhqf7KocV6iGo=
-github.com/pion/dtls/v4 v4.0.0-rc.2/go.mod h1:P8msRRyK3bGwG3aZccN0Vk8chAMp2nQiBR9O29b86Io=
+github.com/pion/dtls/v4 v4.0.0-rc.3 h1:aPHgU7esiVOXB+TmuKGwLjWvzLMPa8qSk2hijVkDJ0U=
+github.com/pion/dtls/v4 v4.0.0-rc.3/go.mod h1:P8msRRyK3bGwG3aZccN0Vk8chAMp2nQiBR9O29b86Io=
 github.com/pion/logging v0.2.4 h1:tTew+7cmQ+Mc1pTBLKH2puKsOvhm32dROumOZ655zB8=
 github.com/pion/logging v0.2.4/go.mod h1:DffhXTKYdNZU+KtJ5pyQDjvOAh/GsNSyv1lbkFbe3so=
 github.com/pion/transport/v5 v5.1.1 h1:Sauq8YJqRopgRfIgnpfKpdpKG14g0N4jWlRgpWsEfN8=
