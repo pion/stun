@@ -3,7 +3,7 @@ module github.com/pion/stun/v4
 go 1.24.0
 
 require (
-	github.com/pion/dtls/v4 v4.0.0-rc.2
+	github.com/pion/dtls/v4 v4.0.0-rc.3
 	github.com/pion/logging v0.2.4
 	github.com/pion/transport/v5 v5.1.1
 	github.com/stretchr/testify v1.12.1
