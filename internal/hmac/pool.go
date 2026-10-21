@@ -4,6 +4,8 @@
 package hmac
 
 import (
+	"crypto/fips140"
+	stdhmac "crypto/hmac"
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"hash"
@@ -47,6 +49,13 @@ var hmacSHA1Pool = &sync.Pool{ //nolint:gochecknoglobals
 
 // AcquireSHA1 returns new HMAC from pool.
 func AcquireSHA1(key []byte) hash.Hash {
+	if fips140.Enabled() {
+		// In FIPS mode the MAC must run inside the Go cryptographic module. The
+		// pooled hmac below is a vendored reimplementation that computes the HMAC
+		// itself and so would run outside the module; delegate to the standard
+		// library instead (not pooled: a stdlib HMAC holds an immutable key).
+		return stdhmac.New(sha1.New, key)
+	}
 	h := hmacSHA1Pool.Get().(*hmac) //nolint:forcetypeassert
 	assertHMACSize(h, sha1.Size, sha1.BlockSize)
 	h.resetTo(key)
@@ -56,6 +65,9 @@ func AcquireSHA1(key []byte) hash.Hash {
 
 // PutSHA1 puts h to pool.
 func PutSHA1(h hash.Hash) {
+	if fips140.Enabled() {
+		return // not pooled in FIPS mode; see AcquireSHA1
+	}
 	hm := h.(*hmac) //nolint:forcetypeassert
 	assertHMACSize(hm, sha1.Size, sha1.BlockSize)
 	hmacSHA1Pool.Put(hm)
@@ -71,6 +83,9 @@ var hmacSHA256Pool = &sync.Pool{ //nolint:gochecknoglobals
 
 // AcquireSHA256 returns new HMAC from SHA256 pool.
 func AcquireSHA256(key []byte) hash.Hash {
+	if fips140.Enabled() {
+		return stdhmac.New(sha256.New, key) // see AcquireSHA1
+	}
 	h := hmacSHA256Pool.Get().(*hmac) //nolint:forcetypeassert
 	assertHMACSize(h, sha256.Size, sha256.BlockSize)
 	h.resetTo(key)
@@ -80,6 +95,9 @@ func AcquireSHA256(key []byte) hash.Hash {
 
 // PutSHA256 puts h to SHA256 pool.
 func PutSHA256(h hash.Hash) {
+	if fips140.Enabled() {
+		return // not pooled in FIPS mode; see AcquireSHA1
+	}
 	hm := h.(*hmac) //nolint:forcetypeassert
 	assertHMACSize(hm, sha256.Size, sha256.BlockSize)
 	hmacSHA256Pool.Put(hm)

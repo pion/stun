@@ -4,6 +4,7 @@
 package hmac
 
 import (
+	"crypto/fips140"
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"fmt"
@@ -118,6 +119,9 @@ func TestHMACPool_SHA256(t *testing.T) { //nolint:dupl,cyclop
 }
 
 func TestAssertBlockSize(t *testing.T) {
+	if fips140.Enabled() {
+		t.Skip("the vendored pool is bypassed under FIPS; Acquire* returns a crypto/hmac value")
+	}
 	t.Run("Positive", func(*testing.T) {
 		h := AcquireSHA1(make([]byte, 0, 1024))
 		assertHMACSize(h.(*hmac), sha1.Size, sha1.BlockSize) //nolint:forcetypeassert
