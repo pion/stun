@@ -1,96 +1,84 @@
 // SPDX-FileCopyrightText: 2026 The Pion community <https://pion.ly>
 // SPDX-License-Identifier: MIT
 
+// Package hmac provides pooled HMAC-SHA1 and HMAC-SHA256 helpers for STUN
+// MESSAGE-INTEGRITY. The HMAC itself is the standard library crypto/hmac; this
+// package only adds a sync.Pool so that repeated signing or verification with
+// the same key reuses one HMAC instance and avoids a per-message allocation.
 package hmac
 
 import (
-	"crypto/sha1" //nolint:gosec
+	"bytes"
+	"crypto/hmac"
+	"crypto/sha1" //nolint:gosec // STUN MESSAGE-INTEGRITY is HMAC-SHA1 (RFC 5389 §15.4).
 	"crypto/sha256"
 	"hash"
 	"sync"
 )
 
-func (h *hmac) resetTo(key []byte) {
-	h.outer.Reset()
-	h.inner.Reset()
-	blocksize := h.inner.BlockSize()
+// keyed wraps a standard library HMAC together with the key it was built with.
+// crypto/hmac cannot be re-keyed, so a pooled instance is reused only when the
+// next caller presents the same key: Reset then restores the pre-computed,
+// key-dependent hash state (allocation free). A different key builds a fresh
+// HMAC, which is no worse than not pooling at all.
+type keyed struct {
+	hash.Hash
+	newHash func() hash.Hash
+	key     []byte
+}
 
-	// Reset size and zero of ipad and opad.
-	h.ipad = append(h.ipad[:0], make([]byte, blocksize)...)
-	h.opad = append(h.opad[:0], make([]byte, blocksize)...)
+// reset readies the wrapped HMAC for key: Reset on a cache hit, rebuild on a miss.
+func (k *keyed) reset(key []byte) {
+	if k.Hash != nil && bytes.Equal(k.key, key) {
+		k.Hash.Reset()
 
-	if len(key) > blocksize {
-		// If key is too big, hash it.
-		h.outer.Write(key) //nolint:errcheck,gosec
-		key = h.outer.Sum(nil)
+		return
 	}
-	copy(h.ipad, key)
-	copy(h.opad, key)
-	for i := range h.ipad {
-		h.ipad[i] ^= 0x36
-	}
-	for i := range h.opad {
-		h.opad[i] ^= 0x5c
-	}
-	h.inner.Write(h.ipad) //nolint:errcheck,gosec
-
-	h.marshaled = false
+	k.Hash = hmac.New(k.newHash, key)
+	k.key = append(k.key[:0], key...)
 }
 
 var hmacSHA1Pool = &sync.Pool{ //nolint:gochecknoglobals
-	New: func() any {
-		h := New(sha1.New, make([]byte, sha1.BlockSize))
-
-		return h
-	},
-}
-
-// AcquireSHA1 returns new HMAC from pool.
-func AcquireSHA1(key []byte) hash.Hash {
-	h := hmacSHA1Pool.Get().(*hmac) //nolint:forcetypeassert
-	assertHMACSize(h, sha1.Size, sha1.BlockSize)
-	h.resetTo(key)
-
-	return h
-}
-
-// PutSHA1 puts h to pool.
-func PutSHA1(h hash.Hash) {
-	hm := h.(*hmac) //nolint:forcetypeassert
-	assertHMACSize(hm, sha1.Size, sha1.BlockSize)
-	hmacSHA1Pool.Put(hm)
+	New: func() any { return &keyed{newHash: sha1.New} },
 }
 
 var hmacSHA256Pool = &sync.Pool{ //nolint:gochecknoglobals
-	New: func() any {
-		h := New(sha256.New, make([]byte, sha256.BlockSize))
-
-		return h
-	},
+	New: func() any { return &keyed{newHash: sha256.New} },
 }
 
-// AcquireSHA256 returns new HMAC from SHA256 pool.
-func AcquireSHA256(key []byte) hash.Hash {
-	h := hmacSHA256Pool.Get().(*hmac) //nolint:forcetypeassert
-	assertHMACSize(h, sha256.Size, sha256.BlockSize)
-	h.resetTo(key)
+// AcquireSHA1 returns an HMAC-SHA1 hash keyed with key, taken from a pool.
+// Return it with PutSHA1 once done.
+func AcquireSHA1(key []byte) hash.Hash {
+	k := hmacSHA1Pool.Get().(*keyed) //nolint:forcetypeassert
+	k.reset(key)
 
-	return h
+	return k
 }
 
-// PutSHA256 puts h to SHA256 pool.
-func PutSHA256(h hash.Hash) {
-	hm := h.(*hmac) //nolint:forcetypeassert
-	assertHMACSize(hm, sha256.Size, sha256.BlockSize)
-	hmacSHA256Pool.Put(hm)
-}
-
-// assertHMACSize panics if h.size != size or h.blocksize != blocksize.
-//
-// Put and Acquire functions are internal functions to project, so
-// checking it via such assert is optimal.
-func assertHMACSize(h *hmac, size, blocksize int) { //nolint:unparam
-	if h.Size() != size || h.BlockSize() != blocksize {
-		panic("BUG: hmac size invalid") //nolint
+// PutSHA1 returns h to the HMAC-SHA1 pool.
+func PutSHA1(h hash.Hash) {
+	if k, ok := h.(*keyed); ok {
+		hmacSHA1Pool.Put(k)
 	}
+}
+
+// AcquireSHA256 returns an HMAC-SHA256 hash keyed with key, taken from a pool.
+// Return it with PutSHA256 once done.
+func AcquireSHA256(key []byte) hash.Hash {
+	k := hmacSHA256Pool.Get().(*keyed) //nolint:forcetypeassert
+	k.reset(key)
+
+	return k
+}
+
+// PutSHA256 returns h to the HMAC-SHA256 pool.
+func PutSHA256(h hash.Hash) {
+	if k, ok := h.(*keyed); ok {
+		hmacSHA256Pool.Put(k)
+	}
+}
+
+// Equal reports whether two MACs are equal without leaking timing information.
+func Equal(mac1, mac2 []byte) bool {
+	return hmac.Equal(mac1, mac2)
 }
