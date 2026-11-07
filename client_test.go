@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/pion/logging"
+	"github.com/pion/transport/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1410,7 +1411,7 @@ func TestDialURITLSConfig(t *testing.T) {
 		t.Run(scheme, func(t *testing.T) {
 			uri, err := ParseURI(scheme + ":" + server.Listener.Addr().String())
 			assert.NoError(t, err)
-			client, err := DialURI(uri, option)
+			client, err := DialURI(uri, option, WithIPVersion(4))
 			assert.NoError(t, err)
 			defer func() { assert.NoError(t, client.Close()) }()
 
@@ -1420,6 +1421,124 @@ func TestDialURITLSConfig(t *testing.T) {
 			assert.NoError(t, conn.HandshakeContext(t.Context()))
 			assert.NotEmpty(t, conn.ConnectionState().VerifiedChains)
 			assert.Equal(t, "original.example", config.ServerName)
+		})
+	}
+}
+
+// Stop at the connection boundary so TLS and DTLS tests do not require certificates.
+type recordingDialNet struct {
+	transport.Net
+	network string
+}
+
+func (n *recordingDialNet) Dial(network, _ string) (net.Conn, error) {
+	n.network = network
+
+	return nil, errClientStartRefused
+}
+
+func (n *recordingDialNet) DialUDP(network string, _, _ *net.UDPAddr) (transport.UDPConn, error) {
+	n.network = network
+
+	return nil, errClientStartRefused
+}
+
+func TestDialURIIPVersionTransports(t *testing.T) {
+	const (
+		udp = "udp"
+		tcp = "tcp"
+	)
+	for _, version := range []int{0, 4, 6} {
+		for _, test := range []struct {
+			uri     string
+			network string
+		}{
+			{"stun:localhost", udp},
+			{"turn:localhost?transport=udp", udp},
+			{"turn:localhost?transport=tcp", tcp},
+			{"stuns:localhost", tcp},
+			{"turns:localhost?transport=tcp", tcp},
+			{"turns:localhost?transport=udp", udp},
+		} {
+			t.Run(fmt.Sprintf("%s/IPv%d", test.uri, version), func(t *testing.T) {
+				uri, err := ParseURI(test.uri)
+				if !assert.NoError(t, err) {
+					return
+				}
+				// Literal addresses keep DTLS resolution independent of host DNS.
+				uri.Host = "127.0.0.1"
+				expected := test.network
+				if version != 0 {
+					expected += fmt.Sprint(version)
+				}
+				if version == 6 {
+					uri.Host = "::1"
+				}
+				network := &recordingDialNet{}
+				client, err := DialURI(uri, WithNet(network), WithIPVersion(version))
+				assert.Nil(t, client)
+				assert.ErrorIs(t, err, errClientStartRefused)
+				assert.Equal(t, expected, network.network)
+			})
+		}
+	}
+}
+
+func TestDialURIIPVersionRejectsOtherFamily(t *testing.T) {
+	for _, test := range []struct {
+		uri     string
+		version int
+	}{
+		{"stun:[::1]", 4},
+		{"stun:127.0.0.1", 6},
+		{"turns:[::1]?transport=udp", 4},
+		{"turns:127.0.0.1?transport=udp", 6},
+	} {
+		t.Run(test.uri, func(t *testing.T) {
+			uri, err := ParseURI(test.uri)
+			if !assert.NoError(t, err) {
+				return
+			}
+			client, err := DialURI(uri, WithIPVersion(test.version))
+			assert.Error(t, err)
+			assert.Nil(t, client)
+		})
+	}
+}
+
+func TestDialURIUnsupportedIPVersion(t *testing.T) {
+	uri, err := ParseURI("stun:localhost")
+	if !assert.NoError(t, err) {
+		return
+	}
+	client, err := DialURI(uri, WithIPVersion(5))
+	assert.ErrorIs(t, err, ErrUnsupportedIPVersion)
+	assert.Nil(t, client)
+}
+
+func TestDialURIIPVersionUDP(t *testing.T) {
+	for _, version := range []int{0, 4, 6} {
+		t.Run(fmt.Sprintf("IPv%d", version), func(t *testing.T) {
+			network, host := "udp6", "[::1]:0"
+			if version == 4 {
+				network, host = "udp4", "127.0.0.1:0"
+			}
+			listener, err := net.ListenPacket(network, host) //nolint:noctx
+			if err != nil && version != 4 {
+				t.Skipf("IPv6 loopback is unavailable: %v", err)
+			}
+			if !assert.NoError(t, err) {
+				return
+			}
+			defer func() { assert.NoError(t, listener.Close()) }()
+			uri, err := ParseURI("stun:" + listener.LocalAddr().String())
+			if !assert.NoError(t, err) {
+				return
+			}
+			client, err := DialURI(uri, WithIPVersion(version))
+			if assert.NoError(t, err) {
+				assert.NoError(t, client.Close())
+			}
 		})
 	}
 }
