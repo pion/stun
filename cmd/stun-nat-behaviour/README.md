@@ -8,7 +8,7 @@ behaviour.
 
 ### Usage
 ```sh
-$ go install github.com/pion/stun/v4/cmd/stun-nat-behaviour@latest
+$ go install github.com/pion/stun/v5/cmd/stun-nat-behaviour@latest
 $ $GOPATH/bin/stun-nat-behaviour [options] [--server IP:port]
 ```
 

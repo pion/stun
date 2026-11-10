@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pion/stun/v4/internal/testutil"
+	"github.com/pion/stun/v5/internal/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
