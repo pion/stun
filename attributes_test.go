@@ -108,7 +108,7 @@ func TestAttrTypeRange(t *testing.T) {
 
 func TestAttrTypeKnown(t *testing.T) {
 	// All Attributes in attrNames should be known
-	for attr := range attrNames() {
+	for attr := range attrNames {
 		assert.True(t, attr.Known())
 	}
 
