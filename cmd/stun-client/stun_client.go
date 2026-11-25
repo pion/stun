@@ -30,8 +30,8 @@ func main() {
 		log.Fatalf("Invalid URI '%s': %s", uriStr, err)
 	}
 
-	// we only try the first address, so restrict ourselves to IPv4
-	client, err := stun.DialURI(uri)
+	// Restrict address selection to IPv4 while retaining the URI's transport.
+	client, err := stun.DialURI(uri, stun.WithIPVersion(4))
 	if err != nil {
 		log.Fatalf("Failed to dial: %s", err)
 	}

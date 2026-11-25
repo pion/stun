@@ -25,6 +25,9 @@ import (
 // ErrUnsupportedURI is an error thrown if the user passes an unsupported STUN or TURN URI.
 var ErrUnsupportedURI = fmt.Errorf("invalid schema or transport")
 
+// ErrUnsupportedIPVersion means the requested IP version is not 0, 4, or 6.
+var ErrUnsupportedIPVersion = errors.New("unsupported IP version")
+
 // Dial connects to the address on the named network and then
 // initializes Client on that connection, returning error if any.
 func Dial(network, address string) (*Client, error) {
@@ -40,6 +43,7 @@ type dialConfig struct {
 	dtlsOptions []dtls.ClientOption
 	tlsConfig   *tls.Config
 	net         transport.Net
+	ipVersion   int
 }
 
 // DialOption configures a connection opened by DialURI.
@@ -68,6 +72,15 @@ func WithNet(network transport.Net) DialOption {
 	}
 }
 
+// WithIPVersion restricts DialURI to IPv4 (4) or IPv6 (6).
+// The default (0) allows either family. The URI still determines the transport,
+// including TLS and DTLS. Other values cause DialURI to return ErrUnsupportedIPVersion.
+func WithIPVersion(version int) DialOption {
+	return func(cfg *dialConfig) {
+		cfg.ipVersion = version
+	}
+}
+
 // DialURI connect to the STUN/TURN URI and then
 // initializes Client on that connection, returning error if any.
 func DialURI(uri *URI, options ...DialOption) (*Client, error) { //nolint:cyclop
@@ -78,6 +91,17 @@ func DialURI(uri *URI, options ...DialOption) (*Client, error) { //nolint:cyclop
 		}
 
 		option(cfg)
+	}
+
+	udpNetwork, tcpNetwork := "udp", "tcp" //nolint:goconst
+	switch cfg.ipVersion {
+	case 0:
+	case 4, 6:
+		suffix := strconv.Itoa(cfg.ipVersion)
+		udpNetwork += suffix
+		tcpNetwork += suffix
+	default:
+		return nil, fmt.Errorf("%w: %d", ErrUnsupportedIPVersion, cfg.ipVersion)
 	}
 
 	var conn Connection
@@ -95,14 +119,14 @@ func DialURI(uri *URI, options ...DialOption) (*Client, error) { //nolint:cyclop
 
 	switch {
 	case uri.Scheme == SchemeTypeSTUN:
-		if conn, err = nw.Dial("udp", addr); err != nil {
+		if conn, err = nw.Dial(udpNetwork, addr); err != nil {
 			return nil, fmt.Errorf("failed to listen: %w", err)
 		}
 
 	case uri.Scheme == SchemeTypeTURN:
-		network := "udp" //nolint:goconst
+		network := udpNetwork
 		if uri.Proto == ProtoTypeTCP {
-			network = "tcp" //nolint:goconst
+			network = tcpNetwork
 		}
 
 		if conn, err = nw.Dial(network, addr); err != nil {
@@ -110,12 +134,12 @@ func DialURI(uri *URI, options ...DialOption) (*Client, error) { //nolint:cyclop
 		}
 
 	case uri.Scheme == SchemeTypeTURNS && uri.Proto == ProtoTypeUDP:
-		udpAddr, err := net.ResolveUDPAddr("udp", addr)
+		udpAddr, err := net.ResolveUDPAddr(udpNetwork, addr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve UDPAddr: %w", err)
 		}
 
-		udpConn, err := nw.DialUDP("udp", nil, udpAddr)
+		udpConn, err := nw.DialUDP(udpNetwork, nil, udpAddr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
@@ -137,7 +161,7 @@ func DialURI(uri *URI, options ...DialOption) (*Client, error) { //nolint:cyclop
 		}
 		tlsCfg.ServerName = uri.Host
 
-		tcpConn, err := nw.Dial("tcp", addr)
+		tcpConn, err := nw.Dial(tcpNetwork, addr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
